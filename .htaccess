@@ -1,0 +1,53 @@
+# ============================================================
+#  結婚式招待状 — Apache 用設定
+#  Nginx をお使いの場合は README.md の設定例をご参照ください
+# ============================================================
+
+AddDefaultCharset UTF-8
+AddType image/webp .webp
+AddType image/svg+xml .svg
+
+# ---- 圧縮（テキスト系のみ。画像は既に圧縮済み） ----
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ---- キャッシュ ----
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # 画像・フォント：内容が変わったらファイル名を変える運用のため長期キャッシュ
+  ExpiresByType image/jpeg              "access plus 1 year"
+  ExpiresByType image/webp              "access plus 1 year"
+  ExpiresByType image/png               "access plus 1 year"
+  ExpiresByType image/svg+xml           "access plus 1 year"
+  # CSS / JS：更新が入りうるので 1 週間
+  ExpiresByType text/css                "access plus 1 week"
+  ExpiresByType application/javascript  "access plus 1 week"
+  # HTML：常に最新を取りに行かせる
+  ExpiresByType text/html               "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(jpg|jpeg|webp|png|svg)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "no-referrer-when-downgrade"
+</IfModule>
+
+# ---- 検索避け（招待状は身内向けのため） ----
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>
+
+# ---- https へ統一（必要な場合のみコメントを外す） ----
+# <IfModule mod_rewrite.c>
+#   RewriteEngine On
+#   RewriteCond %{HTTPS} off
+#   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>

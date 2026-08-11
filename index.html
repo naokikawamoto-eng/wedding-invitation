@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#faf7f2">
+<title>Wedding Invitation | Naoki &amp; Yurika</title>
+<meta property="og:title" content="Wedding Invitation｜河本直樹 &amp; 磯野有梨花">
+<meta property="og:description" content="2026年11月22日（日）ザ・プリンス パークタワー東京">
+<meta name="description" content="河本直樹・磯野有梨花 結婚式のご案内。2026年11月22日（日）ザ・プリンス パークタワー東京。ご出欠のお返事は10月19日までにお願いいたします。">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preload" as="image" href="assets/img/hero-1.webp" type="image/webp" fetchpriority="high">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Naoki &amp; Yurika Wedding Invitation">
+<meta property="og:image" content="assets/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=Noto+Serif+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<div class="hd">
+  <div class="burger" id="burger" role="button" tabindex="0" aria-label="メニュー" aria-expanded="false"><i></i></div>
+</div>
+<nav class="nav" id="nav" aria-hidden="true">
+  <ul>
+    <li><a href="#host">Host</a></li>
+    <li><a href="#countdown">CountDown</a></li>
+    <li><a href="#information">Information</a></li>
+    <li><a href="#message">Message</a></li>
+    <li><a href="#poa">Presence or Absence</a></li>
+  </ul>
+  <div class="navorn"></div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<!-- ▼ メインの写真は .hero .ph の background-image を差し替え -->
+<header class="hero">
+  <!-- ▼ メインビジュアル（4枚が自動で切り替わります／順番はこの並び順） -->
+  <div class="slides" aria-hidden="true">
+    <div class="sl s1" style="--i:0"></div>
+    <div class="sl s2" style="--i:1"></div>
+    <div class="sl s3" style="--i:2"></div>
+    <div class="sl s4" style="--i:3"></div>
+  </div>
+  <div id="particles-js" aria-hidden="true"></div>
+  <div class="frame"></div>
+  <div class="pips" aria-hidden="true"><b style="--i:0"></b><b style="--i:1"></b><b style="--i:2"></b><b style="--i:3"></b></div>
+  <div class="in">
+    <h1 class="calliwrap top">
+    <svg class="calli" viewBox="36 3 501 320" xmlns="http://www.w3.org/2000/svg"
+      role="img" aria-label="Wedding Invitation">
+      <defs>
+        <!-- ▼ 金の質感：本家 action23 の 3_new_pt2_c.svg と同一の stop 値
+             （元は文字ごとに横方向グラデ。spreadMethod="repeat" で同じ見え方を再現） -->
+        <linearGradient id="gold" gradientUnits="userSpaceOnUse"
+                        x1="36" y1="0" x2="156" y2="0" spreadMethod="repeat">
+          <stop offset="0.0056" stop-color="#E4BC7B"/>
+          <stop offset="0.1854" stop-color="#E6CB87"/>
+          <stop offset="0.4101" stop-color="#F1E5D6"/>
+          <stop offset="0.7303" stop-color="#B9802B"/>
+          <stop offset="0.9494" stop-color="#E3B97F"/>
+        </linearGradient>
+        <!-- ▼ 走るハイライト（書き終わってから流れ始める） -->
+        <linearGradient id="shine" gradientUnits="userSpaceOnUse" x1="-320" y1="0" x2="-60" y2="0">
+          <stop offset="0"   stop-color="#fffdf4" stop-opacity="0"/>
+          <stop offset=".42" stop-color="#fffaea" stop-opacity=".7"/>
+          <stop offset=".54" stop-color="#ffffff" stop-opacity=".95"/>
+          <stop offset=".66" stop-color="#fff3cf" stop-opacity=".62"/>
+          <stop offset="1"   stop-color="#fff8e0" stop-opacity="0"/>
+          <animate attributeName="x1" values="-320;-320;620" keyTimes="0;.46;1"
+                   dur="5.2s" begin="11.6s" repeatCount="indefinite"/>
+          <animate attributeName="x2" values="-60;-60;880" keyTimes="0;.46;1"
+                   dur="5.2s" begin="11.6s" repeatCount="indefinite"/>
+        </linearGradient>
+        <!-- ▼ 本家と同じ「マスクで文字を出す」作り。
+             a2=Wedding / a1=Invitation / a3=下線 の3レイヤーが並行して描かれる。
+             線幅は本家 style.css の指定どおり 文字10 / 下線30 -->
+        <mask id="calliMask" maskUnits="userSpaceOnUse" x="0" y="0" width="548.37" height="356.44">
+          <g class="g-wed" fill="none" stroke="#fff" stroke-miterlimit="5" stroke-linejoin="round" stroke-width="10">
+          <path d="M101.81,55.98c0,0-6.52,3.82-9.19-0.33c-2.67-4.15-0.3-10.37,8.6-10.08c8.89,0.3,11.86,5.93,11.56,11.86 c-0.3,5.93-7.71,39.42-34.39,53.95c0,0-41.8,12.15-30.53-36.76c0,0,12.45-50.99,65.51-54.54c0,0,25.2,0.89,21.05,40.61 c0,0-13.34,44.46-42.39,72.03c0,0,26.68-21.94,46.24-45.35c0,0,42.09-57.8,53.06-65.21c0,0-15.12,20.75-21.64,42.69 c-6.52,21.94-24.31,60.17-36.76,69.66c0,0,34.98-28.75,51.87-52.47s45.06-53.06,68.77-63.44c0,0,21.34-13.04,42.69-11.56"/>
+          <path d="M196.08,108.41c0,0,21.05-3.26,30.53-12.75c9.49-9.49-0.3-12.45-11.56-7.11 c-11.26,5.34-33.2,22.23-19.86,40.02c0,0,6.82,6.22,26.09-10.67c0,0,11.86-24.6,26.09-28.75c0,0,18.08-10.67,13.64,5.34 c0,0,4.45-18.97-22.82,3.85c0,0-25.49,32.01-8.3,31.42c0,0,6.82,0.59,26.97-25.2c0,0,32.01-48.02,34.98-54.84 c0,0,0,3.85-6.82,16.01c-6.82,12.15-35.27,52.76-32.9,60.17c0,0,2.67,12.75,21.94-10.67c0,0,11.56-18.67,24.6-25.2 c13.04-6.52,18.67-4.15,15.71,3.26c0,0,5.34-16.9-22.53,4.74c0,0-27.57,28.46-8.6,31.12c0,0,7.41,2.67,25.2-21.94 c0,0,34.09-49.21,36.76-57.8c0,0,1.19,4.45-5.04,14.52s-23.71,37.35-27.57,43.87c-3.85,6.52-13.64,23.12-2.96,21.34 c10.67-1.78,17.79-11.86,21.05-17.49S341.92,93,345.77,88.55c0,0,0.89,4.45-1.78,8.3c-2.67,3.85-16.01,19.56-15.71,26.38 s3.26,9.19,10.08,5.04s30.04-38.58,35.27-40.91c5.24-2.33,10.97-2.96,8.6,6.52s-17.42,32.14-21.34,34.09 c0,0,14.23-13.34,17.19-17.79c2.96-4.45,21.34-25.77,26.38-24.01c5.04,1.76,6.52,4.45,4.45,9.49 c-2.08,5.04-13.04,15.71-14.23,22.53c-1.19,6.82-2.37,12.45,4.74,11.56c7.11-0.89,18.08-13.93,21.64-18.38s17.49-18.97,24.9-21.94 s16.01-6.52,14.52,2.67c0,0,2.08-15.41-25.79,9.78c0,0-21.94,19.56-7.71,26.97c0,0,5.63,5.63,22.82-18.08 c0,0,16.3-16.01,19.27-23.42c0,0-1.19,7.11-7.11,18.08s-9.19,5.34-13.93,17.19c-4.74,11.86-14.82,32.01-20.16,37.94 c-5.34,5.93-21.34,29.35-37.35,19.86s33.2-39.42,48.61-44.17c0,0,30.53-10.37,41.8-32.9"/>
+          <path d="M349.79,77.41c0,0,4.66-8.76,10.62-9.87"/>
+          </g>
+          <g class="g-inv" fill="none" stroke="#fff" stroke-miterlimit="5" stroke-linejoin="round" stroke-width="10">
+          <path d="M48.47,234.97c1.54-2.64,1.3-10.86-3.1-8.88c-4.4,1.98-8.14,6.82-2.64,15.4c5.5,8.58,17.6,11.44,31.9,9.02 s38.94-18.92,43.79-28.38s24.42-40.93,28.82-47.09s21.78-24.2,33-28.6c11.22-4.4,17.6-7.7,14.08-5.06c-3.52,2.64-11,5.72-33.88,11 s-41.59,11.22-45.99,24.2c-4.4,12.98-3.08,26.18,18.48,28.82c0,0,22.44,3.3,31.02-22"/>
+          <path d="M160.23,223.23c0,0,16.5-23.76,19.36-18.26c2.86,5.5,3.52,6.6,1.1,11.44c-2.42,4.84-16.94,27.94-20.02,30.58 c0,0,2.86-0.44,6.6-4.62c3.74-4.18,24.64-35.86,34.1-36.74s8.14,8.58,5.72,12.76s-14.96,17.38-14.3,23.76 c0.66,6.38,2.2,9.68,9.68,5.94c7.48-3.74,27.06-29.48,33-38.28c0,0-0.22-3.08,1.76-3.3s3.96,0.22,1.32,4.62 s-14.96,21.78-17.16,25.96c-2.2,4.18-3.74,16.72,10.34,10.56c14.08-6.16,20.24-25.74,24.42-31.46c4.18-5.72,7.37-12.43,1.1-8.36 c-6.27,4.07-8.36,10.12-9.02,15.18c-0.66,5.06-1.98,11.88,3.08,12.1c5.06,0.22,9.02-0.22,12.32-4.62 c3.3-4.4,11.44-19.14,14.74-22.66c0,0,5.72-2.2,3.3,0.88c-2.42,3.08-19.58,26.18-19.8,31.68c-0.22,5.5-1.32,12.32,7.7,8.36 c9.02-3.96,14.74-11.88,18.04-16.5s20.46-33,24.86-38.72s4.62-3.74,2.64-0.44c-1.98,3.3-26.18,38.72-27.72,44.67 c-1.54,5.94-2.2,10.34,3.96,10.78c6.16,0.44,14.96-11,20.02-16.06c0,0,9.68-14.3,16.72-19.36c7.04-5.06,23.98-14.96,22.22-1.32 c0,0,1.98-18.92-23.76,7.26c0,0-14.08,13.2-14.52,21.12c-0.44,7.92,3.69,11.07,9.68,8.36s16.28-15.84,24.2-24.64 c7.92-8.8,9.68-16.94,12.32-16.72s-7.04,16.06-10.78,20.46c-3.74,4.4-12.76,19.36-4.84,20.68c7.92,1.32,16.72-7.26,19.8-11.88 c3.08-4.62,22.22-36.52,25.3-40.71c3.08-4.18,5.28-9.68,4.84-5.06c-0.44,4.62-18.7,33-22.22,37.84c-3.52,4.84-8.09,16.58-4.4,18.92 c3.69,2.35,10.12,3.74,25.74-18.48c0,0,13.2-20.24,16.5-22c3.3-1.76,3.96-1.98,1.1,2.2c-2.86,4.18-17.6,23.76-18.26,31.9 c-0.66,8.14,3.08,9.9,7.04,7.92c3.96-1.98,16.28-12.54,19.58-16.72c3.3-4.18,4.62-13.86,20.24-23.32 c15.62-9.46,22.66-0.88,17.6,8.14c0,0,7.04-23.76-20.02-3.52c0,0-17.16,12.1-16.5,26.4c0,0,0.22,11.22,11,8.8 c0,0,17.6-10.56,22-23.32c4.4-12.76-3.08-4.62-4.18-1.54c-1.1,3.08-4.84,10.12,1.98,11.22c6.82,1.1,16.5-9.24,20.9-15.18 s14.52-18.48,16.72-14.74c2.2,3.74,4.18,4.18,1.76,9.02c-2.42,4.84-18.04,30.8-22,32.78c0,0,2.2,2.2,9.46-7.04 c7.26-9.24,24.2-34.76,31.68-34.98s10.56,3.3,8.36,8.58c-2.2,5.28-14.52,19.58-15.4,25.52c-0.88,5.94-0.44,11.88,7.26,9.68 s22.88-22.66,24.42-26.18"/>
+          <path d="M283.76,197.16c0,0,4.58-9.9,9.9-10.19"/>
+          <path d="M413.44,196.71c0,0,3.84-8.86,9.31-9.9"/>
+          </g>
+          <g class="g-line" fill="none" stroke="#fff" stroke-miterlimit="5" stroke-linejoin="round" stroke-width="30">
+          <path d="M72.54,319.44c0,0,375.89-2.49,379.38,1"/>
+          </g>
+        </mask>
+      </defs>
+      <rect x="0" y="0" width="548.37" height="356.44" fill="url(#gold)" mask="url(#calliMask)"/>
+      <rect class="glint" x="0" y="0" width="548.37" height="356.44" fill="url(#shine)" mask="url(#calliMask)"/>
+    </svg>
+    </h1>
+    <div class="foot">
+      <p class="nm en">Naoki<i>&amp;</i>Yurika</p>
+      <p class="dt en"><b>2026</b><i>.</i><b>11</b><i>.</i><b>22</b><i>|</i><b>SUN</b></p>
+    </div>
+  </div>
+  <div class="scr">SCROLL<i></i></div>
+</header>
+
+<!-- ============ INTRO + HOST（共通の背景写真あり） ============ -->
+<div class="haikei">
+  <!-- ▼ 背景写真 -->
+  <div class="haikei_bg" aria-hidden="true"></div>
+  <div class="haikei_in">
+<section class="intro sec" id="intro">
+  <div class="wrap">
+    <!-- ▼ ご挨拶文 -->
+    <div class="jptext rv d1 narrow" style="margin-inline:auto">
+      <span class="kei">謹啓</span><br>
+      皆様におかれましては<br>
+      ますますご清祥のことと<br>
+      お慶び申し上げます<br><br>
+      このたび私たちは<br>
+      結婚式を挙げることになりました<br>
+      つきましては皆様により一層の<br>
+      ご指導を賜りたく<br>
+      ささやかではございますが披露宴を<br>
+      催したく存じます<br><br>
+      ご多用中誠に恐縮ではございますが<br>
+      ぜひご出席をいただきたく<br>
+      ご案内申し上げます<br><br>
+      <span class="kei">謹白</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============ HOST ============ -->
+<section class="host sec" id="host">
+  <div class="wrap">
+    <div class="head rv">
+      <div class="orn"></div>
+      <h2>Host</h2>
+      <p class="sub">Thank you for always supporting us</p>
+    </div>
+
+    <div class="hostbox rv d1">
+      <!-- ▼ 新郎 -->
+      <div class="hu">
+        <div class="top">
+          <div class="av"><picture><source srcset="assets/img/profile-groom.webp" type="image/webp"><img src="assets/img/profile-groom.jpg" alt="新郎 河本直樹" width="560" height="560" loading="lazy" decoding="async"></picture></div>
+          <div class="who">
+            <p class="role">Groom</p>
+            <p class="jpn">河本　直樹</p>
+            <p class="enn">Naoki Kawamoto</p>
+          </div>
+        </div>
+        <p class="say">この度 有梨花さんと結婚することとなりました<br>
+        まだまだ未熟な二人ですが<br>
+        今後とも新郎新婦共々よろしくお願いいたします</p>
+      </div>
+
+      <!-- ▼ 新婦 -->
+      <div class="hu rev">
+        <div class="top">
+          <div class="av"><picture><source srcset="assets/img/profile-bride.webp" type="image/webp"><img src="assets/img/profile-bride.jpg" alt="新婦 磯野有梨花" width="560" height="560" loading="lazy" decoding="async"></picture></div>
+          <div class="who">
+            <p class="role">Bride</p>
+            <p class="jpn">磯野　有梨花</p>
+            <p class="enn">Yurika Isono</p>
+          </div>
+        </div>
+        <p class="say">直樹さんと出会ってこれまで<br>
+        たくさんの方に支えられながら<br>
+        結婚まで進むことができました<br>
+        本当にありがとうございます</p>
+      </div>
+    </div>
+  </div>
+</section>
+  </div><!-- /haikei_in -->
+</div><!-- /haikei -->
+
+<!-- ============ COUNTDOWN ============ -->
+<section class="cd sec" id="countdown">
+  <!-- ▼ CountDown 背景（2枚が切り替わります） -->
+  <div class="cdbg" aria-hidden="true">
+    <div class="cdsl cd1" style="--i:0;--pos:52%"></div>
+    <div class="cdsl cd2" style="--i:1;--pos:30%"></div>
+  </div>
+  <div class="wrap">
+    <div class="head rv">
+      <div class="orn"></div>
+      <h2>CountDown</h2>
+      <p class="sub">Look forward to the day</p>
+    </div>
+    <div class="goal rv d1">
+      <span class="to">to</span>
+      <span class="dd">2026.11.22</span>
+    </div>
+    <div class="units rv d2">
+      <div class="u"><div class="n" id="cd-d">—</div><div class="l">DAYS</div></div>
+      <div class="u"><div class="n" id="cd-h">—</div><div class="l">HOURS</div></div>
+      <div class="u"><div class="n" id="cd-m">—</div><div class="l">MINUTES</div></div>
+      <div class="u"><div class="n" id="cd-s">—</div><div class="l">SECONDS</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INFORMATION ============ -->
+<section class="info sec" id="information">
+  <div class="wrap">
+    <div class="head rv">
+      <div class="orn"></div>
+      <h2>Information</h2>
+      <p class="sub">Details of our special day</p>
+    </div>
+
+    <div class="h3 rv d1">
+      <span class="e">Wedding Ceremony</span>
+      <span class="j">挙式・披露宴</span>
+    </div>
+
+    <div class="bigdate rv d1">
+      <span class="d">2026.11.22</span><span class="w">Sun</span>
+    </div>
+
+    <!-- ▼ 時間（現在は仮） -->
+    <div class="sched rv d2">
+      <div class="blk">
+        <p class="main"><span class="ttl">挙式</span><span class="t">11:30</span></p>
+        <p class="subs"><span>ご来館<b>11:10</b></span><span>挙式終了<b>12:00</b></span></p>
+        <p class="room">森のチャペル</p>
+      </div>
+      <div class="blk">
+        <p class="main"><span class="ttl">披露宴</span><span class="t">12:45</span></p>
+        <p class="subs"><span>受付<b>12:15</b></span><span>お披楽喜<b>15:15</b></span></p>
+        <p class="room">ボールルーム</p>
+      </div>
+    </div>
+    <p class="note" style="text-align:center;margin-top:16px">
+      挙式にご列席の方は 11:10 までにご来館ください<br>
+      披露宴からご列席の方は 12:25 までにご来館ください
+    </p>
+
+    <div class="venue rv">
+      <div class="h3">
+        <span class="e">Venue &amp; Access</span>
+        <span class="j">会場・アクセス</span>
+      </div>
+      <div class="mapwrap">
+        <iframe title="会場地図" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"
+          src="https://maps.google.com/maps?q=%E3%82%B6%E3%83%BB%E3%83%97%E3%83%AA%E3%83%B3%E3%82%B9%20%E3%83%91%E3%83%BC%E3%82%AF%E3%82%BF%E3%83%AF%E3%83%BC%E6%9D%B1%E4%BA%AC&amp;z=16&amp;output=embed"></iframe>
+      </div>
+      <!-- ▼ 会場情報 -->
+      <div class="addr">
+        <span class="vn">ザ・プリンス パークタワー東京</span>
+        〒105-8563　東京都港区芝公園4-8-1<br>
+        <span class="tel">TEL 03-5400-1111</span><br>
+        <span style="font-size:12px;color:var(--mute)">
+          都営大江戸線「赤羽橋駅」赤羽橋口より徒歩約2分<br>
+          都営三田線「芝公園駅」A4出口より徒歩約10分<br>
+          JR・東京モノレール「浜松町駅」より徒歩約12分
+        </span>
+      </div>
+      <div class="btnrow">
+        <a class="btn" target="_blank" rel="noopener"
+          href="https://www.google.com/maps/search/?api=1&amp;query=%E3%82%B6%E3%83%BB%E3%83%97%E3%83%AA%E3%83%B3%E3%82%B9%E3%83%91%E3%83%BC%E3%82%AF%E3%82%BF%E3%83%AF%E3%83%BC%E6%9D%B1%E4%BA%AC">OPEN IN MAP</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MESSAGE ============ -->
+<section class="msg sec" id="message">
+  <div class="wrap">
+    <div class="head rv">
+      <div class="orn"></div>
+      <h2>Message</h2>
+      <p class="sub">To our esteemed friends</p>
+    </div>
+    <!-- ▼ ご案内文 -->
+    <div class="jptext rv d1 narrow" style="margin-inline:auto">
+      当日は1階に更衣室をご用意しておりますので<br>
+      お召し替えが必要な方は<br>
+      どうぞご利用くださいませ<br>
+      また受付の手前にはクロークがございます<br>
+      お荷物やコートを先にお預けいただき<br>
+      身軽に受付へお進みいただけますと幸いです<br><br>
+      皆様に心地よくお過ごしいただけるよう<br>
+      ご準備しておりますので<br>
+      どうぞ安心してお越しください
+    </div>
+    <!-- ▼ 当日の流れ -->
+    <div class="tline rv d2">
+      <div class="h3">
+        <span class="e">Wedding Time Line</span>
+        <span class="j">当日の流れ</span>
+      </div>
+      <ol>
+        <li class="tl-item">
+          <span class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21.2s6.6-6.1 6.6-11a6.6 6.6 0 10-13.2 0c0 4.9 6.6 11 6.6 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+          <p class="tl-time en">11:10</p>
+          <p class="tl-jp">ご来館</p>
+          <p class="tl-en">ARRIVAL</p>
+          <p class="tl-note">挙式にご列席の方</p>
+        </li>
+        <li class="tl-item">
+          <span class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v4M10.4 3.6h3.2"/><path d="M4.5 21V10.2L12 6l7.5 4.2V21"/><path d="M2.8 21h18.4"/><path d="M9.6 21v-5.4a2.4 2.4 0 014.8 0V21"/></svg></span>
+          <p class="tl-time en">11:30</p>
+          <p class="tl-jp">挙　式</p>
+          <p class="tl-en">CEREMONY</p>
+          <p class="tl-note">森のチャペル</p>
+        </li>
+        <li class="tl-item">
+          <span class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.4h3.4L8 6h8l1.6 2.4H21v10.2H3z"/><circle cx="12" cy="13.2" r="3.4"/></svg></span>
+          <p class="tl-time en">12:00</p>
+          <p class="tl-jp">挙式終了・フォトタイム</p>
+          <p class="tl-en">PHOTO TIME</p>
+        </li>
+        <li class="tl-item">
+          <span class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.2 4.5h11.2l4.4 4.4V19.5H4.2z"/><path d="M15.4 4.5V9h4.4"/><path d="M7.6 12.4h8M7.6 15.6h5.4"/></svg></span>
+          <p class="tl-time en">12:15</p>
+          <p class="tl-jp">披露宴受付</p>
+          <p class="tl-en">RECEPTION</p>
+          <p class="tl-note">披露宴からの方は 12:25 までにご来館</p>
+        </li>
+        <li class="tl-item">
+          <span class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h6l-1.1 5.2a1.9 1.9 0 01-3.8 0z"/><path d="M8 8.9V20M5.6 20.4h4.8"/><path d="M13 3.5h6l-1.1 5.2a1.9 1.9 0 01-3.8 0z"/><path d="M16 8.9V20M13.6 20.4h4.8"/></svg></span>
+          <p class="tl-time en">12:45</p>
+          <p class="tl-jp">披露宴</p>
+          <p class="tl-en">WEDDING PARTY</p>
+          <p class="tl-note">ボールルーム</p>
+        </li>
+        <li class="tl-item">
+          <span class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.2S3.6 15 3.6 9.3a4.3 4.3 0 018.4-1.5 4.3 4.3 0 018.4 1.5c0 5.7-8.4 10.9-8.4 10.9z"/></svg></span>
+          <p class="tl-time en">15:15</p>
+          <p class="tl-jp">お開き・お見送り</p>
+          <p class="tl-en">FAREWELL</p>
+        </li>
+      </ol>
+      <p class="note" style="text-align:center;margin-top:22px">
+        ※ 進行の都合により多少前後する場合がございます
+      </p>
+    </div>
+  </div>
+
+  <div class="gal rv">
+    <div class="rail" id="rail">
+      <figure><picture><source srcset="assets/img/album-1.webp" type="image/webp"><img src="assets/img/album-1.jpg" alt="" width="800" height="800" loading="lazy" decoding="async"></picture></figure>
+      <figure><picture><source srcset="assets/img/album-2.webp" type="image/webp"><img src="assets/img/album-2.jpg" alt="" width="800" height="800" loading="lazy" decoding="async"></picture></figure>
+      <figure><picture><source srcset="assets/img/album-3.webp" type="image/webp"><img src="assets/img/album-3.jpg" alt="" width="800" height="800" loading="lazy" decoding="async"></picture></figure>
+      <figure><picture><source srcset="assets/img/album-4.webp" type="image/webp"><img src="assets/img/album-4.jpg" alt="" width="800" height="800" loading="lazy" decoding="async"></picture></figure>
+      <figure><picture><source srcset="assets/img/album-5.webp" type="image/webp"><img src="assets/img/album-5.jpg" alt="" width="800" height="800" loading="lazy" decoding="async"></picture></figure>
+      <figure><picture><source srcset="assets/img/album-6.webp" type="image/webp"><img src="assets/img/album-6.jpg" alt="" width="800" height="800" loading="lazy" decoding="async"></picture></figure>
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+</section>
+
+<!-- ============ RSVP ============ -->
+<section class="poa sec" id="poa">
+  <div class="wrap">
+    <div class="head rv">
+      <div class="orn"></div>
+      <h2>Presence or Absence</h2>
+      <p class="sub">R S V P</p>
+    </div>
+
+    <!-- ▼ 返信期日 -->
+    <div class="due rv d1">
+      お手数ですが　下記お日にち迄に<br>
+      ご出欠のご連絡をお願い申し上げます
+      <span class="day">2026年 10月 19日 （月）</span>
+      期日までのご連絡が難しい場合には<br>ご一報いただけますと幸いです
+    </div>
+
+    <div class="formttl rv d1">
+      <span class="j">ゲスト様入力項目</span>
+      <span class="e">Guest Entry Form</span>
+    </div>
+
+    <form class="fm rv d2" id="rsvp" novalidate>
+      <div class="grp">
+        <div class="key">ゲスト様<span class="e">Guest Type</span></div>
+        <div class="pills">
+          <label><input type="radio" name="side" value="新郎側"><span>新郎側<em>GROOM'S GUEST</em></span></label>
+          <label><input type="radio" name="side" value="新婦側"><span>新婦側<em>BRIDE'S GUEST</em></span></label>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="key">お名前<span class="e">Name</span><span class="req">必須</span></div>
+        <div class="row2">
+          <input class="inp" type="text" name="sei" placeholder="姓" required>
+          <input class="inp" type="text" name="mei" placeholder="名" required>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="key">ふりがな<span class="e">Kana</span><span class="req">必須</span></div>
+        <div class="row2">
+          <input class="inp" type="text" name="seik" placeholder="せい" required>
+          <input class="inp" type="text" name="meik" placeholder="めい" required>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="key">電話番号<span class="e">Phone</span></div>
+        <input class="inp" type="tel" name="tel" placeholder="090-0000-0000">
+      </div>
+
+      <div class="grp">
+        <div class="key">郵便番号<span class="e">Postcode</span></div>
+        <div class="rowzip">
+          <input class="inp" type="tel" name="zip1" maxlength="3" placeholder="105">
+          <span style="color:var(--mute)">–</span>
+          <input class="inp" type="tel" name="zip2" maxlength="4" placeholder="0011">
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="key">ご住所<span class="e">Address</span></div>
+        <input class="inp" type="text" name="addr" placeholder="東京都港区芝公園・・・">
+      </div>
+
+      <div class="grp">
+        <div class="key">メールアドレス<span class="e">Mail</span></div>
+        <input class="inp" type="email" name="mail" placeholder="example@mail.com">
+      </div>
+
+      <div class="grp">
+        <div class="key">アレルギー<span class="e">Allergy</span></div>
+        <p class="note warn">アレルギーをお持ちの方のみご記入ください</p>
+        <div class="pills" style="margin-bottom:10px">
+          <label><input type="radio" name="al" value="あり" id="al-yes"><span>あり<em>YES</em></span></label>
+          <label><input type="radio" name="al" value="なし" checked><span>なし<em>NO</em></span></label>
+        </div>
+        <input class="inp" type="text" name="aldetail" id="aldetail" placeholder="詳細（例：えび・そば）" hidden>
+      </div>
+
+      <div class="grp">
+        <div class="key">お連れ様追加<span class="e">Add Family</span></div>
+        <p class="note warn">ご本人様以外に参加される方をご記入ください</p>
+        <div id="guests"></div>
+        <button class="mini" type="button" id="addGuest">＋　お連れ様を追加する</button>
+      </div>
+
+      <div class="grp" style="border-bottom:0;padding-bottom:0">
+        <div class="key">メッセージ<span class="e">Message</span></div>
+        <p class="note">新郎新婦にメッセージを送ることができます（250文字まで）</p>
+        <textarea class="inp" name="msg" maxlength="250" placeholder="お祝いのメッセージをどうぞ"></textarea>
+      </div>
+
+      <div class="grp" style="border-bottom:0">
+        <div class="key">ご質問・ご要望<span class="e">Question</span></div>
+        <p class="note">当日のことでご不明な点や、お伝えいただきたいことがございましたらご記入ください<br>
+        （お子様連れ・お車でのご来場・車椅子のご利用・送迎のご希望など）</p>
+        <textarea class="inp" name="question" maxlength="500" placeholder="例：ベビーカーで伺いたいのですが、置き場所はありますか？"></textarea>
+      </div>
+
+      <p class="attlabel">PRESENCE OR ABSENCE</p>
+      <div class="att">
+        <label><input type="radio" name="attend" value="出席" required><span>ご出席<em>ATTEND</em></span></label>
+        <label><input type="radio" name="attend" value="欠席"><span>ご欠席<em>DECLINE</em></span></label>
+        <label><input type="radio" name="attend" value="保留"><span>保留<em>HOLD</em></span></label>
+      </div>
+
+      <button class="submit" type="submit">確認する<em>CONFIRM THE FOLLOWING</em></button>
+      <p class="note" style="text-align:center;margin-top:16px">
+        ※ 現在は原案のため送信は行われません。<br>送信先（Googleフォーム等）は未定のため、決まり次第つなぎ込みます。
+      </p>
+    </form>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="ft">
+  <div class="wrap">
+    <svg class="mono" viewBox="0 0 220 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Naoki and Yurika">
+      <ellipse cx="110" cy="88" rx="96" ry="76" stroke="#a98a57" stroke-width=".8" opacity=".5"/>
+      <ellipse cx="110" cy="88" rx="90" ry="70" stroke="#a98a57" stroke-width=".5" opacity=".3"/>
+      <path d="M52 88h-24M192 88h-24" stroke="#a98a57" stroke-width=".8" opacity=".45"/>
+      <text x="110" y="36" text-anchor="middle" fill="#a98a57"
+        style="font-family:'Cormorant Garamond',serif;font-size:11px;letter-spacing:5px">2026 . 11 . 22</text>
+      <text x="76" y="106" text-anchor="middle" fill="#26221e"
+        style="font-family:'Cormorant Garamond',serif;font-size:54px">N</text>
+      <text x="110" y="102" text-anchor="middle" fill="#a98a57"
+        style="font-family:'Great Vibes',cursive;font-size:34px">&amp;</text>
+      <text x="145" y="106" text-anchor="middle" fill="#26221e"
+        style="font-family:'Cormorant Garamond',serif;font-size:54px">Y</text>
+      <text x="110" y="140" text-anchor="middle" fill="#8b8177"
+        style="font-family:'Cormorant Garamond',serif;font-size:10.5px;letter-spacing:3.6px">JUST MARRIED</text>
+    </svg>
+    <p class="thanks">Thank you</p>
+    <!-- ▼ 連絡先 -->
+    <div class="cont">
+      ご不明な点がございましたら<br>お気軽にご連絡ください<br><br>
+      新郎　河本 直樹　<a href="tel:09052540512">090-5254-0512</a><br>
+      新婦　磯野 有梨花　<a href="tel:08066165007">080-6616-5007</a>
+    </div>
+    <p class="cr">NAOKI &amp; YURIKA — 2026.11.22 — THE PRINCE PARK TOWER TOKYO</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<!-- particles.js (Vincent Garreau / MIT) — 本家と同じライブラリ -->
+<script src="assets/js/particles.min.js" defer></script>
+<script src="assets/js/app.js" defer></script>
+</body>
+</html>
