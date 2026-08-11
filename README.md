@@ -12,6 +12,7 @@ PHP やデータベースは不要で、静的ファイルのみで動きます�
 ```
 .
 ├── index.html                  ページ本体
+├── vercel.json                 Vercel 用のヘッダ・キャッシュ設定
 ├── .htaccess                   Apache 用の圧縮・キャッシュ設定
 ├── robots.txt                  検索避け
 └── assets/
@@ -27,6 +28,28 @@ PHP やデータベースは不要で、静的ファイルのみで動きます�
 ---
 
 ## 2. アップロード手順
+
+### 現在の公開方法：Vercel（自動デプロイ）
+
+本番は **Vercel** で配信しています。公開URLは `https://wedding.arlys-japan.com/` です。
+
+このリポジトリの `main` ブランチに push すると、Vercel が自動でビルドせずそのまま配信します。
+手動での操作は不要です。
+
+```
+git add -A && git commit -m "..." && git push origin main
+```
+
+- ビルド処理は無く、静的ファイルがそのまま配信されます
+- 圧縮・キャッシュ・`X-Robots-Tag` などのヘッダは `vercel.json` が担当します
+  （`.htaccess` は Apache 専用のため Vercel では読まれません）
+- ドメインの DNS は Xserver のネームサーバーで管理しているため、
+  サブドメインを増やす場合は Xserver 側の DNS レコード設定が必要です
+
+> コミット作成者のメールアドレスが Vercel アカウントと紐づいていないと、
+> デプロイが `BLOCKED` になり反映されません。`git config user.email` を確認してください。
+
+### 他のサーバーへ手動で置く場合
 
 `index.html` `assets/` `.htaccess` `robots.txt` を、公開したいディレクトリへ
 **フォルダ構造のまま**アップロードするだけです。
