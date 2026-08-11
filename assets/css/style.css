@@ -125,7 +125,7 @@ body.nav-open .nav a{transform:none}
   padding:clamp(66px,11svh,110px) 26px clamp(112px,17svh,168px)}
 .hero .calliwrap{font-weight:400;line-height:0}
 .hero .calli{width:min(64vw,340px);height:auto;margin:0 auto;
-  filter:drop-shadow(0 1px 2px rgba(0,0,0,.85)) drop-shadow(0 0 10px rgba(0,0,0,.55));
+  filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.6)) drop-shadow(0 0 9px rgba(0,0,0,.42));
   will-change:filter}
 .hero .calli{visibility:hidden}
 .hero .calli.ready{visibility:visible}
@@ -133,7 +133,7 @@ body.nav-open .nav a{transform:none}
 .hero .calliwrap::before{content:"";position:absolute;z-index:-1;
   left:50%;top:50%;translate:-50% -50%;
   width:min(78vw,420px);aspect-ratio:1.9;border-radius:50%;
-  background:radial-gradient(ellipse at center,rgba(255,205,120,.22) 0%,rgba(210,158,70,.10) 45%,transparent 72%);
+  background:radial-gradient(ellipse at center,rgba(255,214,142,.16) 0%,rgba(210,158,70,.07) 45%,transparent 72%);
   pointer-events:none}
 .hero .calli .glint{mix-blend-mode:screen}
 .hero .nm{font-family:"Cormorant Garamond",serif;
@@ -216,12 +216,15 @@ body.nav-open .nav a{transform:none}
 /* ============ countdown ============ */
 /* 横長写真に合わせて 4:3。中身が入りきらない端末では自動で必要なぶんだけ伸びる */
 .cd{position:relative;text-align:center;background:#141210;color:#fff;
-  aspect-ratio:4/3;max-height:min(80svh,560px);
-  display:grid;place-content:center;padding:22px 0}
+  /* width を明示しないと aspect-ratio が「幅」まで縮めてしまい、
+     iPad 横向きなどでセクションだけ細くなる */
+  width:100%;aspect-ratio:4/3;max-height:min(78svh,620px);
+  display:grid;place-content:start center;
+  padding:clamp(24px,5.5vw,44px) 0 clamp(14px,3vw,22px)}
 .cd > .wrap{position:relative;z-index:2;width:100%}
 .cdbg{position:absolute;inset:0;z-index:0;overflow:hidden}
 .cdsl{position:absolute;inset:0;background-size:cover;
-  background-position:center var(--pos,50%);
+  background-position:var(--posx,center) var(--pos,50%);
   background-repeat:no-repeat;opacity:0;
   animation:cdfade 16s linear infinite;animation-delay:calc(var(--i) * 8s)}
 @keyframes cdfade{
@@ -238,21 +241,22 @@ body.nav-open .nav a{transform:none}
 .cd .head h2{color:#fff;text-shadow:0 3px 22px rgba(0,0,0,.5)}
 .cd .head .sub{color:rgba(255,255,255,.75)}
 .cd .head .orn{background:#eecb85;opacity:.95}
-.cd .goal{font-family:"Cormorant Garamond",serif;margin-bottom:clamp(12px,2.8vw,18px)}
-.cd .goal .to{display:block;font-style:italic;font-size:12.5px;color:#fff;letter-spacing:.2em;
+.cd .goal{font-family:"Cormorant Garamond",serif;margin-bottom:clamp(10px,2.4vw,15px)}
+.cd .goal .to{display:block;font-style:italic;font-size:11.5px;color:#fff;letter-spacing:.2em;
   text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55)}
-.cd .goal .dd{font-size:clamp(23px,6vw,32px);letter-spacing:.08em;color:#fff;
+.cd .goal .dd{font-size:clamp(21px,5.4vw,29px);letter-spacing:.08em;color:#fff;
   text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55)}
 .cd .units{display:flex;justify-content:center;align-items:flex-start;
-  gap:0;max-width:520px;margin:0 auto}
-.cd .u{flex:1;position:relative;padding:0 4px}
+  gap:0;max-width:560px;margin:0 auto}
+.cd .u{flex:1;position:relative;padding:0 2px;min-width:0}
 .cd .u + .u::before{content:"";position:absolute;left:0;top:5px;bottom:14px;width:1px;
   background:rgba(255,255,255,.45)}
 .cd .n{font-family:"Cormorant Garamond",serif;font-weight:300;
   font-size:clamp(30px,9.2vw,50px);line-height:1;color:var(--gold);
   font-variant-numeric:tabular-nums}
-.cd .l{margin-top:8px;font-family:"Cormorant Garamond",serif;font-size:8.5px;
-  letter-spacing:.22em;color:#fff;
+.cd .l{margin-top:10px;font-family:"Cormorant Garamond",serif;
+  font-size:clamp(9.5px,2.55vw,12px);font-weight:500;
+  letter-spacing:.02em;color:#fff;white-space:nowrap;
   text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55)}
 
 /* ============ information ============ */
@@ -304,15 +308,17 @@ body.nav-open .nav a{transform:none}
 
 /* gallery carousel */
 .gal{margin-top:clamp(44px,10vw,66px)}
-.rail{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;
-  padding:6px calc(50% - min(35vw,220px)) 18px;scrollbar-width:none}
+/* 写真は切らず、元の縦横比のまま。高さを揃えて横に流す */
+.rail{display:flex;align-items:center;gap:14px;overflow-x:auto;
+  scroll-snap-type:x mandatory;padding:6px 46% 18px;scrollbar-width:none}
 .rail::-webkit-scrollbar{display:none}
-.rail figure{flex:0 0 min(70vw,440px);scroll-snap-align:center;aspect-ratio:1;
+.rail figure{flex:0 0 auto;scroll-snap-align:center;
   background:#fff;padding:8px;border:1px solid rgba(226,217,203,.8);
   box-shadow:0 18px 40px -26px rgba(60,48,32,.5);
   opacity:.42;transform:scale(.94);transition:.6s var(--ease)}
 .rail figure.act{opacity:1;transform:none}
-.rail img{width:100%;height:100%;object-fit:cover}
+.rail img{display:block;width:auto;height:auto;
+  max-width:min(76vw,470px);max-height:clamp(270px,56vw,430px)}
 .dots{display:flex;justify-content:center;gap:9px;margin-top:16px}
 .dots b{width:5px;height:5px;border-radius:50%;background:var(--hair);transition:.4s;cursor:pointer}
 .dots b.act{background:var(--gold);transform:scale(1.35)}
@@ -439,7 +445,8 @@ textarea.inp{min-height:132px;line-height:2;resize:vertical}
    image-set() 未対応のブラウザは 1 行目の jpg にフォールバックする
    ============================================================ */
 picture{display:block}
-.hu .av picture,.rail picture{width:100%;height:100%}
+.hu .av picture{width:100%;height:100%}
+.rail picture{height:100%;width:auto}
 .hero .sl.s1{background-image:url("../img/hero-1.jpg");
   background-image:image-set(url("../img/hero-1.webp") type("image/webp"),url("../img/hero-1.jpg") type("image/jpeg"))}
 .hero.bg-on .sl.s2{background-image:url("../img/hero-2.jpg");

@@ -80,8 +80,7 @@ var RSVP = {
        ・下線                  … 文字が書き終わってから */
     var PLAN = [
       { sel: '.g-wed',  start: 1.2,  span: 8.8 },
-      { sel: '.g-inv',  start: 1.2,  span: 8.8 },
-      { sel: '.g-line', start: 10.2, span: 1.3 }
+      { sel: '.g-inv',  start: 1.2,  span: 8.8 }
     ];
     var svg = document.querySelector('.hero .calli');
     if(!svg) return;
