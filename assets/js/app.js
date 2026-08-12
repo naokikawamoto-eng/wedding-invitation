@@ -72,62 +72,62 @@ var RSVP = {
     });
   })();
 
-  /* ---- hero calligraphy: stroke drawing ---- */
+  /* ---- hero calligraphy: 書かれていく演出 ----
+     文字は Pinyon Script の実フォントで描いている（index.html の mask 内の <text>）。
+     その文字を clipPath の多角形で覆い、それを左から右へ動かすことで
+     筆が進んでいくように少しずつ現していく。
+     多角形の右端はペン先の角度に合わせて少し傾けてある。 */
   (function(){
     /* 元サイトの実測タイミング（アップロード動画を解析）
        ・写真だけの間          … 0 〜 1.2s
-       ・Wedding / Invitation … 1.2s から “同時に” 描き始め、約 8.8 秒かけて書き上がる
-       ・下線                  … 文字が書き終わってから */
-    var PLAN = [
-      { sel: '.g-wed',  start: 1.2,  span: 8.8 },
-      { sel: '.g-inv',  start: 1.2,  span: 8.8 }
-    ];
+       ・Wedding / Invitation … 1.2s から “同時に” 書き始め、約 8.8 秒で書き上がる */
+    var START = 1.2, SPAN = 8.8;
+    /* 左へ寄せて隠すときの移動量。index.html の polygon 幅より大きくとる */
+    var WIPE = 560;
+
     var svg = document.querySelector('.hero .calli');
     if(!svg) return;
+    var wipes = Array.prototype.slice.call(svg.querySelectorAll('clipPath > .wipe'));
+    if(!wipes.length) return;
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var items = [];
 
-    PLAN.forEach(function(layer){
-      var g = svg.querySelector('mask > ' + layer.sel);
-      if(!g) return;
-      var ps = Array.prototype.slice.call(g.querySelectorAll('path'));
-      var lens = ps.map(function(pt){ return pt.getTotalLength(); });
-      var total = lens.reduce(function(a, c){ return a + c; }, 0) || 1;
-      var t = layer.start;
-      ps.forEach(function(pt, i){
-        var dur = lens[i] / total * layer.span;   /* 線の長さに比例して配分 */
-        items.push({ pt: pt, L: lens[i], dur: dur, delay: t });
-        t += dur;
+    function run(){
+      if(reduce){                                  /* 動きを控える設定なら最初から全部出す */
+        wipes.forEach(function(w){ w.style.transition = 'none'; w.style.transform = 'none'; });
+        svg.classList.add('ready');
+        return;
+      }
+
+      /* 1) まず「隠した状態」を inline で確定させる */
+      wipes.forEach(function(w){
+        w.style.transition = 'none';
+        w.style.transform  = 'translateX(' + (-WIPE) + 'px)';
       });
-    });
 
-    /* 1) まず「隠した状態」を inline で確定させる。
-          CSS 変数のフォールバック値から遷移が始まると dashoffset が破線周期をまたぎ、
-          文字が虫食い状にちらついてしまうため。 */
-    items.forEach(function(o){
-      o.pt.style.transition = 'none';
-      o.pt.style.strokeDasharray = o.L;
-      o.pt.style.strokeDashoffset = o.L;
-    });
+      /* 2) スタイルを確実に反映させてから */
+      void svg.getBoundingClientRect();
 
-    if(reduce){
-      items.forEach(function(o){ o.pt.style.strokeDashoffset = 0; });
-      svg.classList.add('ready');
-      return;
+      /* 3) 走らせる。フォント読み込みで出遅れても、名前・日付の
+            CSS animation-delay と揃うようページ表示からの絶対時刻に合わせる */
+      var delay = Math.max(0, START - performance.now() / 1000);
+      requestAnimationFrame(function(){
+        wipes.forEach(function(w){
+          w.style.transition = 'transform ' + SPAN.toFixed(3) +
+                               's linear ' + delay.toFixed(3) + 's';
+          w.style.transform  = 'translateX(0px)';
+        });
+        svg.classList.add('ready');
+      });
     }
 
-    /* 2) スタイルを確実に反映させてから */
-    void svg.getBoundingClientRect();
-
-    /* 3) 走らせる */
-    requestAnimationFrame(function(){
-      items.forEach(function(o){
-        o.pt.style.transition = 'stroke-dashoffset ' + o.dur.toFixed(3) +
-                                's linear ' + o.delay.toFixed(3) + 's';
-        o.pt.style.strokeDashoffset = '0';
-      });
-      svg.classList.add('ready');
-    });
+    /* Pinyon Script が届く前に描くと別のフォントで一瞬見えてしまうので待つ */
+    if(document.fonts && document.fonts.load){
+      document.fonts.load('118px "Pinyon Script"')
+        .then(function(){ return document.fonts.ready; })
+        .then(run).catch(run);
+    }else{
+      run();
+    }
   })();
 
 
