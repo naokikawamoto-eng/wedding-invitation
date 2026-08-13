@@ -147,8 +147,12 @@ var RSVP = {
           var dy = (tb.y + tb.height / 2) - (pb.y + pb.height / 2) * sc;
           pen.setAttribute('transform',
             'translate(' + dx.toFixed(2) + ',' + dy.toFixed(2) + ') scale(' + sc.toFixed(4) + ')');
-          /* 線の太さは文字の高さより気持ち太く。取りこぼしを防ぐ */
-          pen.setAttribute('stroke-width', (tb.height * 1.25 / sc).toFixed(1));
+          /* ペンの太さ。文字の高さに対する倍率で指定する。
+             太いほど字の取りこぼしは減るが、書き始めた瞬間にこの直径の円が
+             現れるため、大きすぎると「塊が出る」動きになりなだらかさを失う。
+             実測では 0.45 を下回ると I の飾りが欠けるので、余裕を見て 0.55。
+             書き上がりでは unmask() がマスクごと外すので最終的な欠けはない */
+          pen.setAttribute('stroke-width', (tb.height * 0.55 / sc).toFixed(1));
         }
 
         var ps = Array.prototype.slice.call(pen.querySelectorAll('path'));
