@@ -73,35 +73,83 @@ var RSVP = {
   })();
 
   /* ---- hero calligraphy: 書かれていく演出 ----
-     文字は Pinyon Script の実フォントで描いている（index.html の mask 内の <text>）。
-     その文字を clipPath の多角形で覆い、それを左から右へ動かすことで
-     筆が進んでいくように少しずつ現していく。
-     多角形の右端はペン先の角度に合わせて少し傾けてある。 */
+     文字は Pinyon Script の実フォントで描いている（index.html の clipPath 内の <text>）。
+     その文字を「ペンの軌跡」を太い線にしたマスクで覆い、線を書き順どおりに伸ばして
+     少しずつ現していく。ワイプ（カーテン）ではなく筆の動きに沿って現れるので、
+     W の折り返しなども再現される。
+     軌跡は元サイト（action23）の vivus 用データそのもの。
+     フォントを変えても崩れないよう、実際に描画された文字の大きさを測って
+     軌跡を自動で合わせている。 */
   (function(){
-    /* 元サイトの実測タイミング（アップロード動画を解析）
+    /* 元サイトの実測タイミング（動画を解析）
        ・写真だけの間          … 0 〜 1.2s
        ・Wedding / Invitation … 1.2s から “同時に” 書き始め、約 8.8 秒で書き上がる */
     var START = 1.2, SPAN = 8.8;
-    /* 左へ寄せて隠すときの移動量。index.html の polygon 幅より大きくとる */
-    var WIPE = 560;
 
     var svg = document.querySelector('.hero .calli');
     if(!svg) return;
-    var wipes = Array.prototype.slice.call(svg.querySelectorAll('clipPath > .wipe'));
-    if(!wipes.length) return;
+    var LINES = [
+      { pen: '#penWed .pen', clip: '#clipWed text', group: '.g-wed' },
+      { pen: '#penInv .pen', clip: '#clipInv text', group: '.g-inv' }
+    ];
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function run(){
-      if(reduce){                                  /* 動きを控える設定なら最初から全部出す */
-        wipes.forEach(function(w){ w.style.transition = 'none'; w.style.transform = 'none'; });
-        svg.classList.add('ready');
-        return;
-      }
+    function fitAndCollect(){
+      var items = [];
+      LINES.forEach(function(L){
+        var pen  = svg.querySelector(L.pen);
+        var text = svg.querySelector(L.clip);
+        if(!pen || !text) return;
 
-      /* 1) まず「隠した状態」を inline で確定させる */
-      wipes.forEach(function(w){
-        w.style.transition = 'none';
-        w.style.transform  = 'translateX(' + (-WIPE) + 'px)';
+        /* 軌跡を、実際に描かれた文字の位置と大きさへ合わせる */
+        pen.removeAttribute('transform');
+        var tb = text.getBBox();      /* 文字の実寸 */
+        var pb = pen.getBBox();       /* 軌跡の実寸 */
+        if(pb.width > 0 && tb.width > 0){
+          var sc = tb.width / pb.width;
+          var dx = (tb.x + tb.width  / 2) - (pb.x + pb.width  / 2) * sc;
+          var dy = (tb.y + tb.height / 2) - (pb.y + pb.height / 2) * sc;
+          pen.setAttribute('transform',
+            'translate(' + dx.toFixed(2) + ',' + dy.toFixed(2) + ') scale(' + sc.toFixed(4) + ')');
+          /* 線の太さは文字の高さより気持ち太く。取りこぼしを防ぐ */
+          pen.setAttribute('stroke-width', (tb.height * 1.25 / sc).toFixed(1));
+        }
+
+        var ps = Array.prototype.slice.call(pen.querySelectorAll('path'));
+        var lens = ps.map(function(pt){ return pt.getTotalLength(); });
+        var total = lens.reduce(function(x, y){ return x + y; }, 0) || 1;
+        var t = 0;
+        ps.forEach(function(pt, i){
+          var dur = lens[i] / total * SPAN;
+          items.push({ pt: pt, L: lens[i], dur: dur, at: t });
+          t += dur;
+        });
+      });
+      return items;
+    }
+
+    function unmask(){
+      /* 書き終わったらマスクを外す。フォントの字形が軌跡から少しはみ出していても、
+         最後は必ず全文字が出るようにするための保険 */
+      LINES.forEach(function(L){
+        var g = svg.querySelector(L.group);
+        if(g) g.removeAttribute('mask');
+      });
+    }
+
+    function run(){
+      var items = fitAndCollect();
+      if(!items.length){ svg.classList.add('ready'); return; }
+
+      if(reduce){ unmask(); svg.classList.add('ready'); return; }
+
+      /* 1) まず「隠した状態」を inline で確定させる。
+            CSS 変数のフォールバック値から遷移が始まると dashoffset が破線周期を
+            またぎ、文字が虫食い状にちらついてしまうため。 */
+      items.forEach(function(o){
+        o.pt.style.transition = 'none';
+        o.pt.style.strokeDasharray = o.L;
+        o.pt.style.strokeDashoffset = o.L;
       });
 
       /* 2) スタイルを確実に反映させてから */
@@ -109,18 +157,19 @@ var RSVP = {
 
       /* 3) 走らせる。フォント読み込みで出遅れても、名前・日付の
             CSS animation-delay と揃うようページ表示からの絶対時刻に合わせる */
-      var delay = Math.max(0, START - performance.now() / 1000);
+      var base = Math.max(0, START - performance.now() / 1000);
       requestAnimationFrame(function(){
-        wipes.forEach(function(w){
-          w.style.transition = 'transform ' + SPAN.toFixed(3) +
-                               's linear ' + delay.toFixed(3) + 's';
-          w.style.transform  = 'translateX(0px)';
+        items.forEach(function(o){
+          o.pt.style.transition = 'stroke-dashoffset ' + o.dur.toFixed(3) +
+                                  's linear ' + (base + o.at).toFixed(3) + 's';
+          o.pt.style.strokeDashoffset = '0';
         });
         svg.classList.add('ready');
+        setTimeout(unmask, (base + SPAN) * 1000 + 400);
       });
     }
 
-    /* Pinyon Script が届く前に描くと別のフォントで一瞬見えてしまうので待つ */
+    /* Pinyon Script が届く前に測ると別のフォントの大きさで合わせてしまうので待つ */
     if(document.fonts && document.fonts.load){
       document.fonts.load('118px "Pinyon Script"')
         .then(function(){ return document.fonts.ready; })

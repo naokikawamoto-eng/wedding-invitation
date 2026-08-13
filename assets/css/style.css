@@ -245,10 +245,11 @@ body.nav-open .nav a{transform:none}
 .cd .head .sub{color:rgba(255,255,255,.75)}
 .cd .head .orn{background:#eecb85;opacity:.95}
 .cd .goal{font-family:"Cormorant Garamond",serif;margin-bottom:clamp(10px,2.4vw,15px)}
-.cd .goal .to{display:block;font-style:italic;font-size:11.5px;color:#fff;letter-spacing:.2em;
+.cd .goal .to{display:block;font-style:italic;font-size:11.5px;color:#FFE7B8;letter-spacing:.2em;
   text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55)}
-.cd .goal .dd{font-size:clamp(21px,5.4vw,29px);letter-spacing:.08em;color:#fff;
-  text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55)}
+.cd .goal .dd{font-size:clamp(21px,5.4vw,29px);letter-spacing:.08em;color:#FFDC8F;
+  text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55),
+    0 0 20px rgba(255,205,110,.55)}   /* 金の発光 */
 .cd .units{display:flex;justify-content:center;align-items:flex-start;
   gap:0;max-width:560px;margin:0 auto}
 .cd .u{flex:1;position:relative;padding:0 2px;min-width:0}
