@@ -116,7 +116,9 @@ body.nav-open .nav a{transform:none}
   .hero .pips{display:none}
 }
 #particles-js{position:absolute;inset:0;z-index:2;pointer-events:none}
-#particles-js canvas{display:block;width:100%!important;height:100%!important;
+/* 幅・高さは app.js が実寸で指定する。ここで 100% に引き伸ばすと、
+   描画バッファとの比率がずれた瞬間に粒が楕円に潰れてしまう */
+#particles-js canvas{display:block;
   filter:drop-shadow(0 0 3px rgba(255,238,198,.95)) drop-shadow(0 0 8px rgba(255,214,140,.55))}
 .hero .frame{position:absolute;inset:clamp(14px,3.6vw,26px);border:1px solid rgba(255,255,255,.42);z-index:3;
   pointer-events:none}

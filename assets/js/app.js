@@ -50,6 +50,41 @@ var RSVP = {
     /* ヒーローが画面外・タブが裏のときは描画を止める（スマホの電池対策） */
     var pjs = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
     if(!pjs) return;
+
+    /* --- 粒が楕円に潰れるのを防ぐ ---
+       canvas は「描画バッファ（width/height 属性）」と「表示サイズ（CSS）」を
+       別々に持つ。この 2 つの縦横比がずれると、円が引き伸ばされて楕円になる。
+       画面の回転やアドレスバーの出入りでレイアウトが動いた直後、particles.js が
+       確定前の寸法を拾ってしまうことがあるため、こちらで必ず一致させ直す。 */
+    var host = document.getElementById('particles-js');
+    var cv   = pjs.canvas.el;
+    function syncCanvas(){
+      if(!host || !cv) return;
+      var r = host.getBoundingClientRect();
+      var w = Math.max(1, Math.round(r.width));
+      var h = Math.max(1, Math.round(r.height));
+      cv.style.width  = w + 'px';          /* 表示サイズを実寸で固定 */
+      cv.style.height = h + 'px';
+      var ratio = pjs.canvas.pxratio || 1;
+      var bw = Math.round(w * ratio), bh = Math.round(h * ratio);
+      if(cv.width === bw && cv.height === bh) return;
+      cv.width  = bw;                      /* 描画バッファを同じ比率に揃える */
+      cv.height = bh;
+      pjs.canvas.w = bw;
+      pjs.canvas.h = bh;
+      pjs.particles.array.forEach(function(pt){   /* 画面外に取り残さない */
+        if(pt.x > bw) pt.x = Math.random() * bw;
+        if(pt.y > bh) pt.y = Math.random() * bh;
+      });
+    }
+    syncCanvas();
+    if('ResizeObserver' in window){
+      new ResizeObserver(function(){
+        requestAnimationFrame(syncCanvas);   /* レイアウト確定後に測る */
+      }).observe(host);
+    }
+    window.addEventListener('resize', function(){ requestAnimationFrame(syncCanvas); });
+    window.addEventListener('orientationchange', function(){ setTimeout(syncCanvas, 300); });
     var running = true;
     function halt(){
       if(!running) return;
@@ -59,6 +94,7 @@ var RSVP = {
     function resume(){
       if(running) return;
       running = true;
+      syncCanvas();
       pjs.fn.vendors.draw();
     }
     var heroEl = document.querySelector('.hero');
