@@ -107,20 +107,31 @@
         </mask>
         <!-- 文字そのものを切り抜き型に使う。これに「ペンの軌跡」マスクを
              重ねることで、書き順どおりに現れる -->
-        <clipPath id="clipWed">
-          <text x="286.5" y="122" text-anchor="middle" font-family="Pinyon Script" font-size="118">Wedding</text>
-        </clipPath>
-        <clipPath id="clipInv">
-          <text x="286.5" y="268" text-anchor="middle" font-family="Pinyon Script" font-size="118">Invitation</text>
-        </clipPath>
+        <!-- ▼ 字形。clipPath ではなく mask にしてあるのは、clipPath が塗りの形しか
+             見ず stroke を無視するため。stroke を重ねて文字を少しだけ太らせている
+             （太さを変えるのは stroke-width の数値。1.2〜3 くらいが実用範囲） -->
+        <mask id="textWed" maskUnits="userSpaceOnUse" x="0" y="0" width="548.37" height="356.44">
+          <text x="286.5" y="122" text-anchor="middle" fill="#fff"
+                stroke="#fff" stroke-width="2" stroke-linejoin="round"
+                font-family="Pinyon Script" font-size="118">Wedding</text>
+        </mask>
+        <mask id="textInv" maskUnits="userSpaceOnUse" x="0" y="0" width="548.37" height="356.44">
+          <text x="286.5" y="268" text-anchor="middle" fill="#fff"
+                stroke="#fff" stroke-width="2" stroke-linejoin="round"
+                font-family="Pinyon Script" font-size="118">Invitation</text>
+        </mask>
       </defs>
-      <g class="g-wed" clip-path="url(#clipWed)" mask="url(#penWed)">
-        <rect x="0" y="0" width="548.37" height="356.44" fill="url(#gold)"/>
-        <rect class="glint" x="0" y="0" width="548.37" height="356.44" fill="url(#shine)"/>
+      <g class="g-wed" mask="url(#penWed)">
+        <g mask="url(#textWed)">
+          <rect x="0" y="0" width="548.37" height="356.44" fill="url(#gold)"/>
+          <rect class="glint" x="0" y="0" width="548.37" height="356.44" fill="url(#shine)"/>
+        </g>
       </g>
-      <g class="g-inv" clip-path="url(#clipInv)" mask="url(#penInv)">
-        <rect x="0" y="0" width="548.37" height="356.44" fill="url(#gold)"/>
-        <rect class="glint" x="0" y="0" width="548.37" height="356.44" fill="url(#shine)"/>
+      <g class="g-inv" mask="url(#penInv)">
+        <g mask="url(#textInv)">
+          <rect x="0" y="0" width="548.37" height="356.44" fill="url(#gold)"/>
+          <rect class="glint" x="0" y="0" width="548.37" height="356.44" fill="url(#shine)"/>
+        </g>
       </g>
     </svg>
     </h1>

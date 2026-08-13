@@ -125,8 +125,8 @@ var RSVP = {
     var svg = document.querySelector('.hero .calli');
     if(!svg) return;
     var LINES = [
-      { pen: '#penWed .pen', clip: '#clipWed text', group: '.g-wed' },
-      { pen: '#penInv .pen', clip: '#clipInv text', group: '.g-inv' }
+      { pen: '#penWed .pen', clip: '#textWed text', group: '.g-wed' },
+      { pen: '#penInv .pen', clip: '#textInv text', group: '.g-inv' }
     ];
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
