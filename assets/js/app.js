@@ -109,111 +109,84 @@ var RSVP = {
   })();
 
   /* ---- hero calligraphy: 書かれていく演出 ----
-     文字は Pinyon Script の実フォントで描いている（index.html の clipPath 内の <text>）。
-     その文字を「ペンの軌跡」を太い線にしたマスクで覆い、線を書き順どおりに伸ばして
-     少しずつ現していく。ワイプ（カーテン）ではなく筆の動きに沿って現れるので、
-     W の折り返しなども再現される。
-     軌跡は元サイト（action23）の vivus 用データそのもの。
-     フォントを変えても崩れないよう、実際に描画された文字の大きさを測って
-     軌跡を自動で合わせている。 */
+     本家 action23 と同じ仕組み。金のカリグラフィ画像を、書き順の細いペン軌跡で
+     マスクして現す。タイミングは vivus の scenario-sync + EASE
+     （各 stroke の始点・終点をゆるめ、点は短く、単語の頭は一拍置く）。 */
   (function(){
-    /* 元サイトの実測タイミング（動画を解析）
-       ・写真だけの間          … 0 〜 1.2s
-       ・Wedding / Invitation … 1.2s から “同時に” 書き始め、約 8.8 秒で書き上がる */
-    var START = 1.2, SPAN = 8.8;
+    var FPS = 60;
+    /* フェードインと重なるよう、書き始めを少し遅らせる（秒） */
+    var START = 0.35;
 
     var svg = document.querySelector('.hero .calli');
     if(!svg) return;
-    var LINES = [
-      { pen: '#penWed .pen', clip: '#textWed text', group: '.g-wed' },
-      { pen: '#penInv .pen', clip: '#textInv text', group: '.g-inv' }
-    ];
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function fitAndCollect(){
+    /* vivus の EASE：余弦の ease-in-out。手の加速・減速に近い */
+    function ease(x){
+      return -Math.cos(x * Math.PI) / 2 + 0.5;
+    }
+
+    function collect(group){
+      var fallback = parseInt(group.getAttribute('data-duration'), 10) || 80;
+      var paths = Array.prototype.slice.call(group.querySelectorAll('path'));
       var items = [];
-      LINES.forEach(function(L){
-        var pen  = svg.querySelector(L.pen);
-        var text = svg.querySelector(L.clip);
-        if(!pen || !text) return;
-
-        /* 軌跡を、実際に描かれた文字の位置と大きさへ合わせる */
-        pen.removeAttribute('transform');
-        var tb = text.getBBox();      /* 文字の実寸 */
-        var pb = pen.getBBox();       /* 軌跡の実寸 */
-        if(pb.width > 0 && tb.width > 0){
-          var sc = tb.width / pb.width;
-          var dx = (tb.x + tb.width  / 2) - (pb.x + pb.width  / 2) * sc;
-          var dy = (tb.y + tb.height / 2) - (pb.y + pb.height / 2) * sc;
-          pen.setAttribute('transform',
-            'translate(' + dx.toFixed(2) + ',' + dy.toFixed(2) + ') scale(' + sc.toFixed(4) + ')');
-          /* ペンの太さ。文字の高さに対する倍率で指定する。
-             太いほど字の取りこぼしは減るが、書き始めた瞬間にこの直径の円が
-             現れるため、大きすぎると「塊が出る」動きになりなだらかさを失う。
-             実測では 0.45 を下回ると I の飾りが欠けるので、余裕を見て 0.55。
-             書き上がりでは unmask() がマスクごと外すので最終的な欠けはない */
-          pen.setAttribute('stroke-width', (tb.height * 0.55 / sc).toFixed(1));
-        }
-
-        var ps = Array.prototype.slice.call(pen.querySelectorAll('path'));
-        var lens = ps.map(function(pt){ return pt.getTotalLength(); });
-        var total = lens.reduce(function(x, y){ return x + y; }, 0) || 1;
-        var t = 0;
-        ps.forEach(function(pt, i){
-          var dur = lens[i] / total * SPAN;
-          items.push({ pt: pt, L: lens[i], dur: dur, at: t });
-          t += dur;
-        });
+      var t = 0;
+      paths.forEach(function(pt){
+        var delay = parseInt(pt.getAttribute('data-delay'), 10) || 0;
+        var dur = parseInt(pt.getAttribute('data-duration'), 10) || fallback;
+        var L = Math.ceil(pt.getTotalLength());
+        items.push({ pt: pt, L: L, start: t + delay, dur: dur });
+        t = t + delay + dur;
       });
       return items;
     }
 
-    function unmask(){
-      /* 書き終わったらマスクを外す。フォントの字形が軌跡から少しはみ出していても、
-         最後は必ず全文字が出るようにするための保険 */
-      LINES.forEach(function(L){
-        var g = svg.querySelector(L.group);
-        if(g) g.removeAttribute('mask');
-      });
+    function revealAll(items){
+      items.forEach(function(o){ o.pt.style.strokeDashoffset = '0'; });
     }
 
     function run(){
-      var items = fitAndCollect();
+      var groups = svg.querySelectorAll('.pen');
+      var items = [];
+      Array.prototype.forEach.call(groups, function(g){
+        items = items.concat(collect(g));
+      });
       if(!items.length){ svg.classList.add('ready'); return; }
 
-      if(reduce){ unmask(); svg.classList.add('ready'); return; }
-
-      /* 1) まず「隠した状態」を inline で確定させる。
-            CSS 変数のフォールバック値から遷移が始まると dashoffset が破線周期を
-            またぎ、文字が虫食い状にちらついてしまうため。 */
       items.forEach(function(o){
-        o.pt.style.transition = 'none';
-        o.pt.style.strokeDasharray = o.L;
-        o.pt.style.strokeDashoffset = o.L;
+        o.pt.style.strokeDasharray = o.L + ' ' + (o.L + 2);
+        o.pt.style.strokeDashoffset = String(o.L);
+      });
+      svg.classList.add('ready');
+
+      if(reduce){ revealAll(items); return; }
+
+      var maxFrame = 0;
+      items.forEach(function(o){
+        maxFrame = Math.max(maxFrame, o.start + o.dur);
       });
 
-      /* 2) スタイルを確実に反映させてから */
-      void svg.getBoundingClientRect();
+      var origin = performance.now() + START * 1000;
 
-      /* 3) 走らせる。フォント読み込みで出遅れても、名前・日付の
-            CSS animation-delay と揃うようページ表示からの絶対時刻に合わせる */
-      var base = Math.max(0, START - performance.now() / 1000);
-      requestAnimationFrame(function(){
+      function frame(now){
+        var f = (now - origin) / (1000 / FPS);
         items.forEach(function(o){
-          o.pt.style.transition = 'stroke-dashoffset ' + o.dur.toFixed(3) +
-                                  's linear ' + (base + o.at).toFixed(3) + 's';
-          o.pt.style.strokeDashoffset = '0';
+          var p = (f - o.start) / o.dur;
+          if(p <= 0) o.pt.style.strokeDashoffset = String(o.L);
+          else if(p >= 1) o.pt.style.strokeDashoffset = '0';
+          else o.pt.style.strokeDashoffset = String(o.L * (1 - ease(p)));
         });
-        svg.classList.add('ready');
-        setTimeout(unmask, (base + SPAN) * 1000 + 400);
-      });
+        if(f < maxFrame) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
     }
 
-    /* Pinyon Script が届く前に測ると別のフォントの大きさで合わせてしまうので待つ */
-    if(document.fonts && document.fonts.load){
-      document.fonts.load('118px "Pinyon Script"')
-        .then(function(){ return document.fonts.ready; })
-        .then(run).catch(run);
+    var src = (svg.querySelector('image') || {}).href;
+    src = src && (src.baseVal || src);
+    if(src){
+      var preload = new Image();
+      preload.onload = preload.onerror = run;
+      preload.src = src;
     }else{
       run();
     }
