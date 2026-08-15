@@ -11,7 +11,7 @@
 <meta name="description" content="河本直樹・磯野有梨花 結婚式のご案内。2026年11月22日（日）ザ・プリンス パークタワー東京。ご出欠のお返事は10月19日までにお願いいたします。">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-<link rel="preload" as="image" href="assets/img/hero-1.webp" type="image/webp" fetchpriority="high">
+<link rel="preload" as="image" href="assets/img/hero-1.webp?v=3" type="image/webp" fetchpriority="high">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://wedding.arlys-japan.com/">
 <meta property="og:site_name" content="Naoki &amp; Yurika Wedding Invitation">
@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=Noto+Serif+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=20260815">
+<link rel="stylesheet" href="assets/css/style.css?v=20260815r">
 </head>
 <body>
 
@@ -46,10 +46,30 @@
 <header class="hero">
   <!-- ▼ メインビジュアル（4枚が自動で切り替わります／順番はこの並び順） -->
   <div class="slides" aria-hidden="true">
-    <div class="sl s1" style="--i:0"></div>
-    <div class="sl s2" style="--i:1"></div>
-    <div class="sl s3" style="--i:2"></div>
-    <div class="sl s4" style="--i:3"></div>
+    <div class="sl s1" style="--i:0">
+      <picture>
+        <source srcset="assets/img/hero-1.webp?v=3" type="image/webp">
+        <img src="assets/img/hero-1.jpg" alt="" width="2200" height="3300" fetchpriority="high" decoding="async">
+      </picture>
+    </div>
+    <div class="sl s2" style="--i:1">
+      <picture>
+        <source srcset="assets/img/hero-2.webp?v=3" type="image/webp">
+        <img src="assets/img/hero-2.jpg" alt="" width="2200" height="3300" loading="lazy" decoding="async">
+      </picture>
+    </div>
+    <div class="sl s3" style="--i:2">
+      <picture>
+        <source srcset="assets/img/hero-3.webp?v=3" type="image/webp">
+        <img src="assets/img/hero-3.jpg" alt="" width="2200" height="3300" loading="lazy" decoding="async">
+      </picture>
+    </div>
+    <div class="sl s4" style="--i:3">
+      <picture>
+        <source srcset="assets/img/hero-4.webp?v=3" type="image/webp">
+        <img src="assets/img/hero-4.jpg" alt="" width="2200" height="3300" loading="lazy" decoding="async">
+      </picture>
+    </div>
   </div>
   <div id="particles-js" aria-hidden="true"></div>
   <div class="frame"></div>
