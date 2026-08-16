@@ -1,22 +1,12 @@
 /* ============================================================
  *  出欠フォームの送信先設定
  *  ------------------------------------------------------------
- *  endpoint を空のままにしておくと、フォームは送信されず
- *  「受付準備中」の案内が出ます（現在の状態）。
- *
- *  ▼ Google フォームに送る場合
- *     endpoint: 'https://docs.google.com/forms/d/e/【フォームID】/formResponse'
- *     mode:     'no-cors'
- *     ※ HTML 側の name="..." を Google フォームの entry.123456789 に
- *        書き換える必要があります（README 参照）
- *
- *  ▼ Formspree / Google Apps Script などに送る場合
- *     endpoint: 'https://formspree.io/f/【ID】'
- *     mode:     'cors'
+ *  Google スプレッドシートへ集計する（google-apps-script/Code.gs）。
+ *  ウェブアプリの URL を endpoint に入れる。
  * ============================================================ */
 var RSVP = {
-  endpoint: '',
-  mode: 'cors'
+  endpoint: 'https://script.google.com/macros/s/AKfycbyuyHTrmf8W_qHkMasXjNm5tQ9ioxugRgypj8a5bvfZ-wP7ztoxNOQg9Q_1EW4RRb-A/exec',
+  mode: 'no-cors'
 };
 
 (function(){
@@ -371,7 +361,10 @@ var RSVP = {
       return;
     }
 
-    var data = new FormData(f);
+    var data = new URLSearchParams();
+    new FormData(f).forEach(function(value, key){
+      data.append(key, value);
+    });
     /* お連れ様は動的に増えるので、まとめて 1 項目に整形して送る */
     var guests = [];
     document.querySelectorAll('#guests .guest').forEach(function(g){
@@ -388,7 +381,8 @@ var RSVP = {
     fetch(RSVP.endpoint, {
       method: 'POST',
       body: data,
-      mode: RSVP.mode || 'cors'
+      mode: RSVP.mode || 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     }).then(function(){
       form.innerHTML =
         '<div style="text-align:center;padding:40px 10px">' +

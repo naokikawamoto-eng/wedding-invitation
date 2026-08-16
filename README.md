@@ -81,61 +81,31 @@ gzip_types text/css application/javascript image/svg+xml;
 
 ---
 
-## 3. ★ 出欠フォームの送信先を設定する（未設定です）
+## 3. 出欠フォームの送信先（Google スプレッドシート）
 
-**現在フォームは送信されません。** このまま公開すると、ゲストが入力しても
-「ただいま受付の準備中です」と表示されるだけになります。必ず設定してください。
+ゲストの返信は Google スプレッドシートに 1 行ずつ溜まります。
+初回だけ、次の手順でウェブアプリ URL を発行してください。
 
-`assets/js/app.js` の先頭を編集します。
-
-```js
-var RSVP = {
-  endpoint: '',      // ← ここに送信先の URL
-  mode: 'cors'
-};
-```
-
-### A. Google フォームに集計する場合（無料・おすすめ）
-
-1. Google フォームで、招待状と同じ項目の質問を作ります
-2. フォームのプレビューを開き、ページのソースから各項目の `entry.123456789`
-   という name を調べます
-3. `index.html` の各入力欄の `name="..."` を、その `entry.xxxxx` に書き換えます
-
-   | 招待状の name | 内容 |
-   |---|---|
-   | `attend` | ご出欠（出席／欠席／保留）|
-   | `side` | 新郎側／新婦側 |
-   | `sei` `mei` | お名前 |
-   | `seik` `meik` | ふりがな |
-   | `tel` `mail` | 連絡先 |
-   | `zip1` `zip2` `addr` | ご住所 |
-   | `al` `aldetail` | アレルギー |
-   | `companions` | お連れ様（自動でまとめて送られます）|
-   | `msg` | メッセージ |
-   | `question` | ご質問・ご要望 |
-
-4. `app.js` を次のように設定します
+1. [新しいスプレッドシート](https://sheets.new) を作る（名前例：`Wedding RSVP 河本・磯野`）
+2. メニュー **拡張機能 → Apps Script** を開く
+3. `google-apps-script/Code.gs` の内容を貼り付けて保存する
+4. **デプロイ → 新しいデプロイ**
+   - 種類：ウェブアプリ
+   - 次のユーザーとして実行：自分
+   - アクセスできるユーザー：**全員**
+5. 発行された URL を `assets/js/app.js` の `RSVP.endpoint` に貼る
 
 ```js
 var RSVP = {
-  endpoint: 'https://docs.google.com/forms/d/e/【フォームID】/formResponse',
+  endpoint: 'https://script.google.com/macros/s/【デプロイID】/exec',
   mode: 'no-cors'
 };
 ```
 
-### B. Formspree などのフォームサービスを使う場合
+シートの列は「ご出欠・お名前・連絡先・アレルギー・お連れ様・メッセージ」など、
+招待状の入力項目と同じ並びです。
 
-```js
-var RSVP = {
-  endpoint: 'https://formspree.io/f/【ID】',
-  mode: 'cors'
-};
-```
-
-`name` の書き換えは不要です。送信されると項目名そのままでメールに届きます。
-
-**設定したら、必ずご自身でテスト送信して、内容が届くか確認してください。**
+**設定したら、必ずご自身でテスト送信して、シートに行が増えるか確認してください。**
 
 ---
 
