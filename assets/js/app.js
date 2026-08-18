@@ -318,6 +318,18 @@ var RSVP = {
     });
   })();
 
+  /* ---- ご縁（選んだ側に合わせて一言） ---- */
+  var relationNote = document.getElementById('relationNote');
+  var relationCopy = {
+    '新郎側': '直樹とのご縁を、一言でお聞かせください',
+    '新婦側': '有梨花とのご縁を、一言でお聞かせください'
+  };
+  document.querySelectorAll('input[name="side"]').forEach(function(r){
+    r.addEventListener('change', function(){
+      relationNote.textContent = relationCopy[r.value] || relationNote.textContent;
+    });
+  });
+
   /* ---- allergy detail ---- */
   var alDetail = document.getElementById('aldetail');
   document.querySelectorAll('input[name="al"]').forEach(function(r){
