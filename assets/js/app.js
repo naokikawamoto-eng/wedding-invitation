@@ -468,6 +468,176 @@ var RSVP = {
     zip2.addEventListener('blur', lookup);
   })();
 
+  /* ---- メッセージへの画像添付（最大3枚・長辺1000pxに縮小） ---- */
+  var rsvpPhotos = [];
+  (function(){
+    var MAX = 3;
+    var MAX_SIDE = 1000;
+    var QUALITY = 0.86;
+    var stage = document.getElementById('photoStage');
+    var picker = document.getElementById('photoPicker');
+    var addBtn = document.getElementById('photoAdd');
+    var delBtn = document.getElementById('photoRemove');
+    if(!stage || !picker || !addBtn || !delBtn) return;
+
+    var slots = [null];
+    var selected = 0;
+    var pickIndex = 0;
+    var ICON =
+      '<span class="ph-ico" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="12" cy="8.6" r="3.1"/>' +
+          '<path d="M5.6 18.6c1.2-3.1 3.4-4.7 6.4-4.7s5.2 1.6 6.4 4.7"/>' +
+        '</svg>' +
+      '</span>' +
+      '<span class="ph-lbl">写真アップロード</span>';
+
+    function revoke(item){
+      if(item && item.url) URL.revokeObjectURL(item.url);
+    }
+
+    function render(){
+      rsvpPhotos = slots.filter(Boolean);
+      stage.innerHTML = '';
+      slots.forEach(function(item, i){
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'gal-card' + (i === selected ? ' is-selected' : '');
+        card.setAttribute('aria-label', item ? '添付画像 ' + (i + 1) : '写真アップロード');
+        if(item){
+          var img = document.createElement('img');
+          img.src = item.url;
+          img.alt = '';
+          card.appendChild(img);
+        } else {
+          card.innerHTML = ICON;
+        }
+        card.addEventListener('click', function(){
+          selected = i;
+          if(item){
+            render();
+          } else {
+            pickIndex = i;
+            picker.value = '';
+            picker.click();
+          }
+        });
+        stage.appendChild(card);
+      });
+      addBtn.disabled = slots.length >= MAX;
+    }
+
+    function resizeImage(file){
+      return new Promise(function(resolve, reject){
+        var img = new Image();
+        var url = URL.createObjectURL(file);
+        img.onload = function(){
+          var w = img.naturalWidth || img.width;
+          var h = img.naturalHeight || img.height;
+          var scale = Math.min(1, MAX_SIDE / Math.max(w, h));
+          var nw = Math.max(1, Math.round(w * scale));
+          var nh = Math.max(1, Math.round(h * scale));
+          var canvas = document.createElement('canvas');
+          canvas.width = nw;
+          canvas.height = nh;
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, nw, nh);
+          ctx.drawImage(img, 0, 0, nw, nh);
+          URL.revokeObjectURL(url);
+          if(canvas.toBlob){
+            canvas.toBlob(function(blob){
+              if(!blob){ reject(new Error('toBlob')); return; }
+              resolve(blob);
+            }, 'image/jpeg', QUALITY);
+          } else {
+            var data = canvas.toDataURL('image/jpeg', QUALITY);
+            var bin = atob(data.split(',')[1]);
+            var arr = new Uint8Array(bin.length);
+            for(var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+            resolve(new Blob([arr], { type: 'image/jpeg' }));
+          }
+        };
+        img.onerror = function(){
+          URL.revokeObjectURL(url);
+          reject(new Error('load'));
+        };
+        img.src = url;
+      });
+    }
+
+    picker.addEventListener('change', function(){
+      var file = picker.files && picker.files[0];
+      picker.value = '';
+      if(!file) return;
+      if(file.type && file.type.indexOf('image/') !== 0){
+        say('画像ファイルを選んでください');
+        return;
+      }
+      var idx = pickIndex;
+      var card = stage.children[idx];
+      if(card) card.classList.add('is-busy');
+      resizeImage(file).then(function(blob){
+        revoke(slots[idx]);
+        slots[idx] = {
+          blob: blob,
+          url: URL.createObjectURL(blob),
+          name: String(file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg'
+        };
+        selected = idx;
+        render();
+      }).catch(function(){
+        say('この画像は読み込めませんでした');
+        render();
+      });
+    });
+
+    addBtn.addEventListener('click', function(){
+      if(slots.length >= MAX) return;
+      slots.push(null);
+      selected = slots.length - 1;
+      render();
+    });
+
+    delBtn.addEventListener('click', function(){
+      var idx = -1;
+      if(selected >= 0 && slots[selected]) idx = selected;
+      else {
+        for(var i = slots.length - 1; i >= 0; i--){
+          if(slots[i]){ idx = i; break; }
+        }
+      }
+      if(idx < 0){
+        if(slots.length > 1){
+          slots.pop();
+          selected = slots.length - 1;
+          render();
+        }
+        return;
+      }
+      revoke(slots[idx]);
+      slots.splice(idx, 1);
+      if(!slots.length) slots = [null];
+      selected = Math.min(idx, slots.length - 1);
+      render();
+    });
+
+    render();
+  })();
+
+  function blobToBase64(blob){
+    return new Promise(function(resolve, reject){
+      var r = new FileReader();
+      r.onload = function(){
+        var s = String(r.result || '');
+        var i = s.indexOf(',');
+        resolve(i >= 0 ? s.slice(i + 1) : s);
+      };
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  }
+
   var form = document.getElementById('rsvp');
   var btn  = form.querySelector('.submit');
   form.addEventListener('submit', function(e){
@@ -482,9 +652,9 @@ var RSVP = {
       return;
     }
 
-    var data = new URLSearchParams();
+    var payload = {};
     new FormData(f).forEach(function(value, key){
-      data.append(key, value);
+      payload[key] = value;
     });
     /* お連れ様は動的に増えるので、まとめて 1 項目に整形して送る */
     var guests = [];
@@ -492,18 +662,25 @@ var RSVP = {
       var v = [].map.call(g.querySelectorAll('input,select'), function(el){ return el.value.trim(); });
       if(v[0]) guests.push(v.filter(Boolean).join(' / '));
     });
-    data.append('companions', guests.join(' ｜ '));
-    data.append('submitted_at', new Date().toISOString());
+    payload.companions = guests.join(' ｜ ');
+    payload.submitted_at = new Date().toISOString();
 
     btn.disabled = true;
     var label = btn.innerHTML;
     btn.innerHTML = '送信中<em>SENDING…</em>';
 
-    fetch(RSVP.endpoint, {
-      method: 'POST',
-      body: data,
-      mode: RSVP.mode || 'no-cors',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    Promise.all(rsvpPhotos.map(function(item){
+      return blobToBase64(item.blob).then(function(dataBase64){
+        return { name: item.name, mime: 'image/jpeg', dataBase64: dataBase64 };
+      });
+    })).then(function(photos){
+      payload.photos = photos;
+      return fetch(RSVP.endpoint, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        mode: RSVP.mode || 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
     }).then(function(){
       form.innerHTML =
         '<div style="text-align:center;padding:40px 10px">' +

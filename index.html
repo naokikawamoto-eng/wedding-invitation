@@ -24,8 +24,8 @@
 <meta name="twitter:image" content="https://wedding.arlys-japan.com/assets/img/og-2.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=Noto+Serif+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=20260815r">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=Noto+Serif+JP:wght@200;300;400;500&family=Old+Standard+TT:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=20260818p">
 </head>
 <body>
 
@@ -160,7 +160,7 @@
       <!-- ▼ 新郎 -->
       <div class="hu">
         <div class="top">
-          <div class="av"><picture><source srcset="assets/img/profile-groom.webp" type="image/webp"><img src="assets/img/profile-groom.jpg" alt="新郎 河本直樹" width="800" height="800" loading="lazy" decoding="async"></picture></div>
+          <div class="av"><picture><source srcset="assets/img/profile-groom.webp?v=2" type="image/webp"><img src="assets/img/profile-groom.jpg?v=2" alt="新郎 河本直樹" width="1600" height="1600" loading="lazy" decoding="async"></picture></div>
           <div class="who">
             <p class="role">Groom</p>
             <p class="jpn">河本　直樹</p>
@@ -175,7 +175,7 @@
       <!-- ▼ 新婦 -->
       <div class="hu rev">
         <div class="top">
-          <div class="av"><picture><source srcset="assets/img/profile-bride.webp" type="image/webp"><img src="assets/img/profile-bride.jpg" alt="新婦 磯野有梨花" width="800" height="800" loading="lazy" decoding="async"></picture></div>
+          <div class="av"><picture><source srcset="assets/img/profile-bride.webp?v=2" type="image/webp"><img src="assets/img/profile-bride.jpg?v=2" alt="新婦 磯野有梨花" width="1600" height="1600" loading="lazy" decoding="async"></picture></div>
           <div class="who">
             <p class="role">Bride</p>
             <p class="jpn">磯野　有梨花</p>
@@ -456,6 +456,20 @@
         <input class="inp" type="text" name="image" maxlength="40" placeholder="自由にご記入ください">
       </div>
 
+      <div class="grp" id="photoGallery">
+        <div class="key">画像添付Gallery</div>
+        <p class="note gal-hint">メッセージに画像を<span class="num">3</span>枚まで添付できます</p>
+        <p class="note gal-hint">（新郎新婦との思い出の写真など）</p>
+        <p class="note gal-hint">※縦・横 <span class="num">1,000</span>px に縮小されアップロードされます</p>
+        <div class="gal-bar">
+          <span class="gal-reg">画像の登録</span>
+          <button class="gal-del" type="button" id="photoRemove">イメージ削除</button>
+        </div>
+        <div class="gal-stage" id="photoStage"></div>
+        <button class="gal-add" type="button" id="photoAdd">画像追加</button>
+        <input id="photoPicker" type="file" accept="image/*" hidden>
+      </div>
+
       <div class="grp" style="border-bottom:0;padding-bottom:0">
         <div class="key">メッセージ<span class="e">Message</span></div>
         <p class="note">新郎新婦にメッセージを送ることができます（250文字まで）</p>
@@ -492,7 +506,7 @@
       <ellipse cx="110" cy="88" rx="90" ry="70" stroke="#a98a57" stroke-width=".5" opacity=".3"/>
       <path d="M52 88h-24M192 88h-24" stroke="#a98a57" stroke-width=".8" opacity=".45"/>
       <text x="110" y="36" text-anchor="middle" fill="#a98a57"
-        style="font-family:'Cormorant Garamond',serif;font-size:11px;letter-spacing:5px">2026 . 11 . 22</text>
+        style="font-family:'Old Standard Digits','Cormorant Garamond',serif;font-size:11px;letter-spacing:5px">2026 . 11 . 22</text>
       <text x="76" y="106" text-anchor="middle" fill="#26221e"
         style="font-family:'Cormorant Garamond',serif;font-size:54px">N</text>
       <text x="110" y="102" text-anchor="middle" fill="#a98a57"
@@ -517,6 +531,6 @@
 
 <!-- particles.js (Vincent Garreau / MIT) — 本家と同じライブラリ -->
 <script src="assets/js/particles.min.js" defer></script>
-<script src="assets/js/app.js?v=20260818e" defer></script>
+<script src="assets/js/app.js?v=20260818p" defer></script>
 </body>
 </html>
