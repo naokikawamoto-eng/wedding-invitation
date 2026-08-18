@@ -359,6 +359,115 @@ var RSVP = {
     toast.textContent = msg; toast.classList.add('on');
     clearTimeout(tt); tt = setTimeout(function(){ toast.classList.remove('on'); }, 3200);
   }
+
+  /* ---- 郵便番号から住所を途中まで補完 ----
+     zipcloud（無料・APIキー不要）。7桁そろったタイミングで
+     都道府県＋市区町村＋町域まで入れ、番地はゲストに続けて書いていただく。 */
+  (function(){
+    var zip1 = document.querySelector('#rsvp [name="zip1"]');
+    var zip2 = document.querySelector('#rsvp [name="zip2"]');
+    var addr = document.querySelector('#rsvp [name="addr"]');
+    if(!zip1 || !zip2 || !addr) return;
+
+    var lastZip = '';
+    var lastPrefix = '';
+    var seq = 0;
+
+    function digits(s){ return String(s || '').replace(/\D/g, ''); }
+    function zipcode(){ return digits(zip1.value) + digits(zip2.value); }
+
+    function cursorEnd(el){
+      el.focus();
+      var n = el.value.length;
+      try{ el.setSelectionRange(n, n); }catch(e){}
+    }
+
+    function applyPrefix(prefix){
+      if(!prefix) return;
+      var cur = addr.value.replace(/^\s+/, '');
+      if(cur.indexOf(prefix) === 0){
+        lastPrefix = prefix;
+        return;
+      }
+      if(cur && cur !== lastPrefix && prefix.indexOf(cur) !== 0) return;
+      addr.value = prefix;
+      lastPrefix = prefix;
+      cursorEnd(addr);
+    }
+
+    function jsonp(url, cb){
+      var name = 'zipcb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+      var s = document.createElement('script');
+      var done = false;
+      function finish(data){
+        if(done) return;
+        done = true;
+        try{ delete window[name]; }catch(e){ window[name] = undefined; }
+        if(s.parentNode) s.parentNode.removeChild(s);
+        cb(data);
+      }
+      window[name] = function(data){ finish(data); };
+      s.onerror = function(){ finish(null); };
+      s.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + name;
+      document.head.appendChild(s);
+      setTimeout(function(){ finish(null); }, 8000);
+    }
+
+    function request(zip, cb){
+      var url = 'https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + encodeURIComponent(zip);
+      var settled = false;
+      function done(data){
+        if(settled) return;
+        settled = true;
+        cb(data);
+      }
+      if(window.fetch){
+        fetch(url).then(function(res){ return res.json(); }).then(done).catch(function(){
+          jsonp(url, done);
+        });
+      } else {
+        jsonp(url, done);
+      }
+    }
+
+    function lookup(){
+      var z = zipcode();
+      if(z.length !== 7) return;
+      if(z === lastZip) return;
+      lastZip = z;
+      var n = ++seq;
+      request(z, function(data){
+        if(n !== seq || zipcode() !== z) return;
+        if(!data || data.status !== 200 || !data.results || !data.results.length){
+          lastZip = '';
+          if(data && data.status === 200) say('該当する住所が見つかりませんでした');
+          return;
+        }
+        var r = data.results[0];
+        applyPrefix((r.address1 || '') + (r.address2 || '') + (r.address3 || ''));
+      });
+    }
+
+    zip1.addEventListener('input', function(){
+      var d = digits(zip1.value);
+      if(d.length > 3){
+        zip1.value = d.slice(0, 3);
+        zip2.value = (d.slice(3) + digits(zip2.value)).slice(0, 4);
+        zip2.focus();
+      } else {
+        zip1.value = d;
+        if(d.length === 3) zip2.focus();
+      }
+      lookup();
+    });
+    zip2.addEventListener('input', function(){
+      zip2.value = digits(zip2.value).slice(0, 4);
+      lookup();
+    });
+    zip2.addEventListener('change', lookup);
+    zip2.addEventListener('blur', lookup);
+  })();
+
   var form = document.getElementById('rsvp');
   var btn  = form.querySelector('.submit');
   form.addEventListener('submit', function(e){
