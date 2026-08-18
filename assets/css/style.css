@@ -532,16 +532,9 @@ picture{display:block}
 .hu .av picture{width:100%;height:100%}
 .rail picture{height:100%;width:auto}
 .cd.bg-on .cdsl.cd1{background-image:url("../img/countdown-1.jpg");
-  background-image:image-set(url("../img/countdown-1.webp") type("image/webp"),url("../img/countdown-1.jpg") type("image/jpeg"));
-  /* 崖の根元を外し、海と岬の先端が中心になるよう寄る */
-  background-size:175% auto;background-position:50% 26%}
+  background-image:image-set(url("../img/countdown-1.webp") type("image/webp"),url("../img/countdown-1.jpg") type("image/jpeg"))}
 .cd.bg-on .cdsl.cd2{background-image:url("../img/countdown-2.jpg");
-  background-image:image-set(url("../img/countdown-2.webp") type("image/webp"),url("../img/countdown-2.jpg") type("image/jpeg"));
-  background-size:cover;background-position:50% 38%}
-@media (max-width:430px){
-  .cd.bg-on .cdsl.cd1{background-size:205% auto;background-position:50% 24%}
-  .cd.bg-on .cdsl.cd2{background-size:cover;background-position:50% 36%}
-}
+  background-image:image-set(url("../img/countdown-2.webp") type("image/webp"),url("../img/countdown-2.jpg") type("image/jpeg"))}
 :root{--bg-greeting:url("../img/bg-greeting.jpg")}
 @supports (background-image:image-set(url("x.webp") type("image/webp"))){
   :root{--bg-greeting:image-set(url("../img/bg-greeting.webp") type("image/webp"),url("../img/bg-greeting.jpg") type("image/jpeg"))}
