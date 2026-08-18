@@ -253,9 +253,10 @@ body.nav-open .nav a{transform:none}
   /* width を明示しないと aspect-ratio が「幅」まで縮めてしまい、
      iPad 横向きなどでセクションだけ細くなる */
   width:100%;aspect-ratio:4/3;max-height:min(78svh,620px);
-  display:grid;place-content:start center;
+  display:grid;justify-items:stretch;
   padding:clamp(24px,5.5vw,44px) 0 clamp(14px,3vw,22px)}
-.cd > .wrap{position:relative;z-index:2;width:100%}
+.cd > .wrap{position:relative;z-index:2;width:100%;height:100%;
+  display:flex;flex-direction:column;padding-bottom:clamp(8px,2vw,16px)}
 .cdbg{position:absolute;inset:0;z-index:0;overflow:hidden}
 .cdsl{position:absolute;inset:0;background-size:cover;
   background-position:var(--posx,center) var(--pos,50%);
@@ -272,13 +273,15 @@ body.nav-open .nav a{transform:none}
 @media (prefers-reduced-motion:reduce){
   .cdsl{animation:none;opacity:0}.cdsl:first-child{opacity:1}
 }
-/* 見出しと日付の間隔 */
-.cd .head{margin-bottom:clamp(48px,11vw,76px)}
+/* 見出しは上、日付は DAYS / HOURS の直前まで下げる */
+.cd .head{margin-bottom:0}
 .cd .head h2{color:#fff;text-shadow:0 3px 22px rgba(0,0,0,.5)}
 .cd .head .sub{color:rgba(255,255,255,.75)}
 .cd .head .orn{background:#eecb85;opacity:.95}
-.cd .goal{font-family:"Snell Digits","Cormorant Garamond",serif;margin-bottom:clamp(10px,2.4vw,15px)}
+.cd .goal{font-family:"Snell Digits","Cormorant Garamond",serif;
+  margin-top:auto;margin-bottom:clamp(4px,1.2vw,8px);line-height:1.15}
 .cd .goal .to{display:block;font-style:italic;font-size:11.5px;color:#FFE7B8;letter-spacing:.2em;
+  line-height:1.2;margin-bottom:2px;
   text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55)}
 .cd .goal .dd{font-size:clamp(21px,5.4vw,29px);letter-spacing:.08em;color:#FFDC8F;
   text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55),
