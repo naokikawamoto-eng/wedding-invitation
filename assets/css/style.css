@@ -285,7 +285,7 @@ body.nav-open .nav a{transform:none}
 .cd .head .sub{color:rgba(255,255,255,.75);margin-top:10px}
 .cd-board{flex:0 0 auto}
 .cd .goal{font-family:"Snell Digits","Cormorant Garamond",serif;
-  margin:0 0 calc(clamp(6px,1.4vw,10px) - 17px);line-height:1.15}
+  margin:0 0 clamp(14px,3.2vw,22px);line-height:1.15}
 .cd .goal .to{display:block;font-style:italic;font-size:11.5px;color:#FFE7B8;letter-spacing:.2em;
   line-height:1.2;margin-bottom:2px;
   text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55)}
