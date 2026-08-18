@@ -20,7 +20,7 @@ var HEADERS = [
   'お連れ様',
   'メッセージ',
   'ご質問・ご要望',
-  'ご縁（一言）'
+  'イメージ（一言）'
 ];
 var COL_WIDTHS = [150, 80, 170, 90, 90, 100, 100, 130, 100, 240, 200, 140, 180, 200, 240, 240, 180];
 
@@ -44,7 +44,7 @@ function doPost(e) {
     p.companions || '',
     p.msg || '',
     p.question || '',
-    p.relation || ''
+    p.image || p.relation || ''
   ]);
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true }))

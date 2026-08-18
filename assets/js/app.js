@@ -318,15 +318,15 @@ var RSVP = {
     });
   })();
 
-  /* ---- ご縁（選んだ側に合わせて一言） ---- */
-  var relationNote = document.getElementById('relationNote');
-  var relationCopy = {
-    '新郎側': '直樹とのご縁を、一言でお聞かせください',
-    '新婦側': '有梨花とのご縁を、一言でお聞かせください'
+  /* ---- イメージ（選んだ側に合わせて一言） ---- */
+  var imageNote = document.getElementById('imageNote');
+  var imageCopy = {
+    '新郎側': '直樹のイメージを一言で表すと？',
+    '新婦側': '有梨花のイメージを一言で表すと？'
   };
   document.querySelectorAll('input[name="side"]').forEach(function(r){
     r.addEventListener('change', function(){
-      relationNote.textContent = relationCopy[r.value] || relationNote.textContent;
+      imageNote.textContent = imageCopy[r.value] || imageNote.textContent;
     });
   });
 
