@@ -61,8 +61,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .en{font-family:"Snell Digits","Cormorant Garamond",serif;font-weight:300;letter-spacing:.1em}
 .script{font-family:"Snell Digits","Great Vibes",cursive;font-weight:400;letter-spacing:.02em}
 .num{font-family:"Snell Digits","Cormorant Garamond",serif;font-weight:500}
-/* Floor codes (B2 etc.) stay on the Japanese body face */
-.plain{font-family:"Noto Serif JP",serif}
+/* Floor codes (B2 etc.) and venue/map details stay on the Japanese body face */
+.plain,.addr{font-family:"Noto Serif JP",serif}
 .wrap{width:100%;max-width:680px;margin:0 auto;padding-inline:var(--gut)}
 .narrow{max-width:560px}
 
@@ -273,7 +273,7 @@ body.nav-open .nav a{transform:none}
   .cdsl{animation:none;opacity:0}.cdsl:first-child{opacity:1}
 }
 /* 見出しと日付の間隔 */
-.cd .head{margin-bottom:clamp(32px,7.5vw,52px)}
+.cd .head{margin-bottom:clamp(48px,11vw,76px)}
 .cd .head h2{color:#fff;text-shadow:0 3px 22px rgba(0,0,0,.5)}
 .cd .head .sub{color:rgba(255,255,255,.75)}
 .cd .head .orn{background:#eecb85;opacity:.95}
@@ -348,16 +348,16 @@ body.nav-open .nav a{transform:none}
 /* gallery carousel */
 .gal{margin-top:clamp(44px,10vw,66px)}
 /* 写真は切らず、元の縦横比のまま。高さを揃えて横に流す */
-.rail{display:flex;align-items:center;gap:14px;overflow-x:auto;
-  scroll-snap-type:x mandatory;padding:6px 46% 18px;scrollbar-width:none}
+.rail{display:flex;align-items:center;gap:12px;overflow-x:auto;
+  scroll-snap-type:x mandatory;padding:6px 42% 18px;scrollbar-width:none}
 .rail::-webkit-scrollbar{display:none}
 .rail figure{flex:0 0 auto;scroll-snap-align:center;
-  background:#fff;padding:8px;border:1px solid rgba(226,217,203,.8);
+  background:#fff;padding:4px;border:1px solid rgba(226,217,203,.8);
   box-shadow:0 18px 40px -26px rgba(60,48,32,.5);
   opacity:.42;transform:scale(.94);transition:.6s var(--ease)}
 .rail figure.act{opacity:1;transform:none}
 .rail img{display:block;width:auto;height:auto;
-  max-width:min(76vw,470px);max-height:clamp(270px,56vw,430px)}
+  max-width:min(86vw,560px);max-height:clamp(320px,68vw,520px)}
 .dots{display:flex;justify-content:center;gap:9px;margin-top:16px}
 .dots b{width:5px;height:5px;border-radius:50%;background:var(--hair);transition:.4s;cursor:pointer}
 .dots b.act{background:var(--gold);transform:scale(1.35)}
@@ -483,7 +483,10 @@ textarea.inp{min-height:132px;line-height:2;resize:vertical}
 .ft .thanks{font-family:"Snell Digits","Great Vibes",cursive;font-size:clamp(26px,7vw,34px);color:var(--gold);
   line-height:1.4}
 .ft .cont{margin-top:26px;font-size:12.5px;line-height:2.4;color:var(--ink2)}
-.ft .cont a{border-bottom:1px solid var(--hair)}
+.ft .tels{list-style:none;display:inline-grid;grid-template-columns:max-content max-content;
+  column-gap:1.2em;text-align:left}
+.ft .tels li{display:contents}
+.ft .cont a{border-bottom:1px solid var(--hair);font-family:"Noto Serif JP",serif}
 .ft .cr{margin-top:clamp(34px,7vw,48px);padding-top:22px;border-top:1px solid var(--hair);
   font-family:"Snell Digits","Cormorant Garamond",serif;font-size:10px;letter-spacing:.3em;color:var(--mute)}
 
