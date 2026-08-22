@@ -220,7 +220,7 @@ body.nav-open .nav a{transform:none}
 .hu .av{flex:0 0 clamp(112px,32vw,150px);aspect-ratio:1;border-radius:50%;overflow:hidden;
   box-shadow:0 16px 34px -20px rgba(60,48,32,.5);border:3px solid #fff}
 .hu .av img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;
-  transform:scale(1.16);transform-origin:50% 30%}
+  transform:scale(1.5);transform-origin:50% 30%}
 .hu .who{flex:1;min-width:0;text-align:left}
 .hu.rev .who{text-align:right}
 .hu .role{font-family:"Snell Digits","Cormorant Garamond",serif;font-size:12.5px;letter-spacing:.4em;
