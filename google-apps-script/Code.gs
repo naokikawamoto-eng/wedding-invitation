@@ -22,10 +22,11 @@ var HEADERS = [
   'お連れ様',
   'メッセージ',
   'ご質問・ご要望',
-  'イメージ（一言で表すと？）',
+  '新郎のイメージ（一言で表すと？）',
+  '新婦のイメージ（一言で表すと？）',
   '添付画像'
 ];
-var COL_WIDTHS = [150, 80, 170, 90, 90, 100, 100, 130, 100, 240, 200, 140, 180, 200, 240, 240, 180, 280];
+var COL_WIDTHS = [150, 80, 170, 90, 90, 100, 100, 130, 100, 240, 200, 140, 180, 200, 240, 240, 180, 180, 280];
 
 function doPost(e) {
   var parsed = parsePayload_(e);
@@ -54,7 +55,8 @@ function doPost(e) {
     p.companions || '',
     p.msg || '',
     p.question || '',
-    p.image || p.relation || '',
+    p.image_groom || p.image || p.relation || '',
+    p.image_bride || '',
     photoUrls
   ]);
   return ContentService

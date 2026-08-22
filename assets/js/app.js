@@ -318,18 +318,6 @@ var RSVP = {
     });
   })();
 
-  /* ---- イメージ（選んだ側に合わせて一言） ---- */
-  var imageNote = document.getElementById('imageNote');
-  var imageCopy = {
-    '新郎側': '直樹のイメージを一言で表すと？',
-    '新婦側': '有梨花のイメージを一言で表すと？'
-  };
-  document.querySelectorAll('input[name="side"]').forEach(function(r){
-    r.addEventListener('change', function(){
-      imageNote.textContent = imageCopy[r.value] || imageNote.textContent;
-    });
-  });
-
   /* ---- allergy detail ---- */
   var alDetail = document.getElementById('aldetail');
   document.querySelectorAll('input[name="al"]').forEach(function(r){

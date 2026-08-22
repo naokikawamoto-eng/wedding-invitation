@@ -219,8 +219,7 @@ body.nav-open .nav a{transform:none}
 .hu.rev .top{flex-direction:row-reverse}
 .hu .av{flex:0 0 clamp(112px,32vw,150px);aspect-ratio:1;border-radius:50%;overflow:hidden;
   box-shadow:0 16px 34px -20px rgba(60,48,32,.5);border:3px solid #fff}
-.hu .av img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;
-  transform:scale(1.5);transform-origin:50% 30%}
+.hu .av img{width:100%;height:100%;object-fit:cover;object-position:50% 30%}
 .hu .who{flex:1;min-width:0;text-align:left}
 .hu.rev .who{text-align:right}
 .hu .role{font-family:"Snell Digits","Cormorant Garamond",serif;font-size:12.5px;letter-spacing:.4em;
@@ -252,7 +251,7 @@ body.nav-open .nav a{transform:none}
    セクションに高さを明示し、上下を absolute で固定する */
 .cd{position:relative;text-align:center;background:#141210;color:#fff;
   width:100%;padding:0;
-  height:62vh;height:min(62svh,560px);min-height:400px;max-height:620px}
+  height:min(62vh,78vw);height:min(62svh,560px,78vw);min-height:400px;max-height:620px}
 .cd > .wrap{position:absolute;inset:0;z-index:2;width:100%;max-width:none;
   margin:0;box-sizing:border-box}
 .cdbg{position:absolute;inset:0;z-index:0;overflow:hidden}
@@ -303,7 +302,7 @@ body.nav-open .nav a{transform:none}
   letter-spacing:.04em;color:#fff;white-space:nowrap;
   text-shadow:0 0 2px rgba(0,0,0,.95),1px 1px 2px rgba(0,0,0,.9),-1px 1px 2px rgba(0,0,0,.9),1px -1px 2px rgba(0,0,0,.9),-1px -1px 2px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.55)}
 @media (max-width:430px){
-  .cd{height:58vh;height:58svh;min-height:440px;max-height:none}
+  .cd{height:min(58vh,78vw);height:min(58svh,78vw);min-height:250px;max-height:none}
   .cd .head{top:10px}
   .cd-board{bottom:12px}
   .cd .head .sub{letter-spacing:.26em;font-size:10px;margin-top:4px}
@@ -529,8 +528,8 @@ textarea.inp{min-height:132px;line-height:2;resize:vertical}
 picture{display:block}
 .hu .av picture{width:100%;height:100%}
 .rail picture{height:100%;width:auto}
-.cd.bg-on .cdsl.cd1{background-image:url("../img/countdown-1.jpg");
-  background-image:image-set(url("../img/countdown-1.webp") type("image/webp"),url("../img/countdown-1.jpg") type("image/jpeg"))}
+.cd.bg-on .cdsl.cd1{background-image:url("../img/countdown-1.jpg?v=2");
+  background-image:image-set(url("../img/countdown-1.webp?v=2") type("image/webp"),url("../img/countdown-1.jpg?v=2") type("image/jpeg"))}
 .cd.bg-on .cdsl.cd2{background-image:url("../img/countdown-2.jpg");
   background-image:image-set(url("../img/countdown-2.webp") type("image/webp"),url("../img/countdown-2.jpg") type("image/jpeg"))}
 :root{--bg-greeting:url("../img/bg-greeting.jpg")}
