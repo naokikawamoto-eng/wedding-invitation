@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=Noto+Serif+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=20260822b">
+<link rel="stylesheet" href="assets/css/style.css?v=20260825a">
 </head>
 <body>
 
@@ -267,6 +267,14 @@
         <iframe title="会場地図" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"
           src="https://maps.google.com/maps?q=%E3%82%B6%E3%83%BB%E3%83%97%E3%83%AA%E3%83%B3%E3%82%B9%20%E3%83%91%E3%83%BC%E3%82%AF%E3%82%BF%E3%83%AF%E3%83%BC%E6%9D%B1%E4%BA%AC&amp;z=16&amp;output=embed"></iframe>
       </div>
+      <!-- ▼ 会場ロゴ（地図と会場名のあいだ） -->
+      <div class="vlogo rv">
+        <picture>
+          <source srcset="assets/img/venue-logo.webp" type="image/webp">
+          <img src="assets/img/venue-logo.png" alt="ザ・プリンス パークタワー東京"
+               width="560" height="345" loading="lazy" decoding="async">
+        </picture>
+      </div>
       <!-- ▼ 会場情報 -->
       <div class="addr">
         <span class="vn">ザ・プリンス パークタワー東京</span>
@@ -359,7 +367,7 @@
       <figure><picture><source srcset="assets/img/album-2.webp" type="image/webp"><img src="assets/img/album-2.jpg" alt="" width="1400" height="933" loading="lazy" decoding="async"></picture></figure>
       <figure><picture><source srcset="assets/img/album-3.webp" type="image/webp"><img src="assets/img/album-3.jpg" alt="" width="1400" height="933" loading="lazy" decoding="async"></picture></figure>
       <figure><picture><source srcset="assets/img/album-4.webp" type="image/webp"><img src="assets/img/album-4.jpg" alt="" width="933" height="1400" loading="lazy" decoding="async"></picture></figure>
-      <figure><picture><source srcset="assets/img/album-5.webp" type="image/webp"><img src="assets/img/album-5.jpg" alt="" width="933" height="1400" loading="lazy" decoding="async"></picture></figure>
+      <figure><picture><source srcset="assets/img/album-5.webp?v=2" type="image/webp"><img src="assets/img/album-5.jpg?v=2" alt="" width="933" height="1400" loading="lazy" decoding="async"></picture></figure>
       <figure><picture><source srcset="assets/img/album-6.webp" type="image/webp"><img src="assets/img/album-6.jpg" alt="" width="933" height="1400" loading="lazy" decoding="async"></picture></figure>
     </div>
     <div class="dots" id="dots"></div>
@@ -455,7 +463,7 @@
       </div>
 
       <div class="grp">
-        <div class="key">イメージ</div>
+        <div class="key">新郎・新婦の印象<span class="e">Impression</span></div>
         <p class="note">新郎 直樹のイメージを一言で表すと？</p>
         <input class="inp" type="text" name="image_groom" maxlength="40" placeholder="自由にご記入ください">
         <p class="note" style="margin-top:14px">新婦 有梨花のイメージを一言で表すと？</p>

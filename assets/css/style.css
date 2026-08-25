@@ -345,6 +345,12 @@ body.nav-open .nav a{transform:none}
 .mapwrap{border:1px solid var(--hair);background:#fff;padding:9px;box-shadow:var(--shadow)}
 .mapwrap iframe{display:block;width:100%;height:clamp(240px,58vw,320px);border:0;
   filter:grayscale(.32) contrast(1.03)}
+/* 会場ロゴ：地図と会場名のあいだに、細い罫を挟んで置く */
+.vlogo{margin-top:clamp(24px,5.5vw,34px);text-align:center}
+.vlogo img{width:clamp(170px,46vw,240px);height:auto;display:inline-block}
+.vlogo::after{content:"";display:block;width:44px;height:1px;background:var(--gold);
+  opacity:.45;margin:clamp(18px,4vw,24px) auto 0}
+.vlogo + .addr{margin-top:clamp(16px,3.6vw,20px)}
 .addr{text-align:center;margin-top:24px;font-size:13.5px;line-height:2.3;color:var(--ink2)}
 .addr .vn{display:block;font-size:clamp(15px,4.2vw,17px);letter-spacing:.2em;color:var(--ink);
   margin-bottom:8px}
