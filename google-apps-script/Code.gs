@@ -20,13 +20,13 @@ var HEADERS = [
   'アレルギー（あり／なし）',
   'アレルギー詳細',
   'お連れ様',
+  '新郎 直樹のイメージ（一言で表すと？）',
+  '新婦 有梨花のイメージ（一言で表すと？）',
+  '添付画像',
   'メッセージ',
-  'ご質問・ご要望',
-  '新郎のイメージ（一言で表すと？）',
-  '新婦のイメージ（一言で表すと？）',
-  '添付画像'
+  'ご質問・ご要望（当日のご案内）'
 ];
-var COL_WIDTHS = [150, 80, 170, 90, 90, 100, 100, 130, 100, 240, 200, 140, 180, 200, 240, 240, 180, 180, 280];
+var COL_WIDTHS = [150, 80, 170, 90, 90, 100, 100, 130, 100, 240, 200, 140, 180, 200, 220, 220, 280, 240, 260];
 
 function doPost(e) {
   var parsed = parsePayload_(e);
@@ -53,11 +53,11 @@ function doPost(e) {
     p.al || '',
     p.aldetail || '',
     p.companions || '',
-    p.msg || '',
-    p.question || '',
     p.image_groom || p.image || p.relation || '',
     p.image_bride || '',
-    photoUrls
+    photoUrls,
+    p.msg || '',
+    p.question || ''
   ]);
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true }))
@@ -94,7 +94,9 @@ function ensureHeader_(sheet) {
     }
     sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
   } else {
-    /* 末尾に列を足すだけなので、既存行の並びは崩さない */
+    if (sheet.getMaxColumns() < HEADERS.length) {
+      sheet.insertColumnsAfter(sheet.getMaxColumns(), HEADERS.length - sheet.getMaxColumns());
+    }
     sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
   }
 }
