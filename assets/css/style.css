@@ -228,6 +228,8 @@ body.nav-open .nav a{transform:none}
 .hu .enn{margin-top:4px;font-family:"Snell Digits","Cormorant Garamond",serif;font-style:italic;
   font-size:13px;letter-spacing:.1em;color:var(--mute)}
 .hu .bday{margin-top:6px;font-size:11.5px;letter-spacing:.14em;color:var(--mute);line-height:1.4}
+.hu .job{margin-top:7px;font-size:11px;letter-spacing:.18em;color:var(--gold);line-height:1.5}
+.hu .job span{margin:0 .4em;font-weight:300;opacity:.45}
 .hu .say{margin:8px auto 0;padding:0;max-width:min(100%,420px)}
 .hu .say img{display:block;width:100%;height:auto}
 
