@@ -5,7 +5,7 @@
  *  ウェブアプリの URL を endpoint に入れる。
  * ============================================================ */
 var RSVP = {
-  endpoint: 'https://script.google.com/macros/s/AKfycbyuyHTrmf8W_qHkMasXjNm5tQ9ioxugRgypj8a5bvfZ-wP7ztoxNOQg9Q_1EW4RRb-A/exec',
+  endpoint: 'https://script.google.com/macros/s/AKfycbx_YxygCwgYYABcjBNASW0SJN--I_KKQfQOc0jC92Mcn46CvKP732opws3DVPfWUlDB/exec',
   mode: 'no-cors'
 };
 
