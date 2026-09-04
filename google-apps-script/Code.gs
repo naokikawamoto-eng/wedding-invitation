@@ -53,8 +53,8 @@ function doPost(e) {
     p.al || '',
     p.aldetail || '',
     p.companions || '',
-    p.image_groom || p.imageGroom || p.image || p.relation || '',
-    p.image_bride || p.imageBride || '',
+    firstNonEmpty_(p, ['image_groom', 'imageGroom', 'groomimp', 'image', 'relation']),
+    firstNonEmpty_(p, ['image_bride', 'imageBride', 'brideimp']),
     photoUrls,
     p.msg || '',
     p.question || '',
@@ -187,6 +187,14 @@ function getPhotoFolder_() {
   var folder = DriveApp.createFolder(PHOTO_FOLDER_NAME);
   props.setProperty(PHOTO_FOLDER_PROP, folder.getId());
   return folder;
+}
+
+function firstNonEmpty_(p, keys) {
+  for (var i = 0; i < keys.length; i++) {
+    var v = p[keys[i]];
+    if (v != null && String(v).trim() !== '') return v;
+  }
+  return '';
 }
 
 function isArray_(v) {

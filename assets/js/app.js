@@ -667,11 +667,21 @@ var RSVP = {
       });
     })).then(function(photos){
       payload.photos = photos;
+      var body = new URLSearchParams();
+      Object.keys(payload).forEach(function(k){
+        if(k === 'photos') return;
+        if(payload[k] == null) return;
+        body.append(k, String(payload[k]));
+      });
+      body.append('groomimp', payload.image_groom || '');
+      body.append('brideimp', payload.image_bride || '');
+      photos.forEach(function(photo, i){
+        body.append('photo' + (i + 1), photo.dataBase64 || '');
+      });
       return fetch(RSVP.endpoint, {
         method: 'POST',
-        body: JSON.stringify(payload),
-        mode: RSVP.mode || 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        body: body,
+        mode: RSVP.mode || 'no-cors'
       });
     }).then(function(){
       form.innerHTML =
