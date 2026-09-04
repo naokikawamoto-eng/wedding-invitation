@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Great+Vibes&family=Noto+Serif+JP:wght@200;300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/style.css?v=20260904a">
 </head>
 <body>
 
@@ -469,12 +469,12 @@
         <button class="mini" type="button" id="addGuest">＋　お連れ様を追加する</button>
       </div>
 
-      <div class="grp">
+      <div class="grp" id="impressions">
         <div class="key">新郎・新婦の印象<span class="e">Impression</span></div>
-        <p class="note">新郎 直樹のイメージを一言で表すと？</p>
-        <input class="inp" type="text" name="image_groom" maxlength="40" placeholder="自由にご記入ください">
-        <p class="note" style="margin-top:14px">新婦 有梨花のイメージを一言で表すと？</p>
-        <input class="inp" type="text" name="image_bride" maxlength="40" placeholder="自由にご記入ください">
+        <label class="note" for="image_groom">新郎 直樹のイメージを一言で表すと？</label>
+        <input class="inp" type="text" id="image_groom" name="image_groom" maxlength="40" autocomplete="off" inputmode="text" placeholder="自由にご記入ください">
+        <label class="note" for="image_bride" style="margin-top:14px;display:block">新婦 有梨花のイメージを一言で表すと？</label>
+        <input class="inp" type="text" id="image_bride" name="image_bride" maxlength="40" autocomplete="off" inputmode="text" placeholder="自由にご記入ください">
       </div>
 
       <div class="grp" id="photoGallery">
@@ -554,6 +554,6 @@
 
 <!-- particles.js (Vincent Garreau / MIT) — 本家と同じライブラリ -->
 <script src="assets/js/particles.min.js" defer></script>
-<script src="assets/js/app.js?v=20260822a" defer></script>
+<script src="assets/js/app.js?v=20260904a" defer></script>
 </body>
 </html>

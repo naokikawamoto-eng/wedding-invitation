@@ -5,10 +5,10 @@
 var SHEET_NAME = 'RSVP';
 var PHOTO_FOLDER_NAME = 'Wedding RSVP Photos 河本・磯野';
 var PHOTO_FOLDER_PROP = 'RSVP_PHOTO_FOLDER_ID';
+/* 見出しはフォームの表示順・項目名と同じ。先頭の送信日時だけ集計用 */
 var HEADERS = [
   '送信日時',
-  'ご出欠',
-  'ゲスト様（新郎側／新婦側）',
+  'ゲスト様',
   'お名前・姓',
   'お名前・名',
   'ふりがな・せい',
@@ -17,16 +17,17 @@ var HEADERS = [
   '郵便番号',
   'ご住所',
   'メールアドレス',
-  'アレルギー（あり／なし）',
+  'アレルギー',
   'アレルギー詳細',
-  'お連れ様',
-  '新郎 直樹のイメージ（一言で表すと？）',
-  '新婦 有梨花のイメージ（一言で表すと？）',
-  '添付画像',
+  'お連れ様追加',
+  '新郎 直樹のイメージを一言で表すと？',
+  '新婦 有梨花のイメージを一言で表すと？',
+  '画像添付Gallery',
   'メッセージ',
-  'ご質問・ご要望（当日のご案内）'
+  'ご質問・ご要望',
+  'ご出欠'
 ];
-var COL_WIDTHS = [150, 80, 170, 90, 90, 100, 100, 130, 100, 240, 200, 140, 180, 200, 220, 220, 280, 240, 260];
+var COL_WIDTHS = [150, 110, 90, 90, 100, 100, 130, 100, 240, 200, 110, 180, 220, 240, 240, 280, 240, 260, 80];
 
 function doPost(e) {
   var parsed = parsePayload_(e);
@@ -40,7 +41,6 @@ function doPost(e) {
   var sheet = getSheet_();
   sheet.appendRow([
     new Date(),
-    p.attend || '',
     p.side || '',
     p.sei || '',
     p.mei || '',
@@ -53,11 +53,12 @@ function doPost(e) {
     p.al || '',
     p.aldetail || '',
     p.companions || '',
-    p.image_groom || p.image || p.relation || '',
-    p.image_bride || '',
+    p.image_groom || p.imageGroom || p.image || p.relation || '',
+    p.image_bride || p.imageBride || '',
     photoUrls,
     p.msg || '',
-    p.question || ''
+    p.question || '',
+    p.attend || ''
   ]);
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true }))
@@ -161,24 +162,29 @@ function savePhotos_(photos, p) {
     var file = folder.createFile(
       Utilities.newBlob(bytes, mime, 'RSVP_' + who + '_' + stamp + '_' + (i + 1) + '_' + base + '.' + ext)
     );
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (shareErr) {
+      /* リンク共有が禁止でもファイル自体は残す */
+    }
     urls.push(file.getUrl());
   }
   return urls.join('\n');
+}
+
+/** エディタから1回実行して、ドライブ保存の許可を出す */
+function authorizeDrive() {
+  var folder = getPhotoFolder_();
+  Logger.log('写真フォルダ: ' + folder.getName() + ' / ' + folder.getUrl());
 }
 
 function getPhotoFolder_() {
   var props = PropertiesService.getScriptProperties();
   var id = props.getProperty(PHOTO_FOLDER_PROP);
   if (id) {
-    try {
-      return DriveApp.getFolderById(id);
-    } catch (err) {
-      /* フォルダが消されていたら作り直す */
-    }
+    return DriveApp.getFolderById(id);
   }
-  var it = DriveApp.getFoldersByName(PHOTO_FOLDER_NAME);
-  var folder = it.hasNext() ? it.next() : DriveApp.createFolder(PHOTO_FOLDER_NAME);
+  var folder = DriveApp.createFolder(PHOTO_FOLDER_NAME);
   props.setProperty(PHOTO_FOLDER_PROP, folder.getId());
   return folder;
 }
@@ -216,7 +222,7 @@ function formatSheet_(sheet) {
   }
   sheet.getRange(1, 1, lastRow, lastCol).createFilter();
 
-  var attend = sheet.getRange(2, 2, lastRow, 1);
+  var attend = sheet.getRange(2, HEADERS.length, lastRow, 1);
   sheet.setConditionalFormatRules([
     SpreadsheetApp.newConditionalFormatRule()
       .whenTextEqualTo('出席')
@@ -250,11 +256,11 @@ function setupSummary_(ss) {
   sheet = ss.insertSheet(name, 0);
   sheet.getRange('A1:C1').setValues([['項目', '人数', '']]);
   sheet.getRange('A2:B6').setValues([
-    ['ご出席', '=COUNTIF(RSVP!B:B,"出席")'],
-    ['ご欠席', '=COUNTIF(RSVP!B:B,"欠席")'],
-    ['保留', '=COUNTIF(RSVP!B:B,"保留")'],
-    ['返信合計', '=COUNTA(RSVP!B2:B)'],
-    ['アレルギーあり', '=COUNTIF(RSVP!L:L,"あり")']
+    ['ご出席', '=COUNTIF(RSVP!S:S,"出席")'],
+    ['ご欠席', '=COUNTIF(RSVP!S:S,"欠席")'],
+    ['保留', '=COUNTIF(RSVP!S:S,"保留")'],
+    ['返信合計', '=COUNTA(RSVP!S2:S)'],
+    ['アレルギーあり', '=COUNTIF(RSVP!K:K,"あり")']
   ]);
   sheet.getRange('A1:B1')
     .setFontWeight('bold')

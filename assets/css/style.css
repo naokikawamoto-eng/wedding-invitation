@@ -417,6 +417,8 @@ body.nav-open .nav a{transform:none}
   letter-spacing:.32em;color:var(--gold)}
 .fm{background:var(--paper);border:1px solid var(--hair);
   padding:clamp(26px,6vw,42px) clamp(18px,4.5vw,34px)}
+form.fm.rv,form.fm.rv.on{opacity:1;transform:none}
+#impressions .inp{background:#fff;border-color:#c4b49a}
 .grp{padding:20px 0;border-bottom:1px solid var(--hair)}
 .grp:first-child{padding-top:0}
 .key{display:flex;align-items:baseline;flex-wrap:wrap;gap:.5em;margin-bottom:12px;

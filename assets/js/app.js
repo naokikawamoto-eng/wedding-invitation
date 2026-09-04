@@ -651,6 +651,10 @@ var RSVP = {
       if(v[0]) guests.push(v.filter(Boolean).join(' / '));
     });
     payload.companions = guests.join(' ｜ ');
+    var ig = document.getElementById('image_groom');
+    var ib = document.getElementById('image_bride');
+    payload.image_groom = ig ? String(ig.value || '').trim() : (payload.image_groom || '');
+    payload.image_bride = ib ? String(ib.value || '').trim() : (payload.image_bride || '');
     payload.submitted_at = new Date().toISOString();
 
     btn.disabled = true;
