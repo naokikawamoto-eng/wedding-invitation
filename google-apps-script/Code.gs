@@ -29,52 +29,228 @@ var HEADERS = [
 ];
 var COL_WIDTHS = [150, 110, 90, 90, 100, 100, 130, 100, 240, 200, 110, 180, 220, 240, 240, 280, 240, 260, 80];
 
+var SCRIPT_VERSION = 'rsvp-v4-after-party';
+var AFTER_SHEET_NAME = '二次会';
+var AFTER_HEADERS = [
+  '送信日時',
+  'お名前・姓',
+  'お名前・名',
+  'ふりがな・せい',
+  'ふりがな・めい',
+  '電話番号',
+  'ご出欠'
+];
+
 function doPost(e) {
-  var parsed = parsePayload_(e);
-  var p = parsed.p;
-  var photoUrls = '';
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
   try {
-    photoUrls = savePhotos_(parsed.photos, p);
-  } catch (err) {
-    photoUrls = 'アップロード失敗: ' + (err && err.message ? err.message : err);
+    var parsed = parsePayload_(e);
+    var p = parsed.p;
+    if (String(p.event || '') === 'after-party') {
+      appendAfterPartyRow_(p);
+      return ContentService
+        .createTextOutput(JSON.stringify({ ok: true, v: SCRIPT_VERSION, event: 'after-party' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    var photoUrls = '';
+    try {
+      photoUrls = savePhotos_(parsed.photos, p);
+    } catch (err) {
+      photoUrls = 'アップロード失敗: ' + (err && err.message ? err.message : err);
+    }
+    var sheet = getSheet_();
+    var values = [
+      new Date(),
+      p.side || '',
+      p.sei || '',
+      p.mei || '',
+      p.seik || '',
+      p.meik || '',
+      p.tel || '',
+      [p.zip1, p.zip2].filter(Boolean).join('-'),
+      p.addr || '',
+      p.mail || '',
+      p.al || '',
+      p.aldetail || '',
+      p.companions || '',
+      firstNonEmpty_(p, ['image_groom', 'imageGroom', 'groomimp', 'image', 'relation']),
+      firstNonEmpty_(p, ['image_bride', 'imageBride', 'brideimp']),
+      photoUrls,
+      p.msg || '',
+      p.question || '',
+      p.attend || ''
+    ];
+    appendDataRow_(sheet, values);
+  } finally {
+    lock.releaseLock();
   }
-  var sheet = getSheet_();
-  sheet.appendRow([
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true, v: SCRIPT_VERSION }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet() {
+  return ContentService.createTextOutput(SCRIPT_VERSION);
+}
+
+function setupRsvpSheet() {
+  clearRsvpTriggers();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+  }
+  migrateOldLayout_(sheet);
+  ensureHeader_(sheet);
+  formatSheet_(sheet);
+  getAfterPartySheet_();
+  setupSummary_(ss);
+  hideDefaultSheet_();
+  getPhotoFolder_();
+}
+
+/** 送信のたびに見出しを戻す古いトリガーを消す */
+function clearRsvpTriggers() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    ScriptApp.deleteTrigger(triggers[i]);
+  }
+}
+
+function getAfterPartySheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(AFTER_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(AFTER_SHEET_NAME);
+  }
+  if (sheet.getMaxColumns() < AFTER_HEADERS.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), AFTER_HEADERS.length - sheet.getMaxColumns());
+  }
+  var first = String(sheet.getRange(1, 1).getValue() || '');
+  if (first !== AFTER_HEADERS[0]) {
+    if (first !== '' && sheet.getLastRow() > 0) {
+      sheet.insertRowBefore(1);
+    }
+    sheet.getRange(1, 1, 1, AFTER_HEADERS.length).setValues([AFTER_HEADERS]);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1, 1, 1, AFTER_HEADERS.length)
+      .setFontWeight('bold')
+      .setFontColor('#ffffff')
+      .setBackground('#a98a57')
+      .setHorizontalAlignment('center')
+      .setVerticalAlignment('middle');
+    sheet.setRowHeight(1, 36);
+    var widths = [150, 100, 100, 120, 120, 140, 90];
+    for (var i = 0; i < widths.length; i++) {
+      sheet.setColumnWidth(i + 1, widths[i]);
+    }
+    var attend = sheet.getRange(2, AFTER_HEADERS.length, sheet.getMaxRows() - 1, 1);
+    var rules = sheet.getConditionalFormatRules();
+    rules.push(
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('参加')
+        .setBackground('#e7f4ea')
+        .setFontColor('#137333')
+        .setRanges([attend])
+        .build(),
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('不参加')
+        .setBackground('#f1f3f4')
+        .setFontColor('#5f6368')
+        .setRanges([attend])
+        .build(),
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('保留')
+        .setBackground('#fef7e0')
+        .setFontColor('#b06000')
+        .setRanges([attend])
+        .build()
+    );
+    sheet.setConditionalFormatRules(rules);
+  }
+  return sheet;
+}
+
+function appendAfterPartyRow_(p) {
+  var sheet = getAfterPartySheet_();
+  var values = [
     new Date(),
-    p.side || '',
     p.sei || '',
     p.mei || '',
     p.seik || '',
     p.meik || '',
     p.tel || '',
-    [p.zip1, p.zip2].filter(Boolean).join('-'),
-    p.addr || '',
-    p.mail || '',
-    p.al || '',
-    p.aldetail || '',
-    p.companions || '',
-    firstNonEmpty_(p, ['image_groom', 'imageGroom', 'groomimp', 'image', 'relation']),
-    firstNonEmpty_(p, ['image_bride', 'imageBride', 'brideimp']),
-    photoUrls,
-    p.msg || '',
-    p.question || '',
     p.attend || ''
-  ]);
-  return ContentService
-    .createTextOutput(JSON.stringify({ ok: true }))
-    .setMimeType(ContentService.MimeType.JSON);
+  ];
+  var last = sheet.getLastRow();
+  var dest = last < 1 ? 2 : last + 1;
+  sheet.getRange(dest, 1, 1, values.length).setValues([values]);
+  sheet.getRange(dest, 1).setNumberFormat('yyyy/MM/dd HH:mm');
 }
 
-function doGet() {
-  return ContentService.createTextOutput('ok');
+function appendDataRow_(sheet, values) {
+  if (sheet.getMaxColumns() < values.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), values.length - sheet.getMaxColumns());
+  }
+  var last = sheet.getLastRow();
+  var dest = last < 1 ? 2 : last + 1;
+  if (dest === 2 && String(sheet.getRange(1, 1).getValue() || '') === '') {
+    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  }
+  try {
+    sheet.getRange(dest, 1, 1, values.length).breakApart();
+  } catch (err) {}
+  sheet.getRange(dest, 1, 1, values.length).setValues([values]);
 }
 
-function setupRsvpSheet() {
-  var sheet = getSheet_();
-  formatSheet_(sheet);
-  setupSummary_(SpreadsheetApp.getActiveSpreadsheet());
-  hideDefaultSheet_();
-  getPhotoFolder_();
+/* 旧見出し（ご出欠が2列目、イメージが1列）の行を今の並びに直す */
+function migrateOldLayout_(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 1) return;
+  var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var second = String(header[1] || '');
+  var imageCol = String(header[16] || '');
+  var isOld = second === 'ご出欠' || imageCol.indexOf('イメージ（一言') === 0;
+  if (!isOld) return;
+  if (sheet.getMaxColumns() < HEADERS.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), HEADERS.length - sheet.getMaxColumns());
+  }
+  if (lastRow < 2) return;
+  var width = Math.max(lastCol, HEADERS.length);
+  var data = sheet.getRange(2, 1, lastRow - 1, width).getValues();
+  var out = [];
+  for (var r = 0; r < data.length; r++) {
+    var row = data[r];
+    var b = String(row[1] || '');
+    if (b === '出席' || b === '欠席' || b === '保留') {
+      out.push([
+        row[0],
+        row[2],
+        row[3],
+        row[4],
+        row[5],
+        row[6],
+        row[7],
+        row[8],
+        row[9],
+        row[10],
+        row[11],
+        row[12],
+        row[13],
+        row[16],
+        '',
+        row[17],
+        row[14],
+        row[15],
+        row[1]
+      ]);
+    } else {
+      out.push(row.slice(0, HEADERS.length));
+    }
+  }
+  sheet.getRange(2, 1, out.length, HEADERS.length).setValues(out);
 }
 
 function getSheet_() {
@@ -83,22 +259,34 @@ function getSheet_() {
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
   }
-  ensureHeader_(sheet);
   return sheet;
 }
 
+function unmergeSheet_(sheet) {
+  var filter = sheet.getFilter();
+  if (filter) {
+    filter.remove();
+  }
+  try {
+    sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns()).breakApart();
+  } catch (err) {
+    /* 結合が無ければ何もしない */
+  }
+}
+
 function ensureHeader_(sheet) {
+  unmergeSheet_(sheet);
+  if (sheet.getMaxColumns() < HEADERS.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), HEADERS.length - sheet.getMaxColumns());
+  }
+  var used = sheet.getMaxColumns();
   var first = String(sheet.getRange(1, 1).getValue() || '');
-  if (first !== HEADERS[0]) {
-    if (sheet.getLastRow() > 0) {
-      sheet.insertRowBefore(1);
-    }
-    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
-  } else {
-    if (sheet.getMaxColumns() < HEADERS.length) {
-      sheet.insertColumnsAfter(sheet.getMaxColumns(), HEADERS.length - sheet.getMaxColumns());
-    }
-    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  if (first !== HEADERS[0] && sheet.getLastRow() > 0) {
+    sheet.insertRowBefore(1);
+  }
+  sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  if (used > HEADERS.length) {
+    sheet.getRange(1, HEADERS.length + 1, 1, used - HEADERS.length).clearContent();
   }
 }
 
@@ -263,19 +451,22 @@ function setupSummary_(ss) {
   }
   sheet = ss.insertSheet(name, 0);
   sheet.getRange('A1:C1').setValues([['項目', '人数', '']]);
-  sheet.getRange('A2:B6').setValues([
+  sheet.getRange('A2:B9').setValues([
     ['ご出席', '=COUNTIF(RSVP!S:S,"出席")'],
     ['ご欠席', '=COUNTIF(RSVP!S:S,"欠席")'],
     ['保留', '=COUNTIF(RSVP!S:S,"保留")'],
     ['返信合計', '=COUNTA(RSVP!S2:S)'],
-    ['アレルギーあり', '=COUNTIF(RSVP!K:K,"あり")']
+    ['アレルギーあり', '=COUNTIF(RSVP!K:K,"あり")'],
+    ['二次会・参加', '=COUNTIF(\'二次会\'!G:G,"参加")'],
+    ['二次会・不参加', '=COUNTIF(\'二次会\'!G:G,"不参加")'],
+    ['二次会・保留', '=COUNTIF(\'二次会\'!G:G,"保留")']
   ]);
   sheet.getRange('A1:B1')
     .setFontWeight('bold')
     .setFontColor('#ffffff')
     .setBackground('#a98a57')
     .setHorizontalAlignment('center');
-  sheet.getRange('A2:A6').setFontWeight('bold');
+  sheet.getRange('A2:A9').setFontWeight('bold');
   sheet.setColumnWidth(1, 160);
   sheet.setColumnWidth(2, 90);
   sheet.setFrozenRows(1);

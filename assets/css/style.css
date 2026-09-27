@@ -108,7 +108,7 @@ body.nav-open .nav{opacity:1;visibility:visible}
 body.nav-open .nav a{transform:none}
 .nav li:nth-child(1) a{transition-delay:.08s}.nav li:nth-child(2) a{transition-delay:.14s}
 .nav li:nth-child(3) a{transition-delay:.2s}.nav li:nth-child(4) a{transition-delay:.26s}
-.nav li:nth-child(5) a{transition-delay:.32s}
+.nav li:nth-child(5) a{transition-delay:.32s}.nav li:nth-child(6) a{transition-delay:.38s}
 .nav a:hover{color:var(--gold)}
 .nav .navorn{width:150px;height:28px;margin:24px auto 0;background:var(--gold);opacity:.7;
   -webkit-mask:url("../img/ornament.png") no-repeat center/contain;mask:url("../img/ornament.png") no-repeat center/contain}
@@ -546,3 +546,32 @@ picture{display:block}
 @supports (background-image:image-set(url("x.webp") type("image/webp"))){
   :root{--bg-greeting:image-set(url("../img/bg-greeting.webp") type("image/webp"),url("../img/bg-greeting.jpg") type("image/jpeg"))}
 }
+
+/* ============ after party ============ */
+.page-after .hero .calliwrap{line-height:1.15}
+.page-after .hero .party{display:block;font-family:"Great Vibes",cursive;font-weight:400;
+  font-size:clamp(48px,13.5vw,78px);line-height:1.05;color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 12px rgba(0,0,0,.6),0 6px 28px rgba(0,0,0,.5)}
+.page-after .hero .partyjp{display:block;margin-top:10px;font-size:11px;letter-spacing:.42em;text-indent:.42em;
+  color:#f0d095;text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.65)}
+.page-after .hero .nm{animation-delay:.55s}
+.page-after .hero .dt{animation-delay:.85s}
+.page-after .hero .scr,.page-after .hero .pips{animation-delay:1.15s}
+.page-after .sched .room{text-align:center}
+.fee{margin-top:clamp(28px,6.5vw,40px);text-align:center;border:1px solid var(--gold);
+  background:var(--paper);position:relative;padding:clamp(22px,5vw,32px) 16px  clamp(20px,4.6vw,28px)}
+.fee::before{content:"";position:absolute;inset:5px;border:1px solid rgba(169,138,87,.22);pointer-events:none}
+.fee .lbl{font-size:12px;letter-spacing:.36em;color:var(--ink2)}
+.fee .yen{margin-top:6px;font-family:"Snell Digits","Cormorant Garamond",serif;
+  font-size:clamp(40px,11vw,56px);line-height:1;color:var(--gold);letter-spacing:.04em}
+.fee .yen span{font-family:"Noto Serif JP",serif;font-size:.38em;letter-spacing:.18em;
+  margin-left:.2em;color:var(--ink);vertical-align:.28em}
+.fee .per{margin-top:10px;font-size:12px;letter-spacing:.32em;color:var(--mute)}
+.aftercard{margin-top:clamp(52px,11vw,78px);text-align:center;border:1px solid var(--gold);
+  background:var(--paper);position:relative;padding:clamp(32px,7vw,48px) clamp(18px,5vw,36px)}
+.aftercard::before{content:"";position:absolute;inset:6px;border:1px solid rgba(169,138,87,.24);pointer-events:none}
+.aftercard .h3{margin-bottom:clamp(16px,4vw,22px)}
+.aftercard .jptext{margin-bottom:clamp(18px,4vw,26px)}
+.aftercard .when{margin-top:14px;font-size:clamp(15px,4vw,17px);letter-spacing:.12em;color:var(--ink)}
+.aftercard .when b{font-weight:400;font-family:"Snell Digits","Cormorant Garamond",serif;
+  font-size:1.35em;color:var(--gold);letter-spacing:.04em;margin-right:.15em}
