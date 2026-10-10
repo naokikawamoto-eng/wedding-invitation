@@ -568,15 +568,18 @@ picture{display:block}
 .page-after .party{display:block;font-family:"Great Vibes",cursive;font-weight:400;
   font-size:46px;line-height:1;color:#3a3228}
 .page-after .partyjp{display:block;margin-top:2px;font-size:15px;letter-spacing:.28em;text-indent:.28em;color:var(--gold)}
-.page-after .sheet .nm{margin-top:2px;font-size:16px;letter-spacing:.14em}
-.page-after .sheet .date{margin-top:2px;font-size:13px;letter-spacing:.18em;color:var(--ink2)}
+.page-after .sheet .invite{margin:14px 0 0;font-size:13px;letter-spacing:.06em;line-height:1.95}
+.page-after .sheet .invite + .invite{margin-top:12px}
+.page-after .sheet .date{margin-top:16px;font-size:13px;letter-spacing:.18em;color:var(--ink2)}
 .page-after .sheet .date span{margin-left:.7em;letter-spacing:.2em}
-.page-after .sheet .time{margin-top:8px;line-height:1}
-.page-after .sheet .time b{font-family:"Snell Digits","Cormorant Garamond",serif;font-weight:400;
-  font-size:40px;color:var(--gold);letter-spacing:.04em}
-.page-after .sheet .time span{display:block;margin-top:4px;font-size:12px;letter-spacing:.16em;color:var(--ink)}
-.page-after .sheet .place{margin-top:8px;font-size:14px;line-height:1.65;letter-spacing:.08em}
-.page-after .sheet .place a{color:inherit;border-bottom:1px solid rgba(169,138,87,.55)}
+.page-after .when{margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.page-after .when span{display:flex;align-items:baseline;gap:10px;font-size:14px;letter-spacing:.14em}
+.page-after .when b{font-family:"Snell Digits","Cormorant Garamond",serif;font-weight:400;
+  font-size:34px;color:var(--gold);letter-spacing:.04em;font-style:normal}
+.page-after .when .sub{font-size:12px;letter-spacing:.12em;color:var(--ink2)}
+.page-after .when .sub b{font-size:22px}
+.page-after .sheet .place{margin-top:10px;font-size:14px;line-height:1.65;letter-spacing:.08em}
+.page-after .sheet .place a{color:#8d6b32;border-bottom:1px solid #8d6b32}
 .page-after .sheet .place .plain{margin-left:.35em}
 .page-after .sheet .price{margin-top:6px;font-size:13px;letter-spacing:.12em}
 .page-after .sheet .price b{font-family:"Snell Digits","Cormorant Garamond",serif;font-weight:400;
