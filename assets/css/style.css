@@ -552,12 +552,63 @@ picture{display:block}
 .page-after .hero .party{display:block;font-family:"Great Vibes",cursive;font-weight:400;
   font-size:clamp(48px,13.5vw,78px);line-height:1.05;color:#fff;
   text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 12px rgba(0,0,0,.6),0 6px 28px rgba(0,0,0,.5)}
-.page-after .hero .partyjp{display:block;margin-top:10px;font-size:11px;letter-spacing:.42em;text-indent:.42em;
+.page-after .hero .partyjp{display:block;margin-top:14px;font-size:clamp(26px,6.6vw,36px);
+  letter-spacing:.22em;text-indent:.22em;
   color:#f0d095;text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.65)}
 .page-after .hero .nm{animation-delay:.55s}
 .page-after .hero .dt{animation-delay:.85s}
-.page-after .hero .scr,.page-after .hero .pips{animation-delay:1.15s}
-.page-after .sched .room{text-align:center}
+.page-after .hero .scr{animation-delay:1.15s}
+.page-after .hero .sl{animation:none;opacity:1;transform:none}
+.page-after .hero .sl img{object-position:center 22%}
+.page-after .hero .slides::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(18,14,10,.34) 0%,rgba(18,14,10,.08) 26%,rgba(18,14,10,0) 46%,rgba(18,14,10,.28) 100%)}
+.page-after .hero{height:82svh;min-height:520px}
+.page-after .hero .in{padding-top:clamp(52px,8svh,80px);padding-bottom:clamp(78px,12svh,120px)}
+.page-after .sec{padding:clamp(52px,10vw,84px) 0}
+.page-after .intro.sec{padding:clamp(28px,5.5vw,40px) 0 clamp(16px,3.5vw,24px)}
+.page-after .head{margin-bottom:clamp(18px,4vw,28px)}
+.page-after .head .orn{width:clamp(108px,26vw,148px);height:calc(clamp(108px,26vw,148px)*.185);margin-bottom:12px}
+.page-after .head h2{font-size:clamp(28px,7vw,40px)}
+.page-after .head .sub{margin-top:8px}
+.page-after .jptext{line-height:1.85}
+.page-after .h3{margin-bottom:clamp(14px,3vw,22px)}
+.page-after .bigdate{margin-bottom:clamp(16px,3.5vw,24px)}
+.page-after .sched::before{content:none}
+.page-after .sched .blk{padding:16px 6px 10px}
+.page-after .sched .main{font-size:clamp(18px,5vw,24px)}
+.page-after .sched .main .t{font-size:1.9em}
+.page-after .sched .subs{margin-top:14px;font-size:clamp(15px,4.1vw,18px)}
+.page-after .sched .subs b{font-size:1.5em}
+.page-after .sched .room{margin-top:16px;text-align:center;font-size:clamp(17px,4.6vw,22px);
+  letter-spacing:.32em;color:var(--ink)}
+.page-after .floor{margin-top:18px;text-align:center;font-size:clamp(16px,4.4vw,19px);
+  line-height:1.85;letter-spacing:.08em;color:var(--ink)}
+.page-after .floor .plain{font-size:1.15em}
+.page-after .fee::before{content:none}
+.page-after .haikei{min-height:0}
+.page-after .haikei_bg{display:none}
+.page-after .haikei .intro{background:var(--paper)}
+.page-after .haikei .jptext{text-shadow:none}
+.page-after .moment{margin:clamp(28px,6vw,42px) 0 0}
+.page-after .moment img{display:block;width:100%;height:auto}
+.page-after .come{padding:clamp(20px,4vw,32px) 0 0}
+.page-after .come-pic{margin:0}
+.page-after .come-pic img{display:block;width:100%;height:auto}
+.page-after .come-pic figcaption{margin-top:10px;text-align:center;
+  font-size:clamp(18px,4.8vw,24px);letter-spacing:.28em;color:var(--ink)}
+.page-after .poa.sec{padding:clamp(28px,6vw,48px) 0}
+.page-after .poa .head{margin-bottom:clamp(10px,2.4vw,16px)}
+.page-after .due{line-height:1.7}
+.page-after .fm{padding:clamp(14px,3.4vw,22px) clamp(14px,3.6vw,24px)}
+.page-after .grp{padding:8px 0}
+.page-after .key{margin-bottom:8px}
+.page-after .attlabel{margin-top:clamp(10px,2.4vw,16px)}
+.page-after .att{margin:clamp(8px,2vw,14px) 0 0}
+.page-after .att span{width:clamp(72px,21vw,96px)}
+.page-after .submit{margin-top:clamp(14px,3.2vw,22px);padding:14px}
+.page-after .venue{margin-top:clamp(28px,6vw,44px)}
+.page-after .mapwrap iframe{height:clamp(190px,46vw,250px)}
+.page-after .ft{padding:clamp(48px,9vw,72px) 0 clamp(32px,6vw,44px)}
 .fee{margin-top:clamp(28px,6.5vw,40px);text-align:center;border:1px solid var(--gold);
   background:var(--paper);position:relative;padding:clamp(22px,5vw,32px) 16px  clamp(20px,4.6vw,28px)}
 .fee::before{content:"";position:absolute;inset:5px;border:1px solid rgba(169,138,87,.22);pointer-events:none}

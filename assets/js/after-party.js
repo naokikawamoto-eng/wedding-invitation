@@ -126,14 +126,15 @@ var RSVP = {
       f.querySelector('.att').scrollIntoView({block:'center'});
       return;
     }
-    if(!f.sei.value.trim() || !f.mei.value.trim()){
+    if(!f.name.value.trim()){
       say('お名前をご入力ください');
-      f.sei.focus();
+      f.name.focus();
       return;
     }
-    if(!f.seik.value.trim() || !f.meik.value.trim()){
-      say('ふりがなをご入力ください');
-      f.seik.focus();
+    var mail = f.mail.value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){
+      say('メールアドレスをご確認ください');
+      f.mail.focus();
       return;
     }
     if(!RSVP.endpoint){
@@ -167,7 +168,7 @@ var RSVP = {
         '<p class="en" style="font-size:26px;letter-spacing:.14em;' +
         'color:#a98a57;margin-bottom:16px">Thank you</p>' +
         '<p style="font-size:14px;line-height:2.2">ご返信ありがとうございました<br>' +
-        note + '</p></div>';
+        note + '<br>確認のメールをお送りしました</p></div>';
       form.scrollIntoView({block:'center', behavior:'smooth'});
     }).catch(function(){
       btn.disabled = false;

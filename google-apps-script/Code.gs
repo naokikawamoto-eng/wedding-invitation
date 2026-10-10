@@ -29,15 +29,14 @@ var HEADERS = [
 ];
 var COL_WIDTHS = [150, 110, 90, 90, 100, 100, 130, 100, 240, 200, 110, 180, 220, 240, 240, 280, 240, 260, 80];
 
-var SCRIPT_VERSION = 'rsvp-v4-after-party';
+var SCRIPT_VERSION = 'rsvp-v6-after-party-mail';
 var AFTER_SHEET_NAME = '二次会';
+var AFTER_SPREADSHEET_ID = '1gO8PKCDtyHq-ickXRDGzostaTPL40WSWdqdagZzYuQQ';
+var AFTER_SHEET_GID = 718546876;
 var AFTER_HEADERS = [
   '送信日時',
-  'お名前・姓',
-  'お名前・名',
-  'ふりがな・せい',
-  'ふりがな・めい',
-  '電話番号',
+  'お名前',
+  'メールアドレス',
   'ご出欠'
 ];
 
@@ -49,8 +48,14 @@ function doPost(e) {
     var p = parsed.p;
     if (String(p.event || '') === 'after-party') {
       appendAfterPartyRow_(p);
+      var mailed = false;
+      try {
+        mailed = sendAfterPartyMail_(p);
+      } catch (mailErr) {
+        mailed = false;
+      }
       return ContentService
-        .createTextOutput(JSON.stringify({ ok: true, v: SCRIPT_VERSION, event: 'after-party' }))
+        .createTextOutput(JSON.stringify({ ok: true, v: SCRIPT_VERSION, event: 'after-party', mailed: mailed }))
         .setMimeType(ContentService.MimeType.JSON);
     }
     var photoUrls = '';
@@ -118,19 +123,45 @@ function clearRsvpTriggers() {
   }
 }
 
+function getAfterPartySpreadsheet_() {
+  return SpreadsheetApp.openById(AFTER_SPREADSHEET_ID);
+}
+
 function getAfterPartySheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(AFTER_SHEET_NAME);
+  var ss = getAfterPartySpreadsheet_();
+  var sheet = null;
+  var sheets = ss.getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getSheetId() === AFTER_SHEET_GID) {
+      sheet = sheets[i];
+      break;
+    }
+  }
+  if (!sheet) {
+    sheet = ss.getSheetByName(AFTER_SHEET_NAME);
+  }
   if (!sheet) {
     sheet = ss.insertSheet(AFTER_SHEET_NAME);
   }
   if (sheet.getMaxColumns() < AFTER_HEADERS.length) {
     sheet.insertColumnsAfter(sheet.getMaxColumns(), AFTER_HEADERS.length - sheet.getMaxColumns());
   }
-  var first = String(sheet.getRange(1, 1).getValue() || '');
-  if (first !== AFTER_HEADERS[0]) {
-    if (first !== '' && sheet.getLastRow() > 0) {
+  var headerWidth = Math.max(sheet.getLastColumn(), AFTER_HEADERS.length);
+  var header = sheet.getRange(1, 1, 1, headerWidth).getValues()[0];
+  var headersMatch = true;
+  for (var h = 0; h < AFTER_HEADERS.length; h++) {
+    if (String(header[h] || '') !== AFTER_HEADERS[h]) headersMatch = false;
+  }
+  if (!headersMatch) {
+    if (String(header[0] || '') === '送信日時' && String(header[1] || '') === 'お名前' && String(header[2] || '') === 'ご出欠') {
+      sheet.insertColumnBefore(3);
+      headerWidth += 1;
+    }
+    if (String(header[0] || '') === '' && sheet.getLastRow() > 0) {
       sheet.insertRowBefore(1);
+    }
+    if (headerWidth > AFTER_HEADERS.length) {
+      sheet.getRange(1, AFTER_HEADERS.length + 1, 1, headerWidth - AFTER_HEADERS.length).clearContent();
     }
     sheet.getRange(1, 1, 1, AFTER_HEADERS.length).setValues([AFTER_HEADERS]);
     sheet.setFrozenRows(1);
@@ -141,7 +172,7 @@ function getAfterPartySheet_() {
       .setHorizontalAlignment('center')
       .setVerticalAlignment('middle');
     sheet.setRowHeight(1, 36);
-    var widths = [150, 100, 100, 120, 120, 140, 90];
+    var widths = [160, 180, 240, 100];
     for (var i = 0; i < widths.length; i++) {
       sheet.setColumnWidth(i + 1, widths[i]);
     }
@@ -174,19 +205,69 @@ function getAfterPartySheet_() {
 
 function appendAfterPartyRow_(p) {
   var sheet = getAfterPartySheet_();
-  var values = [
-    new Date(),
-    p.sei || '',
-    p.mei || '',
-    p.seik || '',
-    p.meik || '',
-    p.tel || '',
-    p.attend || ''
-  ];
+  var width = Math.max(sheet.getLastColumn(), AFTER_HEADERS.length);
+  var header = sheet.getRange(1, 1, 1, width).getValues()[0];
+  var row = [];
+  for (var c = 0; c < width; c++) row.push('');
+  function put(label, value) {
+    for (var i = 0; i < header.length; i++) {
+      if (String(header[i] || '') === label) {
+        row[i] = value;
+        return;
+      }
+    }
+  }
+  put('送信日時', new Date());
+  put('お名前', p.name || [p.sei, p.mei].filter(Boolean).join(' '));
+  put('メールアドレス', String(p.mail || '').trim());
+  put('ご出欠', p.attend || '');
   var last = sheet.getLastRow();
   var dest = last < 1 ? 2 : last + 1;
-  sheet.getRange(dest, 1, 1, values.length).setValues([values]);
-  sheet.getRange(dest, 1).setNumberFormat('yyyy/MM/dd HH:mm');
+  sheet.getRange(dest, 1, 1, row.length).setValues([row]);
+  for (var d = 0; d < header.length; d++) {
+    if (String(header[d] || '') === '送信日時') {
+      sheet.getRange(dest, d + 1).setNumberFormat('yyyy/MM/dd HH:mm');
+    }
+  }
+}
+
+function sendAfterPartyMail_(p) {
+  var to = String(p.mail || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return false;
+  var name = String(p.name || '').trim();
+  var attend = String(p.attend || '');
+  var greeting = name ? name + ' 様\n\n' : '';
+  var subject;
+  var body;
+  if (attend === '参加') {
+    subject = '二次会のご参加を承りました';
+    body = greeting +
+      '二次会のご参加を承りました。\n' +
+      '当日お会いできますのを楽しみにしております。\n\n' +
+      '2026年11月22日（日）\n' +
+      '開宴 17:00（受付 16:30）\n' +
+      'ザ・プリンス パークタワー東京 ロビーラウンジ\n\n' +
+      '河本直樹・磯野有梨花';
+  } else if (attend === '保留') {
+    subject = '二次会のご返信を承りました';
+    body = greeting +
+      '二次会のご出欠を「保留」として承りました。\n' +
+      'お決まりになりましたら、改めてお知らせください。\n\n' +
+      '河本直樹・磯野有梨花';
+  } else {
+    subject = '二次会のご返信を承りました';
+    body = greeting +
+      '二次会を欠席される旨、承りました。\n' +
+      'またお会いできる日を楽しみにしております。\n\n' +
+      '河本直樹・磯野有梨花';
+  }
+  MailApp.sendEmail({
+    to: to,
+    subject: subject,
+    body: body,
+    name: '河本直樹・磯野有梨花'
+  });
+  return true;
 }
 
 function appendDataRow_(sheet, values) {
@@ -443,6 +524,17 @@ function formatSheet_(sheet) {
   sheet.setHiddenGridlines(false);
 }
 
+function afterPartyCountFormula_(label) {
+  var afterSs = getAfterPartySpreadsheet_();
+  var afterSheet = getAfterPartySheet_();
+  var quoted = "'" + String(afterSheet.getName()).replace(/'/g, "''") + "'";
+  var range = quoted + '!D:D';
+  if (afterSs.getId() === SpreadsheetApp.getActiveSpreadsheet().getId()) {
+    return '=COUNTIF(' + range + ',"' + label + '")';
+  }
+  return '=COUNTIF(IMPORTRANGE("' + AFTER_SPREADSHEET_ID + '","' + range + '"),"' + label + '")';
+}
+
 function setupSummary_(ss) {
   var name = '集計';
   var sheet = ss.getSheetByName(name);
@@ -457,9 +549,9 @@ function setupSummary_(ss) {
     ['保留', '=COUNTIF(RSVP!S:S,"保留")'],
     ['返信合計', '=COUNTA(RSVP!S2:S)'],
     ['アレルギーあり', '=COUNTIF(RSVP!K:K,"あり")'],
-    ['二次会・参加', '=COUNTIF(\'二次会\'!G:G,"参加")'],
-    ['二次会・不参加', '=COUNTIF(\'二次会\'!G:G,"不参加")'],
-    ['二次会・保留', '=COUNTIF(\'二次会\'!G:G,"保留")']
+    ['二次会・参加', afterPartyCountFormula_('参加')],
+    ['二次会・不参加', afterPartyCountFormula_('不参加')],
+    ['二次会・保留', afterPartyCountFormula_('保留')]
   ]);
   sheet.getRange('A1:B1')
     .setFontWeight('bold')
