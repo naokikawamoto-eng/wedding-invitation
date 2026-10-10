@@ -585,10 +585,16 @@ picture{display:block}
   line-height:1.85;letter-spacing:.08em;color:var(--ink)}
 .page-after .floor .plain{font-size:1.15em}
 .page-after .fee::before{content:none}
-.page-after .haikei{min-height:0}
-.page-after .haikei_bg{display:none}
-.page-after .haikei .intro{background:var(--paper)}
-.page-after .haikei .jptext{text-shadow:none}
+.page-after .haikei{min-height:78svh}
+.page-after .haikei_bg{display:block;position:absolute;inset:0;height:auto;margin:0;
+  background-image:url("../img/after-greeting.jpg");background-size:cover;background-position:center 36%}
+.page-after .haikei_bg::after{background:linear-gradient(180deg,rgba(255,253,251,.8) 0%,rgba(255,248,240,.48) 16%,
+  rgba(255,248,240,.12) 40%,rgba(255,248,240,0) 62%)}
+.page-after .haikei .intro{background:transparent}
+.page-after .haikei .jptext{text-shadow:0 1px 8px rgba(255,253,251,.9),0 0 18px rgba(255,253,251,.75)}
+.page-after .greet-a,.page-after .greet-b{display:inline-block}
+.page-after .greet-a{transform:translateY(-12px)}
+.page-after .greet-b{transform:translateY(-24px)}
 .page-after .moment{margin:clamp(28px,6vw,42px) 0 0}
 .page-after .moment img{display:block;width:100%;height:auto}
 .page-after .come{padding:clamp(20px,4vw,32px) 0 0}
