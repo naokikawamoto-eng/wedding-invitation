@@ -29,10 +29,10 @@ var HEADERS = [
 ];
 var COL_WIDTHS = [150, 110, 90, 90, 100, 100, 130, 100, 240, 200, 110, 180, 220, 240, 240, 280, 240, 260, 80];
 
-var SCRIPT_VERSION = 'rsvp-v6-after-party-mail';
+var SCRIPT_VERSION = 'rsvp-v7-after-party-tab';
 var AFTER_SHEET_NAME = '二次会';
 var AFTER_SPREADSHEET_ID = '1gO8PKCDtyHq-ickXRDGzostaTPL40WSWdqdagZzYuQQ';
-var AFTER_SHEET_GID = 718546876;
+var AFTER_SHEET_GID = 2013014585;
 var AFTER_HEADERS = [
   '送信日時',
   'お名前',
@@ -143,26 +143,33 @@ function getAfterPartySheet_() {
   if (!sheet) {
     sheet = ss.insertSheet(AFTER_SHEET_NAME);
   }
-  if (sheet.getMaxColumns() < AFTER_HEADERS.length) {
-    sheet.insertColumnsAfter(sheet.getMaxColumns(), AFTER_HEADERS.length - sheet.getMaxColumns());
+  ensureAfterPartyColumns_(sheet);
+  return sheet;
+}
+
+function headerLabels_(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var labels = [];
+  for (var i = 0; i < header.length; i++) labels.push(String(header[i] || ''));
+  return labels;
+}
+
+function findHeader_(header, label) {
+  for (var i = 0; i < header.length; i++) {
+    if (header[i] === label) return i;
   }
-  var headerWidth = Math.max(sheet.getLastColumn(), AFTER_HEADERS.length);
-  var header = sheet.getRange(1, 1, 1, headerWidth).getValues()[0];
-  var headersMatch = true;
-  for (var h = 0; h < AFTER_HEADERS.length; h++) {
-    if (String(header[h] || '') !== AFTER_HEADERS[h]) headersMatch = false;
+  return -1;
+}
+
+/** 指定タブの既存の見出しは残す。メール列が無ければご出欠の左に足す。 */
+function ensureAfterPartyColumns_(sheet) {
+  var header = headerLabels_(sheet);
+  var hasAny = false;
+  for (var i = 0; i < header.length; i++) {
+    if (header[i] !== '') hasAny = true;
   }
-  if (!headersMatch) {
-    if (String(header[0] || '') === '送信日時' && String(header[1] || '') === 'お名前' && String(header[2] || '') === 'ご出欠') {
-      sheet.insertColumnBefore(3);
-      headerWidth += 1;
-    }
-    if (String(header[0] || '') === '' && sheet.getLastRow() > 0) {
-      sheet.insertRowBefore(1);
-    }
-    if (headerWidth > AFTER_HEADERS.length) {
-      sheet.getRange(1, AFTER_HEADERS.length + 1, 1, headerWidth - AFTER_HEADERS.length).clearContent();
-    }
+  if (!hasAny) {
     sheet.getRange(1, 1, 1, AFTER_HEADERS.length).setValues([AFTER_HEADERS]);
     sheet.setFrozenRows(1);
     sheet.getRange(1, 1, 1, AFTER_HEADERS.length)
@@ -173,34 +180,57 @@ function getAfterPartySheet_() {
       .setVerticalAlignment('middle');
     sheet.setRowHeight(1, 36);
     var widths = [160, 180, 240, 100];
-    for (var i = 0; i < widths.length; i++) {
-      sheet.setColumnWidth(i + 1, widths[i]);
-    }
-    var attend = sheet.getRange(2, AFTER_HEADERS.length, sheet.getMaxRows() - 1, 1);
-    var rules = sheet.getConditionalFormatRules();
-    rules.push(
-      SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('参加')
-        .setBackground('#e7f4ea')
-        .setFontColor('#137333')
-        .setRanges([attend])
-        .build(),
-      SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('不参加')
-        .setBackground('#f1f3f4')
-        .setFontColor('#5f6368')
-        .setRanges([attend])
-        .build(),
-      SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('保留')
-        .setBackground('#fef7e0')
-        .setFontColor('#b06000')
-        .setRanges([attend])
-        .build()
-    );
-    sheet.setConditionalFormatRules(rules);
+    for (var w = 0; w < widths.length; w++) sheet.setColumnWidth(w + 1, widths[w]);
+    header = AFTER_HEADERS.slice();
   }
-  return sheet;
+  if (findHeader_(header, 'メールアドレス') === -1) {
+    var attendIdx = findHeader_(header, 'ご出欠');
+    var insertAt = attendIdx === -1 ? header.length + 1 : attendIdx + 1;
+    sheet.insertColumnBefore(insertAt);
+    var cell = sheet.getRange(1, insertAt);
+    cell.setValue('メールアドレス');
+    if (insertAt > 1) {
+      sheet.getRange(1, insertAt - 1).copyTo(cell, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    }
+    sheet.setColumnWidth(insertAt, 240);
+  }
+  paintAttendRules_(sheet);
+}
+
+function paintAttendRules_(sheet) {
+  var header = headerLabels_(sheet);
+  var idx = findHeader_(header, 'ご出欠');
+  if (idx === -1) return;
+  var col = idx + 1;
+  var rules = sheet.getConditionalFormatRules();
+  for (var i = 0; i < rules.length; i++) {
+    var ranges = rules[i].getRanges();
+    for (var r = 0; r < ranges.length; r++) {
+      if (ranges[r].getColumn() === col) return;
+    }
+  }
+  var attend = sheet.getRange(2, col, Math.max(sheet.getMaxRows() - 1, 1), 1);
+  rules.push(
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextEqualTo('参加')
+      .setBackground('#e7f4ea')
+      .setFontColor('#137333')
+      .setRanges([attend])
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextEqualTo('不参加')
+      .setBackground('#f1f3f4')
+      .setFontColor('#5f6368')
+      .setRanges([attend])
+      .build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextEqualTo('保留')
+      .setBackground('#fef7e0')
+      .setFontColor('#b06000')
+      .setRanges([attend])
+      .build()
+  );
+  sheet.setConditionalFormatRules(rules);
 }
 
 function appendAfterPartyRow_(p) {
@@ -218,7 +248,12 @@ function appendAfterPartyRow_(p) {
     }
   }
   put('送信日時', new Date());
-  put('お名前', p.name || [p.sei, p.mei].filter(Boolean).join(' '));
+  var guestName = p.name || [p.sei, p.mei].filter(Boolean).join(' ');
+  if (findHeader_(header, 'お名前') !== -1) {
+    put('お名前', guestName);
+  } else {
+    put('お名前・姓', guestName);
+  }
   put('メールアドレス', String(p.mail || '').trim());
   put('ご出欠', p.attend || '');
   var last = sheet.getLastRow();
@@ -246,7 +281,7 @@ function sendAfterPartyMail_(p) {
       '当日お会いできますのを楽しみにしております。\n\n' +
       '2026年11月22日（日）\n' +
       '開宴 17:00（受付 16:30）\n' +
-      'ザ・プリンス パークタワー東京 ロビーラウンジ\n\n' +
+      'ザ・プリンス パークタワー東京 イベントホール メロディーライン\n\n' +
       '河本直樹・磯野有梨花';
   } else if (attend === '保留') {
     subject = '二次会のご返信を承りました';
@@ -527,8 +562,11 @@ function formatSheet_(sheet) {
 function afterPartyCountFormula_(label) {
   var afterSs = getAfterPartySpreadsheet_();
   var afterSheet = getAfterPartySheet_();
+  var header = headerLabels_(afterSheet);
+  var attendIdx = findHeader_(header, 'ご出欠');
+  var col = columnLetter_(attendIdx === -1 ? 4 : attendIdx + 1);
   var quoted = "'" + String(afterSheet.getName()).replace(/'/g, "''") + "'";
-  var range = quoted + '!D:D';
+  var range = quoted + '!' + col + ':' + col;
   if (afterSs.getId() === SpreadsheetApp.getActiveSpreadsheet().getId()) {
     return '=COUNTIF(' + range + ',"' + label + '")';
   }
@@ -562,6 +600,17 @@ function setupSummary_(ss) {
   sheet.setColumnWidth(1, 160);
   sheet.setColumnWidth(2, 90);
   sheet.setFrozenRows(1);
+}
+
+function columnLetter_(index) {
+  var letter = '';
+  var n = index;
+  while (n > 0) {
+    var mod = (n - 1) % 26;
+    letter = String.fromCharCode(65 + mod) + letter;
+    n = Math.floor((n - 1) / 26);
+  }
+  return letter;
 }
 
 function hideDefaultSheet_() {

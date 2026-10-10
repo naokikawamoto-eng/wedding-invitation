@@ -1,6 +1,6 @@
 /* 二次会ページ。出欠は結婚式とは別シート（event=after-party）へ送る。 */
 var RSVP = {
-  endpoint: 'https://script.google.com/macros/s/AKfycbx_YxygCwgYYABcjBNASW0SJN--I_KKQfQOc0jC92Mcn46CvKP732opws3DVPfWUlDB/exec',
+  endpoint: 'https://script.google.com/macros/s/AKfycbxRsHDeD8xwth_KZ2m2qFWms6hEccpspFdrSMvANGwLG9MkMX6co4ZAuhHWMsRcjhN1/exec',
   mode: 'no-cors'
 };
 
