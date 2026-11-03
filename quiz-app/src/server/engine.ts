@@ -117,7 +117,7 @@ function buildPreset(preset: (typeof PRESETS)[number], now: number): RoomRecord 
     text: q.text,
     imageUrl: null,
     choices: q.type === "choice" ? q.choices : [],
-    sample: true,
+    ...(q.sample ? { sample: true } : {}),
   }));
   const keys: Record<string, AnswerKey> = {};
   for (const q of preset.questions) {

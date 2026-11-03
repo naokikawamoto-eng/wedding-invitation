@@ -21,7 +21,12 @@ export function QuestionManager({
 
   return (
     <div className="space-y-3">
-      {questions.some((q) => q.sample) && (
+      {questions.some((q) => q.sample && q.text.includes("未定")) && (
+        <p className="rounded-2xl bg-gold-100 px-4 py-3 text-sm">
+          「未定」の問題が残っています。内容が決まったらその問題を編集して保存してください。保存すると印は外れます。
+        </p>
+      )}
+      {questions.some((q) => q.sample && !q.text.includes("未定")) && (
         <p className="rounded-2xl bg-gold-100 px-4 py-3 text-sm">
           サンプル問題です。招待状に書いてある事実だけが入っています。編集して保存すると「サンプル」の印は外れます。
         </p>
@@ -72,7 +77,11 @@ export function QuestionManager({
                 <span className="rounded-full bg-gold-100 px-2 py-0.5 text-gold-600">
                   {q.type === "choice" ? "選択式" : "記述式"}
                 </span>
-                {q.sample && <span className="rounded-full bg-gold-100 px-2 py-0.5 text-gold-600">サンプル</span>}
+                {q.sample && (
+                  <span className="rounded-full bg-gold-100 px-2 py-0.5 text-gold-600">
+                    {q.text.includes("未定") ? "未定" : "サンプル"}
+                  </span>
+                )}
                 {live && <span className="rounded-full bg-blush-100 px-2 py-0.5 text-blush-600">出題中</span>}
                 {revealed && <span className="rounded-full bg-sage-100 px-2 py-0.5 text-sage-600">発表済</span>}
               </div>

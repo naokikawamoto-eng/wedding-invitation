@@ -87,7 +87,12 @@ export function ControlPanel({
     <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
       <div className="space-y-5">
         <Card className="space-y-5">
-          {questions.some((q) => q.sample) && (
+          {questions.some((q) => q.sample && q.text.includes("未定")) && (
+            <p className="rounded-2xl bg-gold-100 px-4 py-3 text-sm">
+              未定の問題が残っています。プロフィールムービーの問題が決まったら、問題タブで差し替えてください。
+            </p>
+          )}
+          {questions.some((q) => q.sample && !q.text.includes("未定")) && (
             <p className="rounded-2xl bg-gold-100 px-4 py-3 text-sm">
               いま入っているのはサンプル問題です。問題タブで、二人のエピソードに差し替えてから当日を迎えてください。
             </p>

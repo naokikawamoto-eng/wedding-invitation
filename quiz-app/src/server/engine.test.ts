@@ -12,8 +12,14 @@ test("一次会と二次会の固定ルームを分けて用意する", () => {
   assert.equal(state.rooms[RECEPTION_ROOM_ID].event, "reception");
   assert.equal(state.rooms[AFTERPARTY_ROOM_ID].event, "afterparty");
   assert.equal(state.rooms[RECEPTION_ROOM_ID].questions.length, 5);
-  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].answerSeconds, 30);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].answerSeconds, 45);
   assert.ok(state.rooms[RECEPTION_ROOM_ID].questions.every((q) => q.sample));
+  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].questions.length, 10);
+  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].answerSeconds, 30);
+  assert.deepEqual(
+    state.rooms[AFTERPARTY_ROOM_ID].questions.filter((q) => q.sample).map((q) => q.id),
+    ["nijie-8"],
+  );
 });
 
 test("ゲストには未発表の正解を渡さない", () => {
@@ -118,7 +124,7 @@ test("二次会の回答は一次会の得点に入らない", () => {
   state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "u", nickname: "ゲスト" }, 0);
   state = applyAction(state, { op: "join", roomId: AFTERPARTY_ROOM_ID, uid: "u", nickname: "ゲスト" }, 0);
   state = applyAction(state, { op: "showQuestion", roomId: AFTERPARTY_ROOM_ID, questionId: "nijie-1" }, 0);
-  state = applyAction(state, { op: "answer", roomId: AFTERPARTY_ROOM_ID, uid: "u", choice: 1 }, 10);
+  state = applyAction(state, { op: "answer", roomId: AFTERPARTY_ROOM_ID, uid: "u", choice: 2 }, 10);
   state = applyAction(state, { op: "revealAnswer", roomId: AFTERPARTY_ROOM_ID, questionId: "nijie-1" }, 20);
   assert.equal(state.rooms[AFTERPARTY_ROOM_ID].participants.u.score, 1);
   assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.u.score, 0);
