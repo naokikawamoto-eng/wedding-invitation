@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ivory: #fffaf5;
+  --color-blush-50: #fff5f7;
+  --color-blush-100: #fde9ee;
+  --color-blush-200: #f8d0da;
+  --color-blush-300: #f2b0c0;
+  --color-blush-400: #e88fa5;
+  --color-blush-500: #d9718b;
+  --color-blush-600: #c05672;
+  --color-gold-100: #f8f0de;
+  --color-gold-200: #efdcb2;
+  --color-gold-300: #e2c486;
+  --color-gold-400: #d1a95e;
+  --color-gold-500: #b98e40;
+  --color-gold-600: #94702d;
+  --color-sage-100: #e6f0ea;
+  --color-sage-500: #5f9474;
+  --color-sage-600: #4b7a5e;
+  --color-lilac-100: #ecebf7;
+  --color-lilac-500: #7d74b6;
+  --color-lilac-600: #655c9e;
+  --color-ink: #4a3a40;
+  --color-ink-soft: #8a7880;
+
+  --font-sans: var(--font-zen), "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --font-display: var(--font-cormorant), "Times New Roman", serif;
+
+  --animate-pop: pop 0.35s ease-out;
+  --animate-float: float 4s ease-in-out infinite;
+
+  @keyframes pop {
+    0% { transform: scale(0.92); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+  color: var(--color-ink);
+  background-color: var(--color-ivory);
+  background-image:
+    radial-gradient(ellipse at 0% 0%, rgb(248 208 218 / 0.55), transparent 55%),
+    radial-gradient(ellipse at 100% 100%, rgb(239 220 178 / 0.5), transparent 55%);
+  background-attachment: fixed;
+}

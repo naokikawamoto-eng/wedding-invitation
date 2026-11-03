@@ -1,0 +1,9 @@
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+.env*.local
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.emulator-data/
