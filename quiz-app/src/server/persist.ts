@@ -1,9 +1,10 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { BlobPreconditionFailedError, BlobServiceRateLimited, get, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 import { applyAction, emptyState, normalize, type Action, type QuizState } from "./engine";
 
 const STATE_PATH = "quiz/state.json";
+const LOCK_PATH = "quiz/state.lock";
 const CACHE_MS = 350;
 
 interface Cache {
@@ -74,21 +75,55 @@ async function loadBlob(): Promise<{ state: QuizState; etag: string | null }> {
   return { state: parseState(text), etag: res.blob.etag };
 }
 
-function isRetryable(error: unknown): boolean {
-  if (error instanceof BlobPreconditionFailedError || error instanceof BlobServiceRateLimited) return true;
-  const message = error instanceof Error ? error.message : "";
-  return /already exists|precondition|conflict/i.test(message);
-}
-
-async function saveBlob(state: QuizState, etag: string | null): Promise<string> {
-  const result = await put(STATE_PATH, JSON.stringify(state), {
+async function saveBlob(state: QuizState): Promise<void> {
+  // ifMatch はプライベート Blob だと一致しないことがあったので、ロックの中で上書きする
+  await put(STATE_PATH, JSON.stringify(state), {
     access: "private",
     addRandomSuffix: false,
+    allowOverwrite: true,
     contentType: "application/json",
     cacheControlMaxAge: 60,
-    ...(etag ? { ifMatch: etag } : { allowOverwrite: false }),
   });
-  return result.etag;
+}
+
+async function breakStaleLock() {
+  const res = await get(LOCK_PATH, { access: "private", useCache: false });
+  if (!res || res.statusCode !== 200 || !res.stream) return;
+  const text = await new Response(res.stream).text();
+  const started = Number(text.split("-")[0]);
+  if (Number.isFinite(started) && Date.now() - started > 8_000) await del(LOCK_PATH).catch(() => undefined);
+}
+
+/** 同時の回答を直列にする。ロックが取れない間は少し待ってやり直す */
+async function withBlobLock<T>(fn: () => Promise<T>): Promise<T> {
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  let last: unknown;
+  for (let attempt = 0; attempt < 25; attempt++) {
+    try {
+      await put(LOCK_PATH, token, {
+        access: "private",
+        addRandomSuffix: false,
+        allowOverwrite: false,
+        contentType: "text/plain",
+        cacheControlMaxAge: 60,
+      });
+    } catch (error) {
+      last = error;
+      const message = error instanceof Error ? error.message : "";
+      const contention = /exist|conflict|locked|precondition|etag/i.test(message);
+      if (!contention && attempt >= 1) throw error;
+      if (attempt === 6 || attempt === 14) await breakStaleLock().catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 40 * (attempt + 1)));
+      continue;
+    }
+    try {
+      return await fn();
+    } finally {
+      await del(LOCK_PATH).catch(() => undefined);
+    }
+  }
+  const message = last instanceof Error ? last.message : "保存できませんでした";
+  throw new Error(message.includes("混み合って") ? message : "サーバーが混み合っています。もう一度お試しください");
 }
 
 function remember(state: QuizState, etag: string | null) {
@@ -110,7 +145,7 @@ async function fileCommit(mutator: (state: QuizState) => QuizState): Promise<Qui
 }
 
 async function blobCommit(mutator: (state: QuizState) => QuizState): Promise<QuizState> {
-  for (let attempt = 0; attempt < 12; attempt++) {
+  return withBlobLock(async () => {
     const loaded = await loadBlob();
     const current = normalize(loaded.state, Date.now());
     const next = mutator(current);
@@ -119,16 +154,10 @@ async function blobCommit(mutator: (state: QuizState) => QuizState): Promise<Qui
       return loaded.state;
     }
     const saved = { ...next, version: loaded.state.version + 1 };
-    try {
-      const etag = await saveBlob(saved, loaded.etag);
-      remember(saved, etag);
-      return saved;
-    } catch (error) {
-      if (!isRetryable(error) || attempt === 11) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 30 * (attempt + 1) + Math.random() * 50));
-    }
-  }
-  throw new Error("サーバーが混み合っています。もう一度お試しください");
+    await saveBlob(saved);
+    remember(saved, null);
+    return saved;
+  });
 }
 
 export function commit(mutator: (state: QuizState) => QuizState): Promise<QuizState> {
