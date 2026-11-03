@@ -52,7 +52,7 @@
 - **本番（Vercel）**: 非公開の [Vercel Blob](https://vercel.com/docs/vercel-blob)。東京リージョン（`hnd1`）。正解データは公開 URL に置きません
 - **手元**: `quiz-app/data/quiz-state.json`（git には入りません）
 
-Firebase は使っていません。招待状サイトのデプロイとは別プロジェクトです（リポジトリ直下の `.vercelignore` で `quiz-app` は招待状側から除外済み）。
+Firebase は使っていません。招待状サイトとは別の Vercel プロジェクトで、Root Directory を `quiz-app` にしてデプロイします。
 
 ゲストの画面は約 0.8 秒おきに最新状態を取りにいきます。会場の Wi-Fi が不安定でも、切れたタブを開き直せば続きから参加できます（同じブラウザならニックネームも残ります）。
 
