@@ -7,23 +7,22 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "typecheck": "tsc --noEmit",
-    "emulators": "mkdir -p .emulator-data && firebase emulators:start --project demo-wedding-quiz --import=.emulator-data --export-on-exit",
-    "deploy:rules": "firebase deploy --only firestore:rules,storage"
+    "test": "tsx --test src/server/*.test.ts"
   },
   "dependencies": {
-    "firebase": "^13.2.0",
     "next": "16.4.4",
     "qrcode.react": "^4.2.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "@vercel/blob": "^2.3.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.4",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "firebase-tools": "^15.34.2",
     "tailwindcss": "^4.3.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "tsx": "^4.20.6"
   }
 }

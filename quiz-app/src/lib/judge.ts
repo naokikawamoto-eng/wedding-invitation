@@ -23,5 +23,5 @@ export function isCorrect(
 
 export function elapsedMs(answer: Pick<Answer, "startedAt" | "answeredAt">): number {
   if (!answer.answeredAt) return 0;
-  return Math.max(0, answer.answeredAt.toMillis() - answer.startedAt.toMillis());
+  return Math.max(0, answer.answeredAt - answer.startedAt);
 }

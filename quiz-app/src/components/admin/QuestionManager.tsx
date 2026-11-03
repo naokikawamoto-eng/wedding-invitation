@@ -21,6 +21,11 @@ export function QuestionManager({
 
   return (
     <div className="space-y-3">
+      {questions.some((q) => q.sample) && (
+        <p className="rounded-2xl bg-gold-100 px-4 py-3 text-sm">
+          サンプル問題です。招待状に書いてある事実だけが入っています。編集して保存すると「サンプル」の印は外れます。
+        </p>
+      )}
       {questions.map((q, i) => {
         const key = keys.get(q.id);
         if (editing === q.id) {
@@ -67,6 +72,7 @@ export function QuestionManager({
                 <span className="rounded-full bg-gold-100 px-2 py-0.5 text-gold-600">
                   {q.type === "choice" ? "選択式" : "記述式"}
                 </span>
+                {q.sample && <span className="rounded-full bg-gold-100 px-2 py-0.5 text-gold-600">サンプル</span>}
                 {live && <span className="rounded-full bg-blush-100 px-2 py-0.5 text-blush-600">出題中</span>}
                 {revealed && <span className="rounded-full bg-sage-100 px-2 py-0.5 text-sage-600">発表済</span>}
               </div>

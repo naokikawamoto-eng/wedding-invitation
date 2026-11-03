@@ -41,7 +41,7 @@ export function rankParticipants(participants: Participant[]): Ranked[] {
     (a, b) =>
       b.score - a.score ||
       a.totalTimeMs - b.totalTimeMs ||
-      (a.joinedAt?.toMillis() ?? 0) - (b.joinedAt?.toMillis() ?? 0),
+      (a.joinedAt ?? 0) - (b.joinedAt ?? 0),
   );
   let rank = 0;
   return sorted.map((p, i) => {

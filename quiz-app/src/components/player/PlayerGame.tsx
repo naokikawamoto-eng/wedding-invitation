@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import { EVENT_LABEL } from "@/lib/events";
 import { useMyAnswer, useParticipants, useQuestion } from "@/lib/hooks";
 import { isCorrect } from "@/lib/judge";
 import { rankParticipants } from "@/lib/scoring";
 import type { Participant, Room } from "@/lib/types";
+import { Countdown } from "../Countdown";
 import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
 import { Card, Ornament, Spinner, Title } from "../ui";
@@ -18,7 +20,10 @@ export function PlayerGame({ room, me }: { room: Room; me: Participant }) {
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between rounded-full bg-white/80 px-4 py-2 text-sm shadow-sm">
-        <span className="min-w-0 truncate font-bold">{me.nickname}</span>
+        <span className="min-w-0 truncate font-bold">
+          {me.nickname}
+          <span className="ml-2 font-normal text-ink-soft">· {EVENT_LABEL[room.event]}</span>
+        </span>
         <span className="shrink-0 text-ink-soft">
           正解 <b className="text-lg text-blush-600">{me.score}</b>
           {room.revealedQuestionIds.length > 0 && myRank && (
@@ -63,6 +68,7 @@ function QuestionStage({ room, me }: { room: Room; me: Participant }) {
 
   return (
     <div className="space-y-4">
+      {room.phase === "question" && <Countdown endsAt={room.questionEndsAt} />}
       <Card>
         <QuestionBody question={question.data} number={room.currentNumber} total={room.totalQuestions} />
       </Card>
