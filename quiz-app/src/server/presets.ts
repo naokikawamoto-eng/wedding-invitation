@@ -21,7 +21,7 @@ export interface Preset {
 }
 
 /**
- * 一次会の本番に載せる確定5問。新婦3問と生花1問は未作成。
+ * 一次会の本番に載せる確定6問。新婦3問と生花1問は未作成。
  * 旅行問題は下の HELD_RECEPTION に置き、採点対象にしない。
  * 二次会は披露宴の振り返り10問。Q8だけ未定。
  */
@@ -79,6 +79,14 @@ export const PRESETS: Preset[] = [
         text: "新郎と新婦のゴルフのベストスコアの差は？",
         choices: ["3打", "5打", "7打", "9打"],
         correctChoice: 1,
+        correctTexts: [],
+      },
+      {
+        id: "couple-photo",
+        type: "choice",
+        text: "結婚式の前撮りを撮影した場所は？",
+        choices: ["札幌", "ハワイ", "江ノ島", "グアム"],
+        correctChoice: 0,
         correctTexts: [],
       },
     ],

@@ -13,7 +13,7 @@ test("一次会と二次会の固定ルームを分けて用意する", () => {
   assert.equal(state.rooms[RECEPTION_ROOM_ID].event, "reception");
   assert.equal(state.rooms[AFTERPARTY_ROOM_ID].event, "afterparty");
   assert.equal(state.rooms[RECEPTION_ROOM_ID].mode, "self");
-  assert.equal(state.rooms[RECEPTION_ROOM_ID].questions.length, 5);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].questions.length, 6);
   assert.equal(state.rooms[RECEPTION_ROOM_ID].answerSeconds, 0);
   assert.equal(state.rooms[RECEPTION_ROOM_ID].questions.some((q) => q.sample), false);
   assert.equal(state.rooms[AFTERPARTY_ROOM_ID].mode, "paced");
@@ -144,7 +144,7 @@ test("一次会は締切まで回答を変えられ、同点は同順位", () =>
   state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "a", questionId: "groom-sports", choice: 2 }, 5_000);
   state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "b", questionId: "groom-sports", choice: 2 }, 1_300);
   const guest = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 5_100);
-  assert.equal(guest.questions?.length, 5);
+  assert.equal(guest.questions?.length, 6);
   assert.equal(guest.answerSheet, null);
   assert.equal(JSON.stringify(guest).includes("correctChoice"), false);
   state = applyAction(state, { op: "closeAnswers", roomId: RECEPTION_ROOM_ID }, 9_000);
