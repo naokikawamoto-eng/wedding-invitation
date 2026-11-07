@@ -7,12 +7,36 @@ import { Button, Card, ErrorNote, Ornament, Spinner, Title, inputClass } from ".
 /** 合言葉を通ったブラウザだけ、進行画面を出す */
 export function AdminGate({ children }: { children: (user: { uid: string }) => React.ReactNode }) {
   const [ready, setReady] = useState<"unknown" | "in" | "out">("unknown");
+  const [gateOpen, setGateOpen] = useState(false);
   useEffect(() => {
-    setReady(passcode() ? "in" : "out");
+    let cancel = false;
+    fetch("/api/host-access", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data: { open?: boolean }) => {
+        if (cancel) return;
+        const open = data.open === true;
+        setGateOpen(open);
+        setReady(open || passcode() ? "in" : "out");
+      })
+      .catch(() => {
+        if (!cancel) setReady(passcode() ? "in" : "out");
+      });
+    return () => {
+      cancel = true;
+    };
   }, []);
   if (ready === "unknown") return <Spinner />;
   if (ready === "out") return <PasscodeForm onOk={() => setReady("in")} />;
-  return <>{children({ uid: "host" })}</>;
+  return (
+    <>
+      {gateOpen && (
+        <p className="bg-gold-100 px-4 py-2 text-center text-sm font-bold text-gold-600">
+          主催者の合言葉確認は、いま一時的にオフです
+        </p>
+      )}
+      {children({ uid: "host" })}
+    </>
+  );
 }
 
 function PasscodeForm({ onOk }: { onOk: () => void }) {

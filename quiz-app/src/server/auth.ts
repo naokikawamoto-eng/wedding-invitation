@@ -7,7 +7,13 @@ export function expectedPasscode(): string {
   return "wedding2026";
 }
 
+/** true のあいだだけ主催者の合言葉を見ない。外すと元の確認に戻る */
+export function hostGateOpen(): boolean {
+  return process.env.QUIZ_HOST_OPEN === "true";
+}
+
 export function isHost(req: Request): boolean {
+  if (hostGateOpen()) return true;
   const expected = expectedPasscode();
   const given = req.headers.get("x-quiz-passcode") ?? "";
   if (!expected || !given) return false;
