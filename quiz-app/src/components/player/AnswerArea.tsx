@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useServerClock } from "@/lib/hooks";
 import { submitAnswer } from "@/lib/quiz";
 import type { Answer, Participant, Question, Reveal, Room } from "@/lib/types";
 import { CHOICE_LETTERS, CHOICE_STYLES } from "../choice";
@@ -24,7 +25,9 @@ export function AnswerArea({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
 
-  const open = room.phase === "question" && !myAnswer;
+  const now = useServerClock();
+  const open =
+    room.phase === "question" && !myAnswer && (room.questionEndsAt == null || now < room.questionEndsAt);
   const selected = myAnswer ? myAnswer.choice : picked;
 
   async function send(answer: { choice: number } | { text: string }) {

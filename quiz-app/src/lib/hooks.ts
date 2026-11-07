@@ -1,163 +1,267 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signInAnonymously, type User } from "firebase/auth";
-import { collection, doc, onSnapshot, orderBy, query, where } from "firebase/firestore";
-import { auth, db } from "./firebase";
-import {
-  answerId,
-  answerKeysCol,
-  answersCol,
-  fromDoc,
-  participantsCol,
-  questionsCol,
-  roomRef,
-} from "./quiz";
-import type { Answer, AnswerKey, Participant, Question, Room } from "./types";
+import type { Answer, AnswerKey, Participant, Question, SyncBody } from "./types";
+import { passcode } from "./transport";
+import { registerPuller } from "./refresh";
 
-interface Live<T> {
-  data: T | undefined;
-  error: Error | undefined;
+type View = "guest" | "host" | "screen" | "list";
+
+interface Entry {
+  view: View;
+  roomId: string;
+  uid: string;
+  data?: SyncBody;
+  error?: Error;
+  listeners: Set<() => void>;
+  refs: number;
+  seq: number;
+  timer?: ReturnType<typeof setTimeout>;
+  stopped: boolean;
 }
 
-/** key が変わるたびに購読し直す onSnapshot のラッパー。key が null の間は購読しない */
-function useLive<T>(
-  key: string | null,
-  subscribe: (next: (value: T) => void, fail: (e: Error) => void) => () => void,
-): Live<T> {
-  const [state, setState] = useState<{ key: string | null; data?: T; error?: Error }>({ key: null });
+const entries = new Map<string, Entry>();
+
+const UID_KEY = "wedding-quiz-guest-id";
+
+let serverNow = 0;
+let receivedAt = 0;
+let clockTimer: ReturnType<typeof setInterval> | null = null;
+const clockListeners = new Set<() => void>();
+
+function ensureClock() {
+  if (clockTimer || clockListeners.size === 0) return;
+  clockTimer = setInterval(() => {
+    if (clockListeners.size === 0 && clockTimer) {
+      clearInterval(clockTimer);
+      clockTimer = null;
+      return;
+    }
+    clockListeners.forEach((listener) => listener());
+  }, 200);
+}
+
+export function noteServerNow(value: number) {
+  if (!value) return;
+  serverNow = value;
+  receivedAt = Date.now();
+  ensureClock();
+}
+
+/** サーバー時刻に合わせた「今」。制限時間の表示に使う */
+export function useServerClock() {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const listener = () => setTick((n) => n + 1);
+    clockListeners.add(listener);
+    ensureClock();
+    return () => {
+      clockListeners.delete(listener);
+    };
+  }, []);
+  if (!serverNow) return Date.now();
+  return serverNow + (Date.now() - receivedAt);
+}
+
+export function useGuestId() {
+  const [uid, setUid] = useState<string | null>(null);
+  useEffect(() => {
+    let id = localStorage.getItem(UID_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(UID_KEY, id);
+    }
+    setUid(id);
+  }, []);
+  return uid;
+}
+
+export function useGuestUser() {
+  const uid = useGuestId();
+  return { user: uid ? { uid } : null, error: undefined as Error | undefined };
+}
+
+async function pull(key: string): Promise<void> {
+  const entry = entries.get(key);
+  if (!entry || entry.stopped) return;
+  if (entry.timer) {
+    clearTimeout(entry.timer);
+    entry.timer = undefined;
+  }
+  const seq = ++entry.seq;
+  try {
+    const url = new URL("/api/sync", window.location.origin);
+    url.searchParams.set("view", entry.view);
+    if (entry.roomId) url.searchParams.set("roomId", entry.roomId);
+    if (entry.uid) url.searchParams.set("uid", entry.uid);
+    const headers: Record<string, string> = {};
+    if (entry.view === "host" || entry.view === "list") headers["x-quiz-passcode"] = passcode();
+    const res = await fetch(url, { headers, cache: "no-store" });
+    const body = (await res.json().catch(() => ({}))) as SyncBody & { error?: string };
+    if (entries.get(key) !== entry || entry.seq !== seq) return;
+    if (!res.ok) throw new Error(body.error || "読み込めませんでした");
+    noteServerNow(body.serverNow);
+    if (entry.data?.version === body.version && !entry.error) return;
+    entry.data = body;
+    entry.error = undefined;
+    entry.listeners.forEach((listener) => listener());
+  } catch (error) {
+    if (entries.get(key) !== entry || entry.seq !== seq) return;
+    entry.error = error instanceof Error ? error : new Error("通信できませんでした");
+    entry.listeners.forEach((listener) => listener());
+  } finally {
+    const current = entries.get(key);
+    if (!current || current !== entry || current.stopped || current.seq !== seq) return;
+    const delay = document.visibilityState === "hidden" ? 2000 : 800;
+    current.timer = setTimeout(() => void pull(key), delay);
+  }
+}
+
+function subscribe(key: string, params: { view: View; roomId: string; uid: string }, listener: () => void) {
+  let entry = entries.get(key);
+  if (!entry) {
+    entry = { ...params, listeners: new Set(), refs: 0, seq: 0, stopped: false };
+    entries.set(key, entry);
+    void pull(key);
+  }
+  entry.refs += 1;
+  entry.listeners.add(listener);
+  listener();
+  return () => {
+    const current = entries.get(key);
+    if (!current) return;
+    current.refs -= 1;
+    current.listeners.delete(listener);
+    if (current.refs <= 0) {
+      current.stopped = true;
+      if (current.timer) clearTimeout(current.timer);
+      entries.delete(key);
+    }
+  };
+}
+
+registerPuller(async () => {
+  await Promise.all([...entries.keys()].map((key) => pull(key)));
+});
+
+const vis = globalThis as { __quizVis?: boolean };
+if (typeof document !== "undefined" && !vis.__quizVis) {
+  vis.__quizVis = true;
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) void pullAll();
+  });
+}
+
+function pullAll() {
+  return Promise.all([...entries.keys()].map((key) => pull(key)));
+}
+
+function useSync(view: View, roomId: string | null, enabled = true) {
+  const uid = useGuestId();
+  const active = enabled && (view === "list" || !!roomId) && (view !== "guest" || !!uid);
+  const key = !active ? null : view === "list" ? "list" : `${view}:${roomId}:${view === "guest" ? uid : ""}`;
+  const [state, setState] = useState<{ key: string | null; data?: SyncBody; error?: Error }>({ key: null });
+
   useEffect(() => {
     if (!key) return;
-    return subscribe(
-      (data) => setState({ key, data }),
-      (error) => {
-        console.error(key, error);
-        setState({ key, error });
-      },
-    );
-    // subscribe は key から決まるので key だけを依存にする
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+    return subscribe(key, { view, roomId: roomId ?? "", uid: uid ?? "" }, () => {
+      const entry = entries.get(key);
+      setState({ key, data: entry?.data, error: entry?.error });
+    });
+  }, [key, view, roomId, uid]);
+
   return state.key === key ? { data: state.data, error: state.error } : { data: undefined, error: undefined };
 }
 
-export function useAuthUser() {
-  const [state, setState] = useState<{ user: User | null; ready: boolean }>({ user: null, ready: false });
-  useEffect(() => onAuthStateChanged(auth(), (user) => setState({ user, ready: true })), []);
-  return state;
-}
-
-/** 参加者用：未ログインなら匿名ログインする（ブラウザを閉じても同じ uid のまま） */
-export function useGuestUser() {
-  const { user, ready } = useAuthUser();
-  const [error, setError] = useState<Error>();
-  useEffect(() => {
-    if (ready && !user) signInAnonymously(auth()).catch(setError);
-  }, [ready, user]);
-  return { user, error };
-}
-
-export function useRoom(roomId: string | null) {
-  return useLive<Room | null>(roomId && `room/${roomId}`, (next, fail) =>
-    onSnapshot(roomRef(roomId!), (s) => next(s.exists() ? fromDoc<Room>(s) : null), fail),
-  );
+export function useRoom(roomId: string | null, view: "guest" | "host" | "screen" = "guest") {
+  const sync = useSync(view, roomId);
+  if (sync.error && !sync.data) return { data: undefined, error: sync.error };
+  if (!sync.data) return { data: undefined, error: sync.error };
+  return { data: sync.data.room ?? null, error: sync.error };
 }
 
 export function useParticipants(roomId: string | null) {
-  return useLive<Participant[]>(roomId && `participants/${roomId}`, (next, fail) =>
-    onSnapshot(participantsCol(roomId!), (s) => next(s.docs.map((d) => fromDoc<Participant>(d))), fail),
-  );
+  const sync = useSync("guest", roomId);
+  return { data: sync.data?.participants, error: sync.error };
 }
 
 export function useParticipant(roomId: string | null, uid: string | undefined) {
-  return useLive<Participant | null>(roomId && uid ? `participant/${roomId}/${uid}` : null, (next, fail) =>
-    onSnapshot(
-      doc(participantsCol(roomId!), uid!),
-      (s) => next(s.exists() ? fromDoc<Participant>(s) : null),
-      fail,
-    ),
-  );
+  const sync = useSync("guest", uid ? roomId : null);
+  if (!sync.data) return { data: undefined as Participant | null | undefined, error: sync.error };
+  return { data: sync.data.me ?? null, error: sync.error };
 }
 
-/** 参加者用：出題中の 1 問だけを読む */
 export function useQuestion(roomId: string | null, questionId: string | null) {
-  return useLive<Question | null>(roomId && questionId ? `question/${roomId}/${questionId}` : null, (next, fail) =>
-    onSnapshot(
-      doc(questionsCol(roomId!), questionId!),
-      (s) => next(s.exists() ? fromDoc<Question>(s) : null),
-      fail,
-    ),
-  );
+  const sync = useSync("guest", roomId);
+  if (!sync.data) return { data: undefined as Question | null | undefined, error: sync.error };
+  if (!questionId) return { data: null, error: sync.error };
+  const question = sync.data.question;
+  return { data: question && question.id === questionId ? question : null, error: sync.error };
 }
 
 export function useMyAnswer(roomId: string | null, questionId: string | null, uid: string | undefined) {
-  return useLive<Answer | null>(
-    roomId && questionId && uid ? `answer/${roomId}/${questionId}/${uid}` : null,
-    (next, fail) =>
-      onSnapshot(
-        doc(answersCol(roomId!), answerId(questionId!, uid!)),
-        (s) => next(s.exists() ? fromDoc<Answer>(s) : null),
-        fail,
-      ),
-  );
+  const sync = useSync("guest", uid ? roomId : null);
+  if (!sync.data) return { data: undefined as Answer | null | undefined, error: sync.error };
+  return { data: sync.data.myAnswer ?? null, error: sync.error };
 }
 
-// ── 以下は主催者だけが読める ──────────────────────────────
-
 export function useQuestions(roomId: string | null) {
-  return useLive<Question[]>(roomId && `questions/${roomId}`, (next, fail) =>
-    onSnapshot(
-      query(questionsCol(roomId!), orderBy("order")),
-      (s) => next(s.docs.map((d) => fromDoc<Question>(d))),
-      fail,
-    ),
-  );
+  const sync = useSync("host", roomId);
+  return { data: sync.data?.questions, error: sync.error };
 }
 
 export function useAnswerKeys(roomId: string | null) {
-  return useLive<Map<string, AnswerKey>>(roomId && `answerKeys/${roomId}`, (next, fail) =>
-    onSnapshot(answerKeysCol(roomId!), (s) => next(new Map(s.docs.map((d) => [d.id, d.data() as AnswerKey]))), fail),
-  );
-}
-
-export function useAnswers(roomId: string | null, questionId?: string | null) {
-  const key = roomId && `answers/${roomId}/${questionId ?? "*"}`;
-  return useLive<Answer[]>(key, (next, fail) =>
-    onSnapshot(
-      questionId ? query(answersCol(roomId!), where("questionId", "==", questionId)) : answersCol(roomId!),
-      (s) => next(s.docs.map((d) => fromDoc<Answer>(d))),
-      fail,
-    ),
-  );
-}
-
-/** 主催者画面でまとめて購読するデータ */
-export function useHostData(roomId: string | null) {
-  const questions = useQuestions(roomId);
-  const keys = useAnswerKeys(roomId);
-  const answers = useAnswers(roomId);
-  const participants = useParticipants(roomId);
+  const sync = useSync("host", roomId);
   return {
-    questions: questions.data ?? [],
-    keys: keys.data ?? new Map<string, AnswerKey>(),
-    answers: answers.data ?? [],
-    participants: participants.data ?? [],
-    loading: !questions.data || !keys.data || !answers.data || !participants.data,
-    error: questions.error ?? keys.error ?? answers.error ?? participants.error,
+    data: sync.data?.keys ? new Map(Object.entries(sync.data.keys)) : undefined,
+    error: sync.error,
+  };
+}
+
+export function useAnswers(roomId: string | null) {
+  const sync = useSync("host", roomId);
+  return { data: sync.data?.answers, error: sync.error };
+}
+
+export function useHostData(roomId: string | null) {
+  const sync = useSync("host", roomId);
+  return {
+    questions: sync.data?.questions ?? [],
+    keys: new Map<string, AnswerKey>(Object.entries(sync.data?.keys ?? {})),
+    answers: sync.data?.answers ?? [],
+    participants: sync.data?.participants ?? [],
+    loading: !sync.data && !sync.error,
+    error: sync.error,
+  };
+}
+
+export function useGuestPacket(roomId: string | null) {
+  const sync = useSync("guest", roomId);
+  return {
+    questions: sync.data?.questions ?? [],
+    myAnswers: sync.data?.myAnswers ?? [],
+    answerSheet: sync.data?.answerSheet ?? null,
+    error: sync.error,
+  };
+}
+
+export function useScreen(roomId: string) {
+  const sync = useSync("screen", roomId);
+  return {
+    room: sync.data ? (sync.data.room ?? null) : undefined,
+    question: sync.data?.question ?? null,
+    questions: sync.data?.questions ?? [],
+    participants: sync.data?.participants ?? [],
+    answers: sync.data?.answers ?? [],
+    answerKey: sync.data?.answerKey ?? null,
+    answerSheet: sync.data?.answerSheet ?? null,
+    progress: sync.data?.progress ?? [],
+    answeredCount: sync.data?.answeredCount ?? 0,
+    error: sync.error,
   };
 }
 
 export function useRooms(enabled: boolean) {
-  return useLive<Room[]>(enabled ? "rooms" : null, (next, fail) =>
-    onSnapshot(
-      collection(db(), "rooms"),
-      (s) =>
-        next(
-          s.docs
-            .map((d) => fromDoc<Room>(d))
-            .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0)),
-        ),
-      fail,
-    ),
-  );
+  const sync = useSync("list", null, enabled);
+  return { data: sync.data?.rooms, error: sync.error };
 }
