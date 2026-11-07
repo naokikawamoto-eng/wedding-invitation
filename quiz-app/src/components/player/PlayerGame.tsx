@@ -11,11 +11,15 @@ import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
 import { Card, Ornament, Spinner, Title } from "../ui";
 import { AnswerArea } from "./AnswerArea";
+import { SelfPlay } from "./SelfPlay";
 
 export function PlayerGame({ room, me }: { room: Room; me: Participant }) {
   const participants = useParticipants(room.id).data ?? [];
-  const ranked = useMemo(() => rankParticipants(participants), [participants]);
+  const byTime = room.mode !== "self";
+  const ranked = useMemo(() => rankParticipants(participants, byTime), [participants, byTime]);
   const myRank = ranked.find((p) => p.id === me.id)?.rank;
+
+  if (room.mode === "self") return <SelfPlay room={room} me={me} />;
 
   return (
     <div className="space-y-4">

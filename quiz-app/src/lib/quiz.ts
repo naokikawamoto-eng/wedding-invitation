@@ -18,14 +18,24 @@ export async function submitAnswer(
   uid: string,
   _nickname: string,
   answer: { choice: number } | { text: string },
+  questionId?: string,
 ) {
   await postAction({
     op: "answer",
     roomId: room.id,
     uid,
+    questionId,
     choice: "choice" in answer ? answer.choice : null,
     text: "text" in answer ? answer.text : null,
   });
+}
+
+export async function openQuiz(roomId: string) {
+  await postAction({ op: "openQuiz", roomId }, true);
+}
+
+export async function revealAll(roomId: string) {
+  await postAction({ op: "revealAll", roomId }, true);
 }
 
 export async function saveQuestion(roomId: string, draft: QuestionDraft, order: number, questionId?: string) {

@@ -52,6 +52,50 @@ export default function ScreenPage() {
     );
   }
 
+  if (room.mode === "self") {
+    const showing = room.phase === "revealed" || room.phase === "finished";
+    return (
+      <main className="mx-auto max-w-5xl space-y-8 p-6 sm:p-10">
+        <Title sub={<span className="text-2xl">{room.title}</span>}>
+          <span className="text-5xl sm:text-6xl">
+            {room.phase === "question" ? "Answer" : room.phase === "closed" ? "Closed" : room.phase === "finished" ? "Results" : "Answers"}
+          </span>
+        </Title>
+        <p className="text-center text-2xl font-bold">
+          {room.phase === "question" && "回答受付中。締め切りまで選べます"}
+          {room.phase === "closed" && "締め切りました"}
+          {showing && room.phase !== "finished" && "正解発表"}
+        </p>
+        <div className="space-y-6">
+          {screen.questions.map((question, index) => {
+            const sheet = screen.answerSheet?.find((item) => item.questionId === question.id);
+            const count = screen.progress.find((item) => item.questionId === question.id)?.answered ?? 0;
+            return (
+              <section key={question.id} className="rounded-3xl bg-white/80 p-6 shadow">
+                <QuestionBody question={question} number={index + 1} total={screen.questions.length} />
+                <ul className="mt-4 grid gap-3 md:grid-cols-2">
+                  {question.choices.map((choice, i) => (
+                    <li
+                      key={i}
+                      className={`rounded-2xl border-4 bg-white px-4 py-3 text-xl font-bold ${CHOICE_STYLES[i].idle} ${
+                        sheet?.correctChoice === i ? "ring-4 ring-gold-300" : ""
+                      }`}
+                    >
+                      {CHOICE_LETTERS[i]}. {choice}
+                      {sheet?.correctChoice === i && <span className="ml-2 text-gold-600">正解</span>}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-center text-lg">回答 {count} 人</p>
+              </section>
+            );
+          })}
+        </div>
+        {room.phase === "finished" && <Ranking participants={screen.participants} limit={10} large showTime={false} byTime={false} />}
+      </main>
+    );
+  }
+
   if (room.phase === "finished") {
     return (
       <main className="mx-auto max-w-4xl space-y-8 p-8 sm:p-12">

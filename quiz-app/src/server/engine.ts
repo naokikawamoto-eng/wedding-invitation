@@ -6,6 +6,8 @@ import type {
   Question,
   QuestionDraft,
   QuizEvent,
+  QuizMode,
+  Reveal,
   Room,
   SyncBody,
 } from "../lib/types";
@@ -25,13 +27,15 @@ export interface QuizState {
 
 export type Action =
   | { op: "join"; roomId: string; uid: string; nickname: string }
-  | { op: "answer"; roomId: string; uid: string; choice?: number | null; text?: string | null }
+  | { op: "answer"; roomId: string; uid: string; questionId?: string; choice?: number | null; text?: string | null }
   | { op: "createRoom"; title: string; event: QuizEvent; hostUid: string }
   | { op: "saveQuestion"; roomId: string; draft: QuestionDraft; order: number; questionId?: string }
   | { op: "deleteQuestion"; roomId: string; questionId: string }
   | { op: "swapQuestionOrder"; roomId: string; aId: string; bId: string }
   | { op: "showQuestion"; roomId: string; questionId: string }
+  | { op: "openQuiz"; roomId: string }
   | { op: "closeAnswers"; roomId: string }
+  | { op: "revealAll"; roomId: string }
   | { op: "revealAnswer"; roomId: string; questionId: string }
   | { op: "recalculateScores"; roomId: string }
   | { op: "finishQuiz"; roomId: string }
@@ -55,6 +59,7 @@ export function publicRoom(room: RoomRecord): Room {
     id: room.id,
     title: room.title,
     event: room.event,
+    mode: room.mode ?? (room.event === "reception" ? "self" : "paced"),
     hostUid: room.hostUid,
     phase: room.phase,
     currentQuestionId: room.currentQuestionId,
@@ -81,6 +86,7 @@ function blankRoom(input: {
   id: string;
   title: string;
   event: QuizEvent;
+  mode: QuizMode;
   hostUid: string;
   now: number;
   answerSeconds: number;
@@ -91,6 +97,7 @@ function blankRoom(input: {
     id: input.id,
     title: input.title,
     event: input.event,
+    mode: input.mode,
     hostUid: input.hostUid,
     phase: "lobby",
     currentQuestionId: null,
@@ -130,6 +137,7 @@ function buildPreset(preset: (typeof PRESETS)[number], now: number): RoomRecord 
     id: preset.id,
     title: preset.title,
     event: preset.event,
+    mode: preset.event === "reception" ? "self" : "paced",
     hostUid: "preset",
     now,
     answerSeconds: preset.answerSeconds,
@@ -166,8 +174,22 @@ export function ensurePresets(state: QuizState, now: number): QuizState {
   return changed ? { ...state, rooms } : state;
 }
 
+/** 古い保存データに進行方式が無いときだけ補う。問題や回答は変えない */
+function ensureModes(state: QuizState): QuizState {
+  let rooms = state.rooms;
+  let changed = false;
+  for (const id of Object.keys(rooms)) {
+    const room = rooms[id];
+    if (room.mode) continue;
+    if (!changed) rooms = { ...rooms };
+    rooms[id] = { ...room, mode: room.event === "reception" ? "self" : "paced" };
+    changed = true;
+  }
+  return changed ? { ...state, rooms } : state;
+}
+
 export function normalize(state: QuizState, now: number): QuizState {
-  return tick(ensurePresets(state, now), now);
+  return tick(ensureModes(ensurePresets(state, now)), now);
 }
 
 function mustRoom(state: QuizState, roomId: string): RoomRecord {
@@ -246,15 +268,17 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
     }
     case "answer": {
       const room = mustRoom(state, action.roomId);
-      if (room.phase !== "question" || !room.currentQuestionId || room.questionStartedAt == null) {
-        throw new Error("回答は締め切られました");
+      if (room.phase !== "question" || room.questionStartedAt == null) {
+        throw new Error(room.phase === "lobby" ? "まだ回答は始まっていません" : "回答は締め切られました");
       }
-      const question = room.questions.find((q) => q.id === room.currentQuestionId);
-      if (!question) throw new Error("問題が見つかりません");
+      const questionId = room.mode === "self" ? action.questionId : room.currentQuestionId;
+      const question = room.questions.find((q) => q.id === questionId);
+      if (!question) throw new Error(room.mode === "self" ? "問題を選んでください" : "問題が見つかりません");
       const participant = room.participants[action.uid];
       if (!participant) throw new Error("先に入室してください");
       const id = `${question.id}_${action.uid}`;
-      if (room.answers[id]) throw new Error("すでに回答済みです");
+      const previous = room.answers[id];
+      if (previous && room.mode !== "self") throw new Error("すでに回答済みです");
       let choice: number | null = null;
       let text: string | null = null;
       if (question.type === "choice") {
@@ -274,7 +298,7 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         nickname: participant.nickname,
         choice,
         text,
-        startedAt: room.questionStartedAt,
+        startedAt: previous?.startedAt ?? room.questionStartedAt,
         answeredAt: now,
       };
       return updateRoom(state, { ...room, answers: { ...room.answers, [id]: answer } });
@@ -298,9 +322,10 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
           id,
           title,
           event: action.event,
+          mode: action.event === "reception" ? "self" : "paced",
           hostUid: action.hostUid || "host",
           now,
-          answerSeconds: action.event === "reception" ? 45 : 30,
+          answerSeconds: action.event === "reception" ? 0 : 30,
         }),
       );
     }
@@ -356,8 +381,24 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
       });
       return updateRoom(state, { ...room, questions });
     }
+    case "openQuiz": {
+      const room = mustRoom(state, action.roomId);
+      if (room.mode !== "self") throw new Error("このルームは1問ずつの進行です");
+      if (!room.questions.length) throw new Error("問題がありません");
+      return updateRoom(state, {
+        ...room,
+        phase: "question",
+        currentQuestionId: null,
+        currentNumber: 0,
+        totalQuestions: room.questions.length,
+        questionStartedAt: now,
+        questionEndsAt: null,
+        reveal: null,
+      });
+    }
     case "showQuestion": {
       const room = mustRoom(state, action.roomId);
+      if (room.mode === "self") throw new Error("一次会は全問をまとめて開始します");
       const questions = ordered(room);
       const index = questions.findIndex((q) => q.id === action.questionId);
       if (index < 0) throw new Error("問題が見つかりません");
@@ -376,6 +417,18 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
       const room = mustRoom(state, action.roomId);
       if (room.phase !== "question") throw new Error("いまは締め切れません");
       return updateRoom(state, { ...room, phase: "closed" });
+    }
+    case "revealAll": {
+      const room = mustRoom(state, action.roomId);
+      if (room.mode !== "self") throw new Error("このルームは1問ずつ発表します");
+      const revealedIds = ordered(room).map((q) => q.id);
+      const scored = recompute(room, revealedIds);
+      return updateRoom(state, {
+        ...scored,
+        phase: "revealed",
+        revealedQuestionIds: revealedIds,
+        reveal: null,
+      });
     }
     case "revealAnswer": {
       const room = mustRoom(state, action.roomId);
@@ -447,6 +500,15 @@ function withoutReveal(room: Room): Room {
   return room.phase === "revealed" ? room : { ...room, reveal: null };
 }
 
+/** 自分のペースモードで、発表後にだけ全問の正解をまとめて渡す */
+function answerSheet(room: RoomRecord): Reveal[] | null {
+  if (room.mode !== "self") return null;
+  if (room.phase !== "revealed" && room.phase !== "finished") return null;
+  return ordered(room)
+    .filter((q) => room.revealedQuestionIds.includes(q.id) && room.keys[q.id])
+    .map((q) => ({ questionId: q.id, type: q.type, ...room.keys[q.id] }));
+}
+
 /** 画面ごとの見える範囲。ゲストとスクリーンには未発表の正解を渡さない */
 export function project(
   state: QuizState,
@@ -464,6 +526,21 @@ export function project(
   if (!record) return { ...base, room: null };
   const room = publicRoom(record);
 
+  if (query.view === "guest" && record.mode === "self") {
+    const uid = query.uid ?? "";
+    const open = room.phase !== "lobby";
+    return {
+      ...base,
+      room: withoutReveal(room),
+      questions: open ? ordered(record).map(publicQuestion) : [],
+      question: null,
+      participants: Object.values(record.participants),
+      me: record.participants[uid] ?? null,
+      myAnswers: open ? Object.values(record.answers).filter((a) => a.uid === uid) : [],
+      answerSheet: answerSheet(record),
+    };
+  }
+
   if (query.view === "guest") {
     const active = room.phase === "question" || room.phase === "closed" || room.phase === "revealed";
     const found = active ? record.questions.find((q) => q.id === room.currentQuestionId) ?? null : null;
@@ -475,6 +552,24 @@ export function project(
       participants: Object.values(record.participants),
       me: record.participants[uid] ?? null,
       myAnswer: found ? record.answers[`${found.id}_${uid}`] ?? null : null,
+    };
+  }
+
+  if (query.view === "screen" && record.mode === "self") {
+    const open = room.phase !== "lobby";
+    const questions = open ? ordered(record) : [];
+    return {
+      ...base,
+      room: withoutReveal(room),
+      questions: questions.map(publicQuestion),
+      question: null,
+      participants: Object.values(record.participants),
+      progress: questions.map((q) => ({
+        questionId: q.id,
+        answered: Object.values(record.answers).filter((a) => a.questionId === q.id).length,
+      })),
+      answerSheet: answerSheet(record),
+      answeredCount: new Set(Object.values(record.answers).map((a) => a.uid)).size,
     };
   }
 

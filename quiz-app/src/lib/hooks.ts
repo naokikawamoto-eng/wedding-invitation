@@ -235,14 +235,27 @@ export function useHostData(roomId: string | null) {
   };
 }
 
+export function useGuestPacket(roomId: string | null) {
+  const sync = useSync("guest", roomId);
+  return {
+    questions: sync.data?.questions ?? [],
+    myAnswers: sync.data?.myAnswers ?? [],
+    answerSheet: sync.data?.answerSheet ?? null,
+    error: sync.error,
+  };
+}
+
 export function useScreen(roomId: string) {
   const sync = useSync("screen", roomId);
   return {
     room: sync.data ? (sync.data.room ?? null) : undefined,
     question: sync.data?.question ?? null,
+    questions: sync.data?.questions ?? [],
     participants: sync.data?.participants ?? [],
     answers: sync.data?.answers ?? [],
     answerKey: sync.data?.answerKey ?? null,
+    answerSheet: sync.data?.answerSheet ?? null,
+    progress: sync.data?.progress ?? [],
     answeredCount: sync.data?.answeredCount ?? 0,
     error: sync.error,
   };

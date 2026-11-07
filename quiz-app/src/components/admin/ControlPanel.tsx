@@ -16,6 +16,7 @@ import { Countdown } from "../Countdown";
 import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
+import { SelfControl } from "./SelfControl";
 
 const TIMER_OPTIONS = [
   { seconds: 0, label: "無制限" },
@@ -51,6 +52,10 @@ export function ControlPanel({
   const current = index >= 0 ? questions[index] : undefined;
   const next = questions[index + 1];
   const answeredCount = answers.filter((a) => a.questionId === room.currentQuestionId).length;
+
+  if (room.mode === "self") {
+    return <SelfControl room={room} questions={questions} answers={answers} participants={participants} />;
+  }
 
   async function run(action: () => Promise<unknown>, confirmMessage?: string) {
     if (confirmMessage && !confirm(confirmMessage)) return;

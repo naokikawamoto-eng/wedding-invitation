@@ -25,6 +25,7 @@ export default function Home() {
           >
             <p className="text-xs font-bold text-blush-600">{EVENT_LABEL[room.event]}</p>
             <p className="mt-1 text-xl font-bold">クイズに参加する</p>
+            <p className="mt-1 text-sm text-ink-soft">{room.hint}</p>
             <p className="mt-1 text-sm text-ink-soft">
               コード <span className="font-display text-lg tracking-widest text-gold-600">{room.id}</span>
             </p>

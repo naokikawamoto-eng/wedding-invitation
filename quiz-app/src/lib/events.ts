@@ -10,6 +10,16 @@ export const EVENT_LABEL: Record<QuizEvent, string> = {
 };
 
 export const PRESET_ROOMS = [
-  { id: RECEPTION_ROOM_ID, event: "reception" as const, label: EVENT_LABEL.reception },
-  { id: AFTERPARTY_ROOM_ID, event: "afterparty" as const, label: EVENT_LABEL.afterparty },
+  {
+    id: RECEPTION_ROOM_ID,
+    event: "reception" as const,
+    label: EVENT_LABEL.reception,
+    hint: "自分のペースで全問回答。締め切りは司会が押します",
+  },
+  {
+    id: AFTERPARTY_ROOM_ID,
+    event: "afterparty" as const,
+    label: EVENT_LABEL.afterparty,
+    hint: "司会の進行に合わせて、1問ずつ",
+  },
 ];

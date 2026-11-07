@@ -35,18 +35,22 @@ export interface Ranked extends Participant {
   rank: number;
 }
 
-/** 正解数の多い順、同点なら回答時間の合計が短い順。完全に同じなら同順位 */
-export function rankParticipants(participants: Participant[]): Ranked[] {
-  const sorted = [...participants].sort(
-    (a, b) =>
-      b.score - a.score ||
-      a.totalTimeMs - b.totalTimeMs ||
-      (a.joinedAt ?? 0) - (b.joinedAt ?? 0),
-  );
+/**
+ * 正解数の多い順。
+ * byTime が true のときだけ、同点を回答時間の短さで分ける（二次会）。
+ * false のときは正解数が同じなら同順位（一次会）。並び順のための参加時刻は順位に使わない。
+ */
+export function rankParticipants(participants: Participant[], byTime = true): Ranked[] {
+  const sorted = [...participants].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (byTime && a.totalTimeMs !== b.totalTimeMs) return a.totalTimeMs - b.totalTimeMs;
+    return (a.joinedAt ?? 0) - (b.joinedAt ?? 0);
+  });
   let rank = 0;
   return sorted.map((p, i) => {
     const prev = sorted[i - 1];
-    if (!prev || prev.score !== p.score || prev.totalTimeMs !== p.totalTimeMs) rank = i + 1;
+    const tied = !!prev && prev.score === p.score && (!byTime || prev.totalTimeMs === p.totalTimeMs);
+    if (!tied) rank = i + 1;
     return { ...p, rank };
   });
 }

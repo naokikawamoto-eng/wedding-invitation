@@ -21,60 +21,65 @@ export interface Preset {
 }
 
 /**
- * 一次会は招待状の事実だけの仮問題（あとから新郎新婦の問題に差し替える）。
+ * 一次会の本番に載せる確定5問。新婦3問と生花1問は未作成。
+ * 旅行問題は下の HELD_RECEPTION に置き、採点対象にしない。
  * 二次会は披露宴の振り返り10問。Q8だけ未定。
  */
+export const HELD_RECEPTION = [
+  {
+    status: "保留",
+    text: "付き合ってから二人で行ったことのない旅行先は？",
+    choices: ["イタリア", "フィンランド", "オーストラリア", "スペイン"],
+    note: "訪問済みはイタリア、ハワイ、グアム、オーストラリア、ヘルシンキ（フィンランド）。スペインが未訪問かは未確認なので正解を置かず、本番の採点には入れない。",
+  },
+] as const;
+
 export const PRESETS: Preset[] = [
   {
     id: RECEPTION_ROOM_ID,
     title: "一次会クイズ（披露宴）",
     event: "reception",
-    answerSeconds: 45,
+    answerSeconds: 0,
     questions: [
       {
-        id: "ichie-1",
+        id: "groom-sports",
         type: "choice",
-        text: "本日の結婚式の会場は、どのホテルでしょう？",
-        choices: ["ザ・プリンス パークタワー東京", "パレスホテル東京", "ホテルニューオータニ", "帝国ホテル"],
-        correctChoice: 0,
+        text: "次のうち、新郎が習ったことのないスポーツは？",
+        choices: ["剣道", "サッカー", "野球", "テニス"],
+        correctChoice: 2,
         correctTexts: [],
-        sample: true,
       },
       {
-        id: "ichie-2",
+        id: "groom-name",
         type: "choice",
-        text: "披露宴が始まる時刻は？",
-        choices: ["11:30", "12:45", "15:00", "17:00"],
+        text: "新郎が小学5年生から大学生まで使っていたニックネームは「ジョンソン」。実は存在するファーストネームは？",
+        choices: ["チャールズ", "クリフォード", "クリストファー", "リチャード"],
         correctChoice: 1,
         correctTexts: [],
-        sample: true,
       },
       {
-        id: "ichie-3",
+        id: "groom-drink",
         type: "choice",
-        text: "披露宴が行われる部屋の名前は？",
-        choices: ["ボールルーム", "メロディーライン", "スカイバンケット", "ガーデンテラス"],
-        correctChoice: 0,
+        text: "新郎が最も好きなお酒は？",
+        choices: ["エビスビール", "モエ・エ・シャンドン", "魔王", "十四代"],
+        correctChoice: 2,
         correctTexts: [],
-        sample: true,
       },
       {
-        id: "ichie-4",
-        type: "text",
-        text: "新郎の氏名は？（姓と名）",
-        choices: [],
-        correctChoice: null,
-        correctTexts: ["河本直樹", "河本 直樹"],
-        sample: true,
+        id: "couple-years",
+        type: "choice",
+        text: "結婚式当日、二人は付き合って何年目？",
+        choices: ["4年目", "5年目", "6年目", "7年目"],
+        correctChoice: 2,
+        correctTexts: [],
       },
       {
-        id: "ichie-5",
-        type: "text",
-        text: "新婦の氏名は？（姓と名）",
-        choices: [],
-        correctChoice: null,
-        correctTexts: ["磯野有梨花", "磯野 有梨花"],
-        sample: true,
+        id: "couple-golf",
+        type: "choice",
+        text: "新郎と新婦のゴルフのベストスコアの差は？",
+        choices: ["3打", "5打", "7打", "9打"],
+        correctChoice: 1,
+        correctTexts: [],
       },
     ],
   },

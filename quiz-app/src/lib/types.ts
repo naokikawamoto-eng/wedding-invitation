@@ -3,6 +3,8 @@ export type Phase = "lobby" | "question" | "closed" | "revealed" | "finished";
 export type QuestionType = "choice" | "text";
 /** reception = 一次会（披露宴） / afterparty = 二次会 */
 export type QuizEvent = "reception" | "afterparty";
+/** paced = 司会が1問ずつ出す（二次会） / self = 各自のペースで全問（一次会） */
+export type QuizMode = "paced" | "self";
 
 export interface AnswerKey {
   /** 選択式の正解（choices の添字） */
@@ -20,6 +22,7 @@ export interface Room {
   id: string;
   title: string;
   event: QuizEvent;
+  mode: QuizMode;
   hostUid: string;
   phase: Phase;
   currentQuestionId: string | null;
@@ -91,5 +94,11 @@ export interface SyncBody {
   participants?: Participant[];
   me?: Participant | null;
   myAnswer?: Answer | null;
+  /** 自分のペースモードでの、自分の全回答 */
+  myAnswers?: Answer[];
+  /** 正解発表後だけ入る。発表前は null */
+  answerSheet?: Reveal[] | null;
+  /** 自分のペースモードの、問題ごとの回答人数 */
+  progress?: { questionId: string; answered: number }[];
   answeredCount?: number;
 }

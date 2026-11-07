@@ -9,6 +9,7 @@ export function Ranking({
   limit,
   large = false,
   showTime = true,
+  byTime = true,
   onRemove,
 }: {
   participants: Participant[];
@@ -16,9 +17,11 @@ export function Ranking({
   limit?: number;
   large?: boolean;
   showTime?: boolean;
+  /** false のとき、正解数が同じなら同順位 */
+  byTime?: boolean;
   onRemove?: (p: Participant) => void;
 }) {
-  const ranked = rankParticipants(participants);
+  const ranked = rankParticipants(participants, byTime);
   const rows = limit ? ranked.slice(0, limit) : ranked;
   if (!rows.length) return <p className="py-6 text-center text-sm text-ink-soft">まだ参加者がいません</p>;
   return (

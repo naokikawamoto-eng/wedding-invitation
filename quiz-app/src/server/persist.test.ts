@@ -23,11 +23,11 @@ after(async () => {
 
 test("同時に届いた回答を取りこぼさない", async () => {
   const now = Date.now();
-  await runAction({ op: "showQuestion", roomId: RECEPTION_ROOM_ID, questionId: "ichie-1" }, now);
+  await runAction({ op: "openQuiz", roomId: RECEPTION_ROOM_ID }, now);
   const ids = Array.from({ length: 40 }, (_, i) => `guest-${i}`);
   await Promise.all(ids.map((uid, i) => runAction({ op: "join", roomId: RECEPTION_ROOM_ID, uid, nickname: `客${i}` }, now + i)));
   await Promise.all(
-    ids.map((uid, i) => runAction({ op: "answer", roomId: RECEPTION_ROOM_ID, uid, choice: i % 4 }, now + 100 + i)),
+    ids.map((uid, i) => runAction({ op: "answer", roomId: RECEPTION_ROOM_ID, uid, questionId: "groom-sports", choice: i % 4 }, now + 100 + i)),
   );
   const state = await readState(now + 1_000);
   assert.equal(Object.keys(state.rooms[RECEPTION_ROOM_ID].participants).length, 40);
