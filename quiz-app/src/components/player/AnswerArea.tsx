@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { enqueueForUser } from "@/lib/answer-ui";
 import { useServerClock } from "@/lib/hooks";
 import { submitAnswer } from "@/lib/quiz";
 import type { Answer, Participant, Question, Reveal, Room } from "@/lib/types";
@@ -22,7 +23,7 @@ export function AnswerArea({
 }) {
   const [picked, setPicked] = useState<number | null>(null);
   const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<unknown>();
 
   const now = useServerClock();
@@ -31,15 +32,14 @@ export function AnswerArea({
   const selected = myAnswer ? myAnswer.choice : picked;
 
   async function send(answer: { choice: number } | { text: string }) {
-    setBusy(true);
+    setStatus("saving");
     setError(undefined);
     try {
-      await submitAnswer(room, me.id, me.nickname, answer);
+      await enqueueForUser(`${room.id}:${me.id}`, () => submitAnswer(room, me.id, me.nickname, answer));
+      setStatus("saved");
     } catch (err) {
-      // ルールで拒否された = 締切に間に合わなかった
+      setStatus("error");
       setError(room.phase === "question" ? err : new Error("回答は締め切られました"));
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -53,7 +53,7 @@ export function AnswerArea({
             return (
               <li key={i}>
                 <button
-                  disabled={!open || busy}
+                  disabled={!open || status === "saving"}
                   onClick={() => setPicked(i)}
                   className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-4 text-left text-lg font-bold transition active:scale-[0.98] ${
                     isPicked ? `${CHOICE_STYLES[i].picked} text-white shadow-lg` : `${CHOICE_STYLES[i].idle} bg-white`
@@ -82,7 +82,7 @@ export function AnswerArea({
           className={`${inputClass} text-lg`}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          disabled={!open || busy}
+          disabled={!open || status === "saving"}
           maxLength={50}
           placeholder="回答を入力"
           enterKeyHint="send"
@@ -93,16 +93,21 @@ export function AnswerArea({
       )}
 
       <ErrorNote error={error} />
+      {status === "saved" && open && (
+        <p className="text-center text-xs text-ink-soft" aria-live="polite">
+          保存しました
+        </p>
+      )}
 
       {open ? (
         <Button
           variant="gold"
           size="lg"
           className="w-full"
-          disabled={busy || (question.type === "choice" ? picked === null : !text.trim())}
+          disabled={status === "saving" || (question.type === "choice" ? picked === null : !text.trim())}
           onClick={() => send(question.type === "choice" ? { choice: picked! } : { text })}
         >
-          {busy ? "送信中…" : "この回答で決定"}
+          {status === "saving" ? "保存しています…" : status === "error" ? "もう一度保存する" : "この回答で決定"}
         </Button>
       ) : (
         !reveal && (

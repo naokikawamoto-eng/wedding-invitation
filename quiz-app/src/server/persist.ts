@@ -1,7 +1,9 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { del, get, put } from "@vercel/blob";
-import { applyAction, emptyState, normalize, type Action, type QuizState } from "./engine";
+import { del, get, list, put } from "@vercel/blob";
+import type { Answer, Participant } from "../lib/types";
+import { overlayGuests, type GuestRecord } from "./answers";
+import { applyAction, cleanRoomId, emptyState, normalize, rescoreIfPublished, type Action, type QuizState } from "./engine";
 
 const STATE_PATH = "quiz/state.json";
 const LOCK_PATH = "quiz/state.lock";
@@ -15,6 +17,10 @@ interface Cache {
 
 let cache: Cache | null = null;
 let chain: Promise<unknown> = Promise.resolve();
+const guestChains = new Map<string, Promise<unknown>>();
+let guestListCache: { roomId: string; at: number; guests: GuestRecord[] } | null = null;
+
+const GUEST_LIST_MS = 1000;
 
 export function usingBlob(): boolean {
   if (process.env.QUIZ_STATE_FILE) return false;
@@ -170,9 +176,9 @@ export function commit(mutator: (state: QuizState) => QuizState): Promise<QuizSt
   return run;
 }
 
-export async function readState(now = Date.now()): Promise<QuizState> {
+export async function readState(now = Date.now(), opts?: { fresh?: boolean }): Promise<QuizState> {
   assertStore();
-  if (cache && Date.now() - cache.at < CACHE_MS) {
+  if (!opts?.fresh && cache && Date.now() - cache.at < CACHE_MS) {
     const next = normalize(cache.state, now);
     if (next === cache.state) return cache.state;
     return commit((state) => normalize(state, Date.now()));
@@ -184,16 +190,212 @@ export async function readState(now = Date.now()): Promise<QuizState> {
   return commit((state) => normalize(state, Date.now()));
 }
 
+function enqueueGuest<T>(roomId: string, uid: string, task: () => Promise<T>): Promise<T> {
+  const key = `${roomId}:${uid}`;
+  const prev = guestChains.get(key) ?? Promise.resolve();
+  const run = prev.then(task, task);
+  guestChains.set(
+    key,
+    run.then(
+      () => undefined,
+      () => undefined,
+    ),
+  );
+  return run;
+}
+
+function safeUid(uid: string): string {
+  const safe = uid.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 80);
+  if (!safe) throw new Error("参加者を確認できません");
+  return safe;
+}
+
+function guestBlobPath(roomId: string, uid: string): string {
+  return `quiz/guests/${roomId}/${safeUid(uid)}.json`;
+}
+
+function parseGuest(text: string): GuestRecord | null {
+  const data = JSON.parse(text) as { participant?: Participant; answers?: Answer[] };
+  const participant = data?.participant;
+  if (!participant || typeof participant.id !== "string" || typeof participant.nickname !== "string") return null;
+  const answers = Array.isArray(data.answers)
+    ? data.answers.filter((answer) => answer && answer.uid === participant.id && typeof answer.questionId === "string").slice(0, 40)
+    : [];
+  return { participant, answers };
+}
+
+async function readGuestBlob(pathname: string): Promise<GuestRecord | null> {
+  const res = await get(pathname, { access: "private", useCache: false });
+  if (!res || res.statusCode !== 200 || !res.stream) return null;
+  const text = await new Response(res.stream).text();
+  return parseGuest(text);
+}
+
+async function writeGuestBlob(roomId: string, participant: Participant, answers: Answer[]) {
+  const pathname = guestBlobPath(roomId, participant.id);
+  const body = JSON.stringify({ participant, answers });
+  await put(pathname, body, {
+    access: "private",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/json",
+    cacheControlMaxAge: 60,
+  });
+  const record = { participant, answers };
+  if (guestListCache?.roomId === roomId) {
+    guestListCache = {
+      roomId,
+      at: Date.now(),
+      guests: [...guestListCache.guests.filter((guest) => guest.participant.id !== participant.id), record],
+    };
+  }
+}
+
+async function readAllGuests(roomId: string, fresh = false): Promise<GuestRecord[]> {
+  if (!fresh && guestListCache && guestListCache.roomId === roomId && Date.now() - guestListCache.at < GUEST_LIST_MS) {
+    return guestListCache.guests;
+  }
+  const prefix = `quiz/guests/${roomId}/`;
+  const pathnames: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await list({ prefix, cursor, limit: 1000 });
+    for (const blob of page.blobs) {
+      if (blob.pathname.endsWith(".json")) pathnames.push(blob.pathname);
+    }
+    cursor = page.hasMore ? page.cursor : undefined;
+    if (page.hasMore && !cursor) break;
+  } while (cursor);
+  const guests: GuestRecord[] = [];
+  for (let i = 0; i < pathnames.length; i += 20) {
+    const part = await Promise.all(
+      pathnames.slice(i, i + 20).map(async (pathname) => {
+        try {
+          return await readGuestBlob(pathname);
+        } catch (error) {
+          console.error(error);
+          return null;
+        }
+      }),
+    );
+    for (const guest of part) if (guest) guests.push(guest);
+  }
+  guestListCache = { roomId, at: Date.now(), guests };
+  return guests;
+}
+
+async function readOwnGuest(roomId: string, uid: string): Promise<GuestRecord | null> {
+  if (!uid) return null;
+  try {
+    return await readGuestBlob(guestBlobPath(roomId, uid));
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+/** 画面用。個人ファイルを部屋の状態へ重ね、発表後は得点を回答から計算し直す */
+export async function withGuestBlobs(
+  state: QuizState,
+  roomId: string,
+  scope: { view: "guest" | "host" | "screen" | "list"; uid: string },
+): Promise<QuizState> {
+  if (!usingBlob() || scope.view === "list" || !state.rooms[roomId]) return state;
+  const room = state.rooms[roomId];
+  const published = room.phase === "revealed" || room.phase === "finished";
+  const needAll = scope.view !== "guest" || room.phase === "lobby" || published;
+  let guests = needAll ? await readAllGuests(roomId) : [];
+  if (scope.uid) {
+    const mine = await readOwnGuest(roomId, scope.uid);
+    guests = guests.filter((guest) => guest.participant.id !== scope.uid);
+    if (mine) guests = [...guests, mine];
+  }
+  let next = overlayGuests(state, roomId, guests);
+  if (published) next = rescoreIfPublished(next, roomId);
+  return next;
+}
+
+const SNAPSHOT_OPS = new Set(["closeAnswers", "revealAll", "revealAnswer", "recalculateScores"]);
+
+async function answerFast(action: Extract<Action, { op: "answer" }>, now: number): Promise<QuizState> {
+  const roomId = cleanRoomId(action.roomId);
+  return enqueueGuest(roomId, action.uid, async () => {
+    const [state, own] = await Promise.all([readState(now, { fresh: true }), readOwnGuest(roomId, action.uid)]);
+    const overlaid = overlayGuests(state, roomId, own ? [own] : []);
+    const next = applyAction(overlaid, action, now);
+    const room = next.rooms[roomId];
+    const participant = room?.participants[action.uid];
+    if (!participant) throw new Error("先に入室してください");
+    const answers = Object.values(room.answers).filter((answer) => answer.uid === action.uid);
+    await writeGuestBlob(roomId, participant, answers);
+    return overlaid;
+  });
+}
+
+async function joinFast(action: Extract<Action, { op: "join" }>, now: number): Promise<QuizState> {
+  const roomId = cleanRoomId(action.roomId);
+  return enqueueGuest(roomId, action.uid, async () => {
+    const [state, own] = await Promise.all([readState(now, { fresh: true }), readOwnGuest(roomId, action.uid)]);
+    const overlaid = overlayGuests(state, roomId, own ? [own] : []);
+    const next = applyAction(overlaid, action, now);
+    const participant = next.rooms[roomId]?.participants[action.uid];
+    if (!participant) throw new Error("入室できませんでした");
+    const answers = Object.values(next.rooms[roomId].answers).filter((answer) => answer.uid === action.uid);
+    await writeGuestBlob(roomId, participant, answers);
+    return overlaid;
+  });
+}
+
+async function deleteGuestBlobs(action: Extract<Action, { op: "removeParticipant" | "resetRoom" }>) {
+  const roomId = cleanRoomId(action.roomId);
+  if (action.op === "removeParticipant") {
+    await del(guestBlobPath(roomId, action.uid)).catch(() => undefined);
+  } else {
+    const prefix = `quiz/guests/${roomId}/`;
+    const pathnames: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await list({ prefix, cursor, limit: 1000 });
+      for (const blob of page.blobs) pathnames.push(blob.pathname);
+      cursor = page.hasMore ? page.cursor : undefined;
+      if (page.hasMore && !cursor) break;
+    } while (cursor);
+    if (pathnames.length) await del(pathnames).catch(() => undefined);
+  }
+  if (guestListCache?.roomId === roomId) guestListCache = null;
+}
+
 export async function runAction(action: Action, now = Date.now()): Promise<{ state: QuizState; createdRoomId?: string }> {
+  if (usingBlob() && action.op === "answer") {
+    const state = await answerFast(action, now);
+    return { state };
+  }
+  if (usingBlob() && action.op === "join") {
+    const state = await joinFast(action, now);
+    return { state };
+  }
   let createdRoomId: string | undefined;
+  let snapshot: GuestRecord[] = [];
+  if (usingBlob() && SNAPSHOT_OPS.has(action.op) && "roomId" in action && action.roomId) {
+    try {
+      snapshot = await readAllGuests(cleanRoomId(action.roomId), true);
+    } catch (error) {
+      console.error(error);
+    }
+  }
   const state = await commit((current) => {
     const before = new Set(Object.keys(current.rooms));
-    const next = applyAction(current, action, now);
+    const roomId = "roomId" in action && action.roomId ? action.roomId : "";
+    const base = snapshot.length && roomId ? overlayGuests(current, cleanRoomId(roomId), snapshot) : current;
+    const next = applyAction(base, action, now);
     if (action.op === "createRoom") {
       createdRoomId = Object.keys(next.rooms).find((id) => !before.has(id));
     }
     return next;
   });
+  if (usingBlob() && (action.op === "removeParticipant" || action.op === "resetRoom")) {
+    await deleteGuestBlobs(action);
+  }
   return { state, createdRoomId };
 }
 
@@ -223,4 +425,6 @@ export async function readImage(pathname: string) {
 export function __resetStoreForTests() {
   cache = null;
   chain = Promise.resolve();
+  guestChains.clear();
+  guestListCache = null;
 }

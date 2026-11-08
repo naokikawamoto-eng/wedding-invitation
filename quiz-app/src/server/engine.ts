@@ -229,6 +229,21 @@ function recompute(room: RoomRecord, revealedIds: string[]): RoomRecord {
   return { ...room, participants, revealedQuestionIds: revealedIds };
 }
 
+/** 発表後の得点を、部屋ファイルと個人ファイルを重ねた回答から計算し直す。保存はしない */
+export function rescoreIfPublished(state: QuizState, roomId: string): QuizState {
+  const room = state.rooms[roomId];
+  if (!room) return state;
+  if (room.phase !== "revealed" && room.phase !== "finished") return state;
+  const next = recompute(room, room.revealedQuestionIds);
+  const same = Object.keys(room.participants).every((id) => {
+    const prev = room.participants[id];
+    const scored = next.participants[id];
+    return !!scored && prev.score === scored.score && prev.totalTimeMs === scored.totalTimeMs;
+  });
+  if (same && Object.keys(next.participants).length === Object.keys(room.participants).length) return state;
+  return updateRoom(state, next);
+}
+
 function validateDraft(draft: QuestionDraft): QuestionDraft {
   const text = (draft.text ?? "").trim();
   const imageUrl = draft.imageUrl?.trim() || null;

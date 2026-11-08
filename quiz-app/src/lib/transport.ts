@@ -33,7 +33,7 @@ export async function verifyPasscode(value: string) {
   }
 }
 
-export async function postAction(body: unknown, host = false): Promise<{ roomId?: string }> {
+export async function postAction(body: unknown, host = false, opts?: { refresh?: boolean }): Promise<{ roomId?: string }> {
   let res: Response;
   try {
     res = await fetch("/api/action", {
@@ -50,6 +50,7 @@ export async function postAction(body: unknown, host = false): Promise<{ roomId?
   }
   const data = (await res.json().catch(() => ({}))) as { error?: string; roomId?: string };
   if (!res.ok) throw new Error(data.error || "失敗しました");
-  await requestRefresh();
+  if (opts?.refresh === false) void requestRefresh();
+  else await requestRefresh();
   return data;
 }

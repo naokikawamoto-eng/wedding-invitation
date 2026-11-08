@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { isHost } from "@/server/auth";
 import { cleanRoomId, project } from "@/server/engine";
-import { readState } from "@/server/persist";
+import { readState, withGuestBlobs } from "@/server/persist";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,7 +26,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = Date.now();
-    const state = await readState(now);
+    const loaded = await readState(now);
+    const state = roomId
+      ? await withGuestBlobs(loaded, roomId, { view: view as "guest" | "host" | "screen" | "list", uid: req.nextUrl.searchParams.get("uid") ?? "" })
+      : loaded;
     const body = project(
       state,
       { view: view as "guest" | "screen" | "host" | "list", roomId: roomId || undefined, uid: req.nextUrl.searchParams.get("uid") ?? "" },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { syncStamp } from "./answer-ui";
 import type { Answer, AnswerKey, Participant, Question, SyncBody } from "./types";
 import { passcode } from "./transport";
 import { registerPuller } from "./refresh";
@@ -101,7 +102,7 @@ async function pull(key: string): Promise<void> {
     if (entries.get(key) !== entry || entry.seq !== seq) return;
     if (!res.ok) throw new Error(body.error || "読み込めませんでした");
     noteServerNow(body.serverNow);
-    if (entry.data?.version === body.version && !entry.error) return;
+    if (entry.data && syncStamp(entry.data) === syncStamp(body) && !entry.error) return;
     entry.data = body;
     entry.error = undefined;
     entry.listeners.forEach((listener) => listener());

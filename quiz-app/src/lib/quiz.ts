@@ -20,14 +20,18 @@ export async function submitAnswer(
   answer: { choice: number } | { text: string },
   questionId?: string,
 ) {
-  await postAction({
-    op: "answer",
-    roomId: room.id,
-    uid,
-    questionId,
-    choice: "choice" in answer ? answer.choice : null,
-    text: "text" in answer ? answer.text : null,
-  });
+  await postAction(
+    {
+      op: "answer",
+      roomId: room.id,
+      uid,
+      questionId,
+      choice: "choice" in answer ? answer.choice : null,
+      text: "text" in answer ? answer.text : null,
+    },
+    false,
+    { refresh: false },
+  );
 }
 
 export async function openQuiz(roomId: string) {

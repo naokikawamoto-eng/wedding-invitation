@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CHOICE_LETTERS, CHOICE_STYLES } from "@/components/choice";
+import { enqueueForUser, visibleChoice, type LocalPick } from "@/lib/answer-ui";
 import { EVENT_LABEL } from "@/lib/events";
 import { useGuestPacket, useParticipants } from "@/lib/hooks";
 import { rankParticipants } from "@/lib/scoring";
@@ -17,7 +18,14 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
   const participants = useParticipants(room.id).data ?? [];
   const ranked = rankParticipants(participants, false);
   const myRank = ranked.find((p) => p.id === me.id)?.rank;
-  const answered = packet.myAnswers.filter((a) => a.choice != null).length;
+  const [locals, setLocals] = useState<Record<string, LocalPick>>({});
+  const answeredIds = new Set(packet.myAnswers.filter((answer) => answer.choice != null).map((answer) => answer.questionId));
+  if (room.phase === "question") {
+    for (const [questionId, local] of Object.entries(locals)) {
+      if (local.status !== "error") answeredIds.add(questionId);
+    }
+  }
+  const answered = answeredIds.size;
 
   return (
     <div className="space-y-4">
@@ -78,7 +86,9 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
               questionId={question.id}
               text={question.text}
               choices={question.choices}
-              selected={packet.myAnswers.find((a) => a.questionId === question.id)?.choice ?? null}
+              serverChoice={packet.myAnswers.find((a) => a.questionId === question.id)?.choice ?? null}
+              local={locals[question.id] ?? null}
+              onLocal={(pick) => setLocals((prev) => ({ ...prev, [question.id]: pick }))}
               sheet={packet.answerSheet?.find((s) => s.questionId === question.id) ?? null}
             />
           ))}
@@ -102,7 +112,9 @@ function SelfQuestion({
   questionId,
   text,
   choices,
-  selected,
+  serverChoice,
+  local,
+  onLocal,
   sheet,
 }: {
   room: Room;
@@ -112,24 +124,35 @@ function SelfQuestion({
   questionId: string;
   text: string;
   choices: string[];
-  selected: number | null;
+  serverChoice: number | null;
+  local: LocalPick | null;
+  onLocal: (pick: LocalPick) => void;
   sheet: Reveal | null;
 }) {
-  const [busy, setBusy] = useState(false);
+  const tokenRef = useRef(0);
   const [error, setError] = useState<string>();
   const open = room.phase === "question";
+  const selected = visibleChoice(serverChoice, local, open);
+  const status = open ? local?.status : undefined;
 
-  async function pick(choice: number) {
-    if (!open || busy) return;
-    setBusy(true);
+  function pick(choice: number) {
+    if (!open) return;
+    if (selected === choice && local?.status !== "error") return;
+    const token = ++tokenRef.current;
     setError(undefined);
-    try {
-      await submitAnswer(room, me.id, me.nickname, { choice }, questionId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "保存できませんでした");
-    } finally {
-      setBusy(false);
-    }
+    onLocal({ choice, status: "saving" });
+    void enqueueForUser(`${room.id}:${me.id}`, async () => {
+      if (tokenRef.current !== token) return;
+      try {
+        await submitAnswer(room, me.id, me.nickname, { choice }, questionId);
+        if (tokenRef.current !== token) return;
+        onLocal({ choice, status: "saved" });
+      } catch (err) {
+        if (tokenRef.current !== token) return;
+        onLocal({ choice, status: "error" });
+        setError(err instanceof Error ? err.message : "保存できませんでした");
+      }
+    });
   }
 
   return (
@@ -143,7 +166,8 @@ function SelfQuestion({
             <li key={i}>
               <button
                 type="button"
-                disabled={!open || busy}
+                disabled={!open}
+                aria-pressed={picked}
                 onClick={() => pick(i)}
                 className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left font-bold ${
                   picked ? `${CHOICE_STYLES[i].picked} text-white` : `${CHOICE_STYLES[i].idle} bg-white`
@@ -159,8 +183,21 @@ function SelfQuestion({
           );
         })}
       </ul>
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      {open && selected != null && <p className="text-center text-xs text-ink-soft">保存しました。締め切りまで変更できます。</p>}
+      {status === "saving" && (
+        <p className="text-center text-xs text-ink-soft" aria-live="polite">
+          保存しています…
+        </p>
+      )}
+      {status === "error" && (
+        <p className="text-center text-sm text-red-700" aria-live="polite">
+          {error || "保存できませんでした。もう一度押してください。"}
+        </p>
+      )}
+      {open && selected != null && status !== "saving" && status !== "error" && (
+        <p className="text-center text-xs text-ink-soft" aria-live="polite">
+          保存しました。締め切りまで変更できます。
+        </p>
+      )}
     </Card>
   );
 }
