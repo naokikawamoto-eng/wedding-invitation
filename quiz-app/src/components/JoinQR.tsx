@@ -14,15 +14,29 @@ export function joinUrl(roomId: string): string {
 
 const noop = () => () => {};
 
-export function JoinQR({ roomId, size = 180, showUrl = true }: { roomId: string; size?: number; showUrl?: boolean }) {
+export function JoinQR({
+  roomId,
+  size = 180,
+  showUrl = true,
+  large = false,
+}: {
+  roomId: string;
+  size?: number;
+  showUrl?: boolean;
+  large?: boolean;
+}) {
   const url = useSyncExternalStore(noop, () => joinUrl(roomId), () => "");
   if (!url) return null;
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="rounded-3xl bg-white p-4 shadow-md">
+    <div className="flex flex-col items-center gap-3">
+      <div className={`rounded-3xl bg-white shadow-md ${large ? "p-5" : "p-4"}`}>
         <QRCodeSVG value={url} size={size} fgColor="#4a3a40" marginSize={0} />
       </div>
-      {showUrl && <p className="break-all text-center text-xs text-ink-soft">{url}</p>}
+      {showUrl && (
+        <p className={large ? "break-all text-center text-2xl font-bold tracking-wide sm:text-4xl" : "break-all text-center text-xs text-ink-soft"}>
+          {url}
+        </p>
+      )}
     </div>
   );
 }

@@ -257,6 +257,7 @@ export function useScreen(roomId: string) {
     answerKey: sync.data?.answerKey ?? null,
     answerSheet: sync.data?.answerSheet ?? null,
     progress: sync.data?.progress ?? [],
+    choiceCounts: sync.data?.choiceCounts,
     answeredCount: sync.data?.answeredCount ?? 0,
     error: sync.error,
   };

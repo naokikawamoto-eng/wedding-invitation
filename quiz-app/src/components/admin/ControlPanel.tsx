@@ -9,6 +9,7 @@ import {
   revealAnswer,
   setAnswerSeconds,
   showQuestion,
+  showStandings,
 } from "@/lib/quiz";
 import type { Answer, AnswerKey, Participant, Question, Room } from "@/lib/types";
 import { AnswerStats } from "../AnswerStats";
@@ -71,27 +72,28 @@ export function ControlPanel({
   }
 
   const primary = (() => {
-    switch (room.phase) {
-      case "lobby":
-      case "revealed":
-        return next
-          ? { label: `Q${index + 2} を表示する`, action: () => showQuestion(room.id, questions, next.id) }
-          : room.phase === "revealed"
-            ? { label: "最終結果を発表する", action: () => finishQuiz(room.id) }
-            : null;
-      case "question":
-        return { label: "回答を締め切る", action: () => closeAnswers(room.id) };
-      case "closed":
-        return { label: "正解を発表する", action: () => revealAnswer(room.id, room.currentQuestionId!) };
-      case "finished":
-        return null;
+    if (room.phase === "lobby") {
+      const first = questions[0];
+      return first ? { label: "Q1 を表示する", action: () => showQuestion(room.id, questions, first.id) } : null;
     }
+    if (room.phase === "question") return { label: "回答を締め切る", action: () => closeAnswers(room.id) };
+    if (room.phase === "closed") return { label: "正解を発表する", action: () => revealAnswer(room.id, room.currentQuestionId!) };
+    if (room.phase === "revealed" && !room.presentStandings) return { label: "途中順位を見る", action: () => showStandings(room.id) };
+    if (room.phase === "revealed") {
+      return next
+        ? { label: `Q${index + 2} を表示する`, action: () => showQuestion(room.id, questions, next.id) }
+        : { label: "最終結果を発表する", action: () => finishQuiz(room.id) };
+    }
+    return null;
   })();
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
       <div className="space-y-5">
         <Card className="space-y-5">
+          <a href={`/screen/${room.id}`} target="_blank" rel="noreferrer" className="block text-center text-sm font-bold text-blush-600 underline">
+            スクリーンを開く（/screen/{room.id}）
+          </a>
           {questions.some((q) => q.sample && q.text.includes("未定")) && (
             <p className="rounded-2xl bg-gold-100 px-4 py-3 text-sm">
               未定の問題が残っています。プロフィールムービーの問題が決まったら、問題タブで差し替えてください。
@@ -143,6 +145,9 @@ export function ControlPanel({
           )}
           {room.phase === "finished" && (
             <p className="py-6 text-center font-bold text-gold-600">最終結果を発表中です 🎉</p>
+          )}
+          {room.presentStandings && room.phase === "revealed" && (
+            <p className="text-center font-bold text-gold-600">スクリーンは途中順位を表示しています</p>
           )}
           {current && room.phase !== "lobby" && room.phase !== "finished" && (
             <>

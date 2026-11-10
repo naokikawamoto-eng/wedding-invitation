@@ -36,6 +36,8 @@ export type Action =
   | { op: "openQuiz"; roomId: string }
   | { op: "closeAnswers"; roomId: string }
   | { op: "revealAll"; roomId: string }
+  | { op: "advanceReveal"; roomId: string }
+  | { op: "showStandings"; roomId: string }
   | { op: "revealAnswer"; roomId: string; questionId: string }
   | { op: "recalculateScores"; roomId: string }
   | { op: "finishQuiz"; roomId: string }
@@ -71,6 +73,9 @@ export function publicRoom(room: RoomRecord): Room {
     revealedQuestionIds: room.revealedQuestionIds,
     reveal: room.reveal,
     createdAt: room.createdAt,
+    presentIndex: room.presentIndex ?? null,
+    presentAnswer: room.presentAnswer ?? false,
+    presentStandings: room.presentStandings ?? false,
   };
 }
 
@@ -426,6 +431,7 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         questionStartedAt: now,
         questionEndsAt: room.answerSeconds > 0 ? now + room.answerSeconds * 1000 : null,
         reveal: null,
+        presentStandings: false,
       });
     }
     case "closeAnswers": {
@@ -443,7 +449,31 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         phase: "revealed",
         revealedQuestionIds: revealedIds,
         reveal: null,
+        presentIndex: 0,
+        presentAnswer: false,
+        presentStandings: false,
       });
+    }
+    case "advanceReveal": {
+      const room = mustRoom(state, action.roomId);
+      if (room.mode !== "self") throw new Error("このルームは1問ずつ発表します");
+      if (room.phase !== "revealed") throw new Error("答え合わせ中だけ進められます");
+      const questions = ordered(room);
+      const index = room.presentIndex ?? 0;
+      if (!room.presentAnswer) {
+        if (!questions[index]) throw new Error("問題が見つかりません");
+        return updateRoom(state, { ...room, presentIndex: index, presentAnswer: true, presentStandings: false });
+      }
+      if (index + 1 < questions.length) {
+        return updateRoom(state, { ...room, presentIndex: index + 1, presentAnswer: false, presentStandings: false });
+      }
+      throw new Error("最後の問題です。最終順位を発表してください");
+    }
+    case "showStandings": {
+      const room = mustRoom(state, action.roomId);
+      if (room.mode === "self") throw new Error("一次会の順位は、答え合わせの最後に出します");
+      if (room.phase !== "revealed") throw new Error("正解を発表してから順位を出してください");
+      return updateRoom(state, { ...room, presentStandings: true });
     }
     case "revealAnswer": {
       const room = mustRoom(state, action.roomId);
@@ -458,6 +488,7 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         ...scored,
         phase: "revealed",
         reveal: { questionId: action.questionId, type: question.type, ...key },
+        presentStandings: false,
       });
     }
     case "recalculateScores": {
@@ -466,7 +497,7 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
     }
     case "finishQuiz": {
       const room = mustRoom(state, action.roomId);
-      return updateRoom(state, { ...room, phase: "finished" });
+      return updateRoom(state, { ...room, phase: "finished", presentStandings: false });
     }
     case "resetRoom": {
       const room = mustRoom(state, action.roomId);
@@ -484,6 +515,9 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         questionEndsAt: null,
         revealedQuestionIds: [],
         reveal: null,
+        presentIndex: null,
+        presentAnswer: false,
+        presentStandings: false,
         answers: {},
         participants,
       });
@@ -515,12 +549,37 @@ function withoutReveal(room: Room): Room {
   return room.phase === "revealed" ? room : { ...room, reveal: null };
 }
 
-/** 自分のペースモードで、発表後にだけ全問の正解をまとめて渡す */
+/** スクリーンとゲストに正解を出してよい問題。一次会は「次へ」で増える */
+function publicAnswerIds(room: RoomRecord): Set<string> {
+  if (room.mode !== "self") return new Set();
+  if (room.phase === "finished") return new Set(room.revealedQuestionIds);
+  if (room.phase !== "revealed") return new Set();
+  const list = ordered(room);
+  const index = room.presentIndex ?? 0;
+  const ids = list.slice(0, Math.max(0, index)).map((q) => q.id);
+  if (room.presentAnswer && list[index]) ids.push(list[index].id);
+  return new Set(ids);
+}
+
+function choiceCountsFor(room: RoomRecord, questionId: string): number[] {
+  const question = room.questions.find((q) => q.id === questionId);
+  if (!question || question.type !== "choice") return [];
+  const counts = question.choices.map(() => 0);
+  for (const answer of Object.values(room.answers)) {
+    if (answer.questionId !== questionId || typeof answer.choice !== "number") continue;
+    if (answer.choice >= 0 && answer.choice < counts.length) counts[answer.choice] += 1;
+  }
+  return counts;
+}
+
+/** 自分のペースモードで、すでに公開した問題の正解だけを渡す */
 function answerSheet(room: RoomRecord): Reveal[] | null {
   if (room.mode !== "self") return null;
   if (room.phase !== "revealed" && room.phase !== "finished") return null;
+  const ids = publicAnswerIds(room);
+  if (!ids.size) return null;
   return ordered(room)
-    .filter((q) => room.revealedQuestionIds.includes(q.id) && room.keys[q.id])
+    .filter((q) => ids.has(q.id) && room.keys[q.id])
     .map((q) => ({ questionId: q.id, type: q.type, ...room.keys[q.id] }));
 }
 
@@ -573,17 +632,20 @@ export function project(
   if (query.view === "screen" && record.mode === "self") {
     const open = room.phase !== "lobby";
     const questions = open ? ordered(record) : [];
+    const presenting = room.phase === "revealed" ? questions[room.presentIndex ?? 0] ?? null : null;
+    const shown = publicAnswerIds(record);
     return {
       ...base,
       room: withoutReveal(room),
       questions: questions.map(publicQuestion),
-      question: null,
+      question: presenting ? publicQuestion(presenting) : null,
       participants: Object.values(record.participants),
       progress: questions.map((q) => ({
         questionId: q.id,
         answered: Object.values(record.answers).filter((a) => a.questionId === q.id).length,
       })),
       answerSheet: answerSheet(record),
+      choiceCounts: presenting && shown.has(presenting.id) ? choiceCountsFor(record, presenting.id) : undefined,
       answeredCount: new Set(Object.values(record.answers).map((a) => a.uid)).size,
     };
   }

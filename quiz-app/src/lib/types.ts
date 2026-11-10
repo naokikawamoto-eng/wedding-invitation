@@ -37,6 +37,15 @@ export interface Room {
   revealedQuestionIds: string[];
   reveal: Reveal | null;
   createdAt: number | null;
+  /**
+   * 一次会の答え合わせで、スクリーンに出している問題（0始まり）。
+   * 未設定や null は、まだ答え合わせの画面に入っていない。
+   */
+  presentIndex?: number | null;
+  /** いま出している問題の正解を、スクリーンとゲストに出してよいか */
+  presentAnswer?: boolean;
+  /** 二次会で、正解のあとに途中順位を出しているか */
+  presentStandings?: boolean;
 }
 
 export interface Question {
@@ -101,4 +110,6 @@ export interface SyncBody {
   /** 自分のペースモードの、問題ごとの回答人数 */
   progress?: { questionId: string; answered: number }[];
   answeredCount?: number;
+  /** 正解を出したあとの、選択肢ごとの人数。出す前は付けない */
+  choiceCounts?: number[];
 }

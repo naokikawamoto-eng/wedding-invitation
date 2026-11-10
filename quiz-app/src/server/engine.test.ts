@@ -157,8 +157,40 @@ test("一次会は締切まで回答を変えられ、同点は同順位", () =>
   assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.b.score, 1);
   const ranked = rankParticipants(Object.values(state.rooms[RECEPTION_ROOM_ID].participants), false);
   assert.equal(ranked.find((p) => p.id === "a")?.rank, ranked.find((p) => p.id === "b")?.rank);
-  const revealed = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 9_200);
+  const hidden = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 9_200);
+  const hiddenScreen = project(state, { view: "screen", roomId: RECEPTION_ROOM_ID }, 9_200);
+  assert.equal(hidden.answerSheet, null);
+  assert.equal(JSON.stringify(hidden).includes("correctChoice"), false);
+  assert.equal(JSON.stringify(hiddenScreen).includes("correctChoice"), false);
+  state = applyAction(state, { op: "advanceReveal", roomId: RECEPTION_ROOM_ID }, 9_300);
+  const revealed = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 9_300);
   assert.equal(revealed.answerSheet?.find((s) => s.questionId === "groom-sports")?.correctChoice, 2);
+  assert.equal(revealed.answerSheet?.length, 1);
+  const screen = project(state, { view: "screen", roomId: RECEPTION_ROOM_ID }, 9_300);
+  assert.equal(screen.choiceCounts?.[2], 2);
+  state = applyAction(state, { op: "advanceReveal", roomId: RECEPTION_ROOM_ID }, 9_400);
+  const nextQuestion = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 9_400);
+  assert.equal(nextQuestion.answerSheet?.length, 1);
+  assert.equal(nextQuestion.room?.presentAnswer, false);
+});
+
+test("二次会は正解のあとだけ途中順位に進める", () => {
+  let state = room(10_000);
+  state = applyAction(state, { op: "join", roomId: AFTERPARTY_ROOM_ID, uid: "u", nickname: "ゲスト" }, 10_000);
+  state = applyAction(state, { op: "showQuestion", roomId: AFTERPARTY_ROOM_ID, questionId: "nijie-1" }, 11_000);
+  const before = project(state, { view: "screen", roomId: AFTERPARTY_ROOM_ID }, 11_000);
+  assert.equal(before.answerKey ?? null, null);
+  assert.equal(JSON.stringify(before).includes("correctChoice"), false);
+  assert.throws(() => applyAction(state, { op: "showStandings", roomId: AFTERPARTY_ROOM_ID }, 12_000), /正解を発表してから/);
+  state = applyAction(state, { op: "closeAnswers", roomId: AFTERPARTY_ROOM_ID }, 20_000);
+  state = applyAction(state, { op: "revealAnswer", roomId: AFTERPARTY_ROOM_ID, questionId: "nijie-1" }, 21_000);
+  state = applyAction(state, { op: "showStandings", roomId: AFTERPARTY_ROOM_ID }, 22_000);
+  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].presentStandings, true);
+  state = applyAction(state, { op: "showQuestion", roomId: AFTERPARTY_ROOM_ID, questionId: "nijie-2" }, 23_000);
+  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].presentStandings, false);
+  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].phase, "question");
+  const playing = project(state, { view: "screen", roomId: AFTERPARTY_ROOM_ID }, 23_000);
+  assert.equal(playing.answerKey ?? null, null);
 });
 
 test("二次会の回答は一次会の得点に入らない", () => {

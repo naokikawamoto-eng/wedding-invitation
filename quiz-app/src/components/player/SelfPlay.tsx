@@ -35,7 +35,7 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
           <span className="ml-2 font-normal text-ink-soft">· {EVENT_LABEL[room.event]}</span>
         </span>
         <span className="shrink-0 text-ink-soft">
-          {room.phase === "revealed" || room.phase === "finished" ? (
+          {room.phase === "finished" ? (
             <>
               正解 <b className="text-lg text-blush-600">{me.score}</b>
               {myRank && (
@@ -76,6 +76,11 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
               締め切りました。正解発表をお待ちください。
             </p>
           )}
+          {room.phase === "revealed" && (
+            <p className="rounded-2xl bg-gold-100 px-4 py-3 text-center text-sm font-bold text-gold-600">
+              答え合わせは会場のスクリーンで進みます。出た問題から、自分の回答に正解が付きます。
+            </p>
+          )}
           {packet.questions.map((question, index) => (
             <SelfQuestion
               key={question.id}
@@ -92,7 +97,7 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
               sheet={packet.answerSheet?.find((s) => s.questionId === question.id) ?? null}
             />
           ))}
-          {(room.phase === "revealed" || room.phase === "finished") && (
+          {room.phase === "finished" && (
             <Card>
               <h2 className="mb-3 text-center font-bold">順位</h2>
               <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} byTime={false} />

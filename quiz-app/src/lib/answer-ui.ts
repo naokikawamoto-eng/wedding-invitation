@@ -51,7 +51,9 @@ export function syncStamp(body: SyncBody): string {
   const sheet = (body.answerSheet ?? []).map((item) => item.questionId).join(",");
   return [
     body.version,
-    room ? `${room.phase}:${room.currentQuestionId ?? ""}:${room.questionEndsAt ?? ""}:${room.totalQuestions}` : "",
+    room
+      ? `${room.phase}:${room.currentQuestionId ?? ""}:${room.questionEndsAt ?? ""}:${room.totalQuestions}:${room.presentIndex ?? ""}:${room.presentAnswer ? 1 : 0}:${room.presentStandings ? 1 : 0}`
+      : "",
     mine,
     one,
     progress,
@@ -60,6 +62,7 @@ export function syncStamp(body: SyncBody): string {
     me,
     body.answeredCount ?? "",
     body.questions?.length ?? "",
+    (body.choiceCounts ?? []).join(","),
     sheet,
   ].join("|");
 }
