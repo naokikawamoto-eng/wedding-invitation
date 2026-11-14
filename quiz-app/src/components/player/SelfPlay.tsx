@@ -1,16 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { PrizeChoices, PrizeIntro } from "@/components/player/Prizes";
 import { CHOICE_LETTERS, CHOICE_STYLES } from "@/components/choice";
 import { enqueueForUser, visibleChoice, type LocalPick } from "@/lib/answer-ui";
 import { EVENT_LABEL } from "@/lib/events";
 import { useGuestPacket, useParticipants } from "@/lib/hooks";
 import { rankParticipants } from "@/lib/scoring";
-import { submitAnswer } from "@/lib/quiz";
+import { prizeShort, type PrizeId } from "@/lib/prizes";
+import { setPrizeWish, submitAnswer } from "@/lib/quiz";
 import type { Participant, Reveal, Room } from "@/lib/types";
 import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
-import { Card, Ornament, Title } from "../ui";
+import { Button, Card, Ornament, Title } from "../ui";
 
 /** 一次会。全員が全問を自分のペースで答え、締め切りまで選び直せる */
 export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
@@ -52,6 +54,8 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
           )}
         </span>
       </header>
+
+      <PrizeWish me={me} roomId={room.id} />
 
       {room.phase === "lobby" && (
         <Card className="space-y-3 py-10 text-center">
@@ -105,6 +109,54 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function PrizeWish({ me, roomId }: { me: Participant; roomId: string }) {
+  const [editing, setEditing] = useState(!me.prizeWish);
+  const [choice, setChoice] = useState<PrizeId | "">((me.prizeWish as PrizeId) || "");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [error, setError] = useState("");
+
+  async function save() {
+    if (!choice) return;
+    setStatus("saving");
+    setError("");
+    try {
+      await setPrizeWish(roomId, me.id, choice);
+      setStatus("saved");
+      setEditing(false);
+    } catch (err) {
+      setStatus("error");
+      setError(err instanceof Error ? err.message : "保存できませんでした");
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <PrizeIntro />
+      <Card className="space-y-3">
+        {me.prizeWish && !editing ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm">
+              希望 <b>{prizeShort(me.prizeWish)}</b>
+            </p>
+            <button type="button" className="text-sm font-bold text-blush-600" onClick={() => setEditing(true)}>
+              変更する
+            </button>
+          </div>
+        ) : (
+          <>
+            <PrizeChoices value={choice} onChange={setChoice} disabled={status === "saving"} />
+            <Button className="w-full" disabled={!choice || status === "saving"} onClick={() => void save()}>
+              {status === "saving" ? "保存しています…" : me.prizeWish ? "希望を保存する" : "この景品を希望する"}
+            </Button>
+          </>
+        )}
+        {status === "saved" && <p className="text-center text-xs text-ink-soft">保存しました。あとから変更できます。</p>}
+        {status === "error" && <p className="text-center text-sm text-red-700">{error}</p>}
+      </Card>
     </div>
   );
 }

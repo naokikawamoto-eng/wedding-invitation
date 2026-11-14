@@ -346,6 +346,20 @@ async function joinFast(action: Extract<Action, { op: "join" }>, now: number): P
   });
 }
 
+async function prizeFast(action: Extract<Action, { op: "setPrizeWish" }>, now: number): Promise<QuizState> {
+  const roomId = cleanRoomId(action.roomId);
+  return enqueueGuest(roomId, action.uid, async () => {
+    const [state, own] = await Promise.all([readState(now, { fresh: true }), readOwnGuest(roomId, action.uid)]);
+    const overlaid = overlayGuests(state, roomId, own ? [own] : []);
+    const next = applyAction(overlaid, action, now);
+    const participant = next.rooms[roomId]?.participants[action.uid];
+    if (!participant) throw new Error("先に入室してください");
+    const answers = Object.values(next.rooms[roomId].answers).filter((answer) => answer.uid === action.uid);
+    await writeGuestBlob(roomId, participant, answers);
+    return overlaid;
+  });
+}
+
 async function deleteGuestBlobs(action: Extract<Action, { op: "removeParticipant" | "resetRoom" }>) {
   const roomId = cleanRoomId(action.roomId);
   if (action.op === "removeParticipant") {
@@ -372,6 +386,10 @@ export async function runAction(action: Action, now = Date.now()): Promise<{ sta
   }
   if (usingBlob() && action.op === "join") {
     const state = await joinFast(action, now);
+    return { state };
+  }
+  if (usingBlob() && action.op === "setPrizeWish") {
+    const state = await prizeFast(action, now);
     return { state };
   }
   let createdRoomId: string | undefined;

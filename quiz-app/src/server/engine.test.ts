@@ -193,6 +193,45 @@ test("二次会は正解のあとだけ途中順位に進める", () => {
   assert.equal(playing.answerKey ?? null, null);
 });
 
+test("一次会の景品希望は順位を変えず、二次会には残さない", () => {
+  let state = room(1_000);
+  state = applyAction(state, { op: "openQuiz", roomId: RECEPTION_ROOM_ID }, 1_000);
+  state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "old", nickname: "既存" }, 1_000);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.old.prizeWish, undefined);
+  state = applyAction(
+    state,
+    { op: "join", roomId: RECEPTION_ROOM_ID, uid: "a", nickname: "A", prizeWish: "watch" },
+    1_100,
+  );
+  state = applyAction(
+    state,
+    { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "a", questionId: "groom-sports", choice: 2 },
+    1_200,
+  );
+  const before = state.rooms[RECEPTION_ROOM_ID].participants.a.score;
+  state = applyAction(state, { op: "setPrizeWish", roomId: RECEPTION_ROOM_ID, uid: "a", prizeWish: "pad" }, 1_300);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.a.prizeWish, "pad");
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.a.score, before);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.old.score, 0);
+  state = applyAction(state, { op: "setPrizeWish", roomId: RECEPTION_ROOM_ID, uid: "old", prizeWish: "any" }, 1_400);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.old.prizeWish, "any");
+  assert.throws(
+    () => applyAction(state, { op: "setPrizeWish", roomId: RECEPTION_ROOM_ID, uid: "a", prizeWish: "unknown" }, 1_500),
+    /景品/,
+  );
+  state = applyAction(
+    state,
+    { op: "join", roomId: AFTERPARTY_ROOM_ID, uid: "a", nickname: "A", prizeWish: "watch" },
+    1_600,
+  );
+  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].participants.a.prizeWish, undefined);
+  const guest = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 1_700);
+  assert.equal(guest.me?.prizeWish, "pad");
+  assert.equal(guest.participants?.find((person) => person.id === "old")?.prizeWish, undefined);
+  const host = project(state, { view: "host", roomId: RECEPTION_ROOM_ID }, 1_700);
+  assert.equal(host.participants?.find((person) => person.id === "old")?.prizeWish, "any");
+});
+
 test("二次会の回答は一次会の得点に入らない", () => {
   let state = room(0);
   state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "u", nickname: "ゲスト" }, 0);

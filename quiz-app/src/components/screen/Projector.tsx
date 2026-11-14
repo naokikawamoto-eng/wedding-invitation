@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { JoinQR } from "@/components/JoinQR";
+import { PrizeIntro } from "@/components/player/Prizes";
 import { CHOICE_LETTERS, CHOICE_STYLES } from "@/components/choice";
 import { useServerClock } from "@/lib/hooks";
 import { rankParticipants } from "@/lib/scoring";
@@ -83,6 +84,7 @@ function Welcome({ room, participants }: { room: Room; participants: Participant
           <p className="text-2xl font-bold sm:text-4xl">{room.title}</p>
           <p className="text-lg text-ink-soft sm:text-2xl">{room.mode === "self" ? "着席のあと、スマホでご参加ください" : "まもなく始まります"}</p>
           <JoinQR roomId={room.id} size={280} large />
+          {room.event === "reception" && <PrizeIntro compact />}
         </div>
         <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6">
           <p className="text-center text-2xl sm:text-3xl">
@@ -126,6 +128,7 @@ function SelfBoard({
           <p className={`text-3xl font-bold sm:text-5xl ${closed ? "text-blush-600" : ""}`}>{closed ? "締め切りました" : "回答受付中"}</p>
           <p className="text-lg text-ink-soft sm:text-2xl">{closed ? "答え合わせまで、そのままお待ちください" : "締め切りまで、回答は変えられます"}</p>
           <JoinQR roomId={room.id} size={220} large />
+          <PrizeIntro compact />
         </div>
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 text-center">

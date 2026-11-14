@@ -46,8 +46,8 @@ export function syncStamp(body: SyncBody): string {
   const answers = (body.answers ?? [])
     .map((answer) => `${answer.id}:${answer.choice ?? ""}:${answer.text ?? ""}:${answer.answeredAt ?? ""}`)
     .join(",");
-  const people = (body.participants ?? []).map((person) => `${person.id}:${person.nickname}:${person.score}`).join(",");
-  const me = body.me ? `${body.me.id}:${body.me.nickname}:${body.me.score}` : "";
+  const people = (body.participants ?? []).map((person) => `${person.id}:${person.nickname}:${person.score}:${person.prizeWish ?? ""}`).join(",");
+  const me = body.me ? `${body.me.id}:${body.me.nickname}:${body.me.score}:${body.me.prizeWish ?? ""}` : "";
   const sheet = (body.answerSheet ?? []).map((item) => item.questionId).join(",");
   return [
     body.version,

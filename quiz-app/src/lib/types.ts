@@ -66,6 +66,8 @@ export interface Participant {
   /** 正解した問題の回答時間の合計。同点のときは短い人が上位 */
   totalTimeMs: number;
   joinedAt: number | null;
+  /** 一次会で希望した景品。未設定は未選択。順位には使わない */
+  prizeWish?: string | null;
 }
 
 export interface Answer {

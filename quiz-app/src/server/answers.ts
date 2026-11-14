@@ -1,3 +1,4 @@
+import { isPrizeId } from "../lib/prizes";
 import type { Answer, Participant } from "../lib/types";
 import type { QuizState } from "./engine";
 
@@ -21,12 +22,18 @@ export function overlayParticipants(state: QuizState, roomId: string, people: Pa
     const nickname = typeof person.nickname === "string" ? person.nickname.trim() : "";
     if (!nickname || nickname.length > 20) continue;
     const prev = participants[person.id];
+    const prizeWish = isPrizeId(person.prizeWish) ? person.prizeWish : prev?.prizeWish;
     const merged: Participant = prev
-      ? prev.nickname === nickname
-        ? prev
-        : { ...prev, nickname }
-      : { id: person.id, nickname, score: 0, totalTimeMs: 0, joinedAt: person.joinedAt ?? null };
-    if (merged === prev) continue;
+      ? { ...prev, nickname, ...(prizeWish ? { prizeWish } : {}) }
+      : { id: person.id, nickname, score: 0, totalTimeMs: 0, joinedAt: person.joinedAt ?? null, ...(prizeWish ? { prizeWish } : {}) };
+    if (
+      prev &&
+      prev.nickname === merged.nickname &&
+      (prev.prizeWish ?? null) === (merged.prizeWish ?? null) &&
+      prev.score === merged.score
+    ) {
+      continue;
+    }
     if (!changed) participants = { ...participants };
     participants[person.id] = merged;
     changed = true;

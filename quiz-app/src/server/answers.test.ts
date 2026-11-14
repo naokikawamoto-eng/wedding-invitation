@@ -35,7 +35,7 @@ function opened() {
 test("古い個人回答は新しい選択を戻さず、別の問題と別の人は残る", () => {
   const state = overlayGuests(opened(), "1122A", [
     {
-      participant: person("a", "エー"),
+      participant: { ...person("a", "エー"), prizeWish: "earbuds" },
       answers: [
         answer("a", "groom-sports", 0, 1_500),
         answer("a", "couple-golf", 1, 3_000),
@@ -52,6 +52,7 @@ test("古い個人回答は新しい選択を戻さず、別の問題と別の�
   assert.equal(room.answers["couple-golf_a"].choice, 1);
   assert.equal(room.answers["groom-sports_b"].choice, 0);
   assert.equal(room.participants.a.nickname, "エー");
+  assert.equal(room.participants.a.prizeWish, "earbuds");
   assert.equal(room.participants.c.score, 0);
   assert.equal(room.answers["groom-sports_c"].choice, 2);
 });

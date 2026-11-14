@@ -11,6 +11,7 @@ import type {
   Room,
   SyncBody,
 } from "../lib/types";
+import { isPrizeId } from "../lib/prizes";
 import { PRESETS } from "./presets";
 
 export interface RoomRecord extends Room {
@@ -26,7 +27,8 @@ export interface QuizState {
 }
 
 export type Action =
-  | { op: "join"; roomId: string; uid: string; nickname: string }
+  | { op: "join"; roomId: string; uid: string; nickname: string; prizeWish?: string | null }
+  | { op: "setPrizeWish"; roomId: string; uid: string; prizeWish: string }
   | { op: "answer"; roomId: string; uid: string; questionId?: string; choice?: number | null; text?: string | null }
   | { op: "createRoom"; title: string; event: QuizEvent; hostUid: string }
   | { op: "saveQuestion"; roomId: string; draft: QuestionDraft; order: number; questionId?: string }
@@ -81,6 +83,15 @@ export function publicRoom(room: RoomRecord): Room {
 
 function ordered(room: RoomRecord): Question[] {
   return [...room.questions].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+}
+
+function withoutWishes(people: Participant[], keepUid?: string): Participant[] {
+  return people.map((person) => {
+    if ((keepUid && person.id === keepUid) || !person.prizeWish) return person;
+    const next = { ...person };
+    delete next.prizeWish;
+    return next;
+  });
 }
 
 function publicQuestion(q: Question): Question {
@@ -213,6 +224,14 @@ function updateRoom(state: QuizState, room: RoomRecord): QuizState {
   return { ...state, rooms: { ...state.rooms, [room.id]: room } };
 }
 
+/** 一次会だけ保存する。未指定なら今の希望を残す。二次会では保存しない */
+function cleanPrizeWish(room: RoomRecord, value: string | null | undefined, current?: string | null): string | undefined {
+  if (room.event !== "reception") return undefined;
+  if (value == null || value === "") return current ?? undefined;
+  if (!isPrizeId(value)) throw new Error("景品を選んでください");
+  return value;
+}
+
 function cleanNickname(input: string): string {
   const nickname = input.replace(/\s+/g, " ").trim();
   if (nickname.length < 1 || nickname.length > 20) throw new Error("ニックネームは1〜20文字にしてください");
@@ -281,10 +300,23 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
       if (!action.uid || action.uid.length > 80) throw new Error("参加者を確認できません");
       const existing = room.participants[action.uid];
       if (!existing && Object.keys(room.participants).length >= 400) throw new Error("参加者が上限に達しました");
+      const prizeWish = cleanPrizeWish(room, action.prizeWish, existing?.prizeWish);
       const participant: Participant = existing
-        ? { ...existing, nickname }
-        : { id: action.uid, nickname, score: 0, totalTimeMs: 0, joinedAt: now };
+        ? { ...existing, nickname, ...(prizeWish ? { prizeWish } : {}) }
+        : { id: action.uid, nickname, score: 0, totalTimeMs: 0, joinedAt: now, ...(prizeWish ? { prizeWish } : {}) };
       return updateRoom(state, { ...room, participants: { ...room.participants, [action.uid]: participant } });
+    }
+    case "setPrizeWish": {
+      const room = mustRoom(state, action.roomId);
+      if (room.event !== "reception") throw new Error("景品の選択は一次会だけです");
+      const participant = room.participants[action.uid];
+      if (!participant) throw new Error("先に入室してください");
+      if (!isPrizeId(action.prizeWish)) throw new Error("景品を選んでください");
+      if (participant.prizeWish === action.prizeWish) return state;
+      return updateRoom(state, {
+        ...room,
+        participants: { ...room.participants, [action.uid]: { ...participant, prizeWish: action.prizeWish } },
+      });
     }
     case "answer": {
       const room = mustRoom(state, action.roomId);
@@ -608,7 +640,7 @@ export function project(
       room: withoutReveal(room),
       questions: open ? ordered(record).map(publicQuestion) : [],
       question: null,
-      participants: Object.values(record.participants),
+      participants: withoutWishes(Object.values(record.participants), uid),
       me: record.participants[uid] ?? null,
       myAnswers: open ? Object.values(record.answers).filter((a) => a.uid === uid) : [],
       answerSheet: answerSheet(record),
@@ -623,7 +655,7 @@ export function project(
       ...base,
       room: withoutReveal(room),
       question: found ? publicQuestion(found) : null,
-      participants: Object.values(record.participants),
+      participants: withoutWishes(Object.values(record.participants), uid),
       me: record.participants[uid] ?? null,
       myAnswer: found ? record.answers[`${found.id}_${uid}`] ?? null : null,
     };
@@ -639,7 +671,7 @@ export function project(
       room: withoutReveal(room),
       questions: questions.map(publicQuestion),
       question: presenting ? publicQuestion(presenting) : null,
-      participants: Object.values(record.participants),
+      participants: withoutWishes(Object.values(record.participants)),
       progress: questions.map((q) => ({
         questionId: q.id,
         answered: Object.values(record.answers).filter((a) => a.questionId === q.id).length,
@@ -662,7 +694,7 @@ export function project(
       ...base,
       room: withoutReveal(room),
       question: found ? publicQuestion(found) : null,
-      participants: Object.values(record.participants),
+      participants: withoutWishes(Object.values(record.participants)),
       answers,
       answerKey: revealed && found ? record.keys[found.id] ?? null : null,
       answeredCount: currentAnswers.length,

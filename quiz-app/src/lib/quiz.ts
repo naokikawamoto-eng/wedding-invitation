@@ -9,8 +9,12 @@ export async function createRoom(title: string, hostUid: string, event: QuizEven
   return roomId;
 }
 
-export async function joinRoom(roomId: string, uid: string, nickname: string) {
-  await postAction({ op: "join", roomId, uid, nickname });
+export async function joinRoom(roomId: string, uid: string, nickname: string, prizeWish?: string) {
+  await postAction({ op: "join", roomId, uid, nickname, prizeWish });
+}
+
+export async function setPrizeWish(roomId: string, uid: string, prizeWish: string) {
+  await postAction({ op: "setPrizeWish", roomId, uid, prizeWish }, false, { refresh: false });
 }
 
 export async function submitAnswer(

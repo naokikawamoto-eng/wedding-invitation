@@ -102,6 +102,9 @@ function AdminRoom({ room }: { room: Room }) {
         <Card>
           <Ranking
             participants={participants}
+            showPrize={room.event === "reception"}
+            byTime={room.event !== "reception"}
+            showTime={room.event !== "reception"}
             onRemove={(p) => {
               if (confirm(`「${p.nickname}」を削除しますか？`)) removeParticipant(room.id, p.id);
             }}
