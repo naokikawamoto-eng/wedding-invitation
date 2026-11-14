@@ -1,157 +1,111 @@
-# Wedding Quiz — 二次会リアルタイムクイズ
+# Wedding Quiz — 一次会・二次会リアルタイムクイズ
 
-ゲストは自分のスマホで回答し、主催者は PC/タブレットで進行・集計するクイズアプリです。
-主催者がボタンを押すと、全員のスマホとスクリーンが同時に切り替わります。
+ゲストは自分のスマホで回答し、主催者は手元の画面で進行します。
+会場のスクリーンには問題・QR・順位だけが大きく出ます。正解は、主催者が「正解を発表する」を押すまでゲストにもスクリーンにも渡りません。
 
-- **Next.js 16**（App Router / TypeScript）＋ **Tailwind CSS v4**
-- **Firebase**：Firestore（リアルタイム同期）/ Storage（問題画像）/ Authentication（匿名ログイン。主催者は合言葉で昇格）
-- サーバー側のコード（Cloud Functions）は使いません。不正防止はセキュリティルールで行います
+一次会（披露宴）と二次会は **別ルーム** です。参加者・得点・問題は混ざりません。
 
----
+| 回 | ルームコード | ゲスト | 主催者 | 会場スクリーン |
+|---|---|---|---|---|
+| 一次会（披露宴） | `1122A` | `/play/1122A` | `/admin/1122A` | `/screen/1122A` |
+| 二次会 | `1122B` | `/play/1122B` | `/admin/1122B` | `/screen/1122B` |
 
-## 1. 画面構成
+トップページからも、どちらの回かに入れます。
 
-| URL | 使う人 | 内容 |
-|---|---|---|
-| `/` | ゲスト | ルームコードを入力 |
-| `/play/{コード}` | ゲスト | ニックネームで入室 → 待機 → 回答 → 正解/不正解・順位 → 最終結果。QR コードはここを指します |
-| `/admin` | 主催者 | 合言葉で入室・ルームの作成と一覧 |
-| `/admin/{コード}` | 主催者 | タブで **進行**／**問題**（作成・画像・並べ替え）／**ランキング**／**分析**（正解率・選択肢の分布） |
-| `/screen/{コード}` | 会場スクリーン | プロジェクター用の大きな表示。待機中は参加 QR、出題中は問題と回答数、発表時は分布、最後はランキング |
-
-進行は次の 4 つのボタンで行います。
+進行は次のボタンです。
 
 ```
 [Q1 を表示する] → [回答を締め切る] → [正解を発表する] → [Q2 を表示する] → … → [最終結果を発表する]
-     phase: question        closed            revealed                               finished
 ```
 
-### コンポーネント
-
-```
-src/
-├── app/
-│   ├── page.tsx                 ルームコード入力
-│   ├── play/[roomId]/page.tsx   ゲスト画面（入室状態で JoinForm / PlayerGame を出し分け）
-│   ├── admin/page.tsx           ルーム一覧・作成
-│   ├── admin/[roomId]/page.tsx  主催者ダッシュボード（タブ）
-│   └── screen/[roomId]/page.tsx プロジェクター表示
-├── components/
-│   ├── player/  JoinForm, PlayerGame（待機/出題/最終結果）, AnswerArea（選択肢・記述入力）
-│   ├── admin/   AdminGate（合言葉）, ControlPanel（進行）, QuestionManager, QuestionEditor, AnalyticsPanel
-│   ├── QuestionBody, AnswerStats（分布バー）, Ranking, JoinQR, ui（Button/Card など）
-└── lib/
-    ├── firebase.ts  初期化（エミュレータ切替を含む）
-    ├── hooks.ts     onSnapshot を使ったリアルタイム購読フック
-    ├── quiz.ts      書き込み処理（入室・回答・問題保存・進行・採点・リセット）
-    ├── judge.ts     正誤判定
-    ├── scoring.ts   得点計算・順位付け・問題別集計
-    └── image.ts     画像の縮小とアップロード
-```
+制限時間（初期値は一次会 45 秒・二次会 30 秒）を過ぎると、サーバーが回答を締め切ります。「無制限」にすると、締め切りボタンを押すまで受け付けます。
 
 ---
 
-## 2. データベース設計（Firestore）
+## いま入っている問題
 
-```
-config/admin                       passcode   ← 主催者の合言葉。クライアントからは読めない
-admins/{uid}                       passcode   ← 合言葉が一致したときだけ作れる＝主催者の印
+`1122A`（一次会）は、確定している6問を各自のペースで答えます。締め切りは司会が手動で押します。締め切りまで回答は変えられます。順位は正解数だけで、同点は同順位です。新婦の問題・生花の問題・旅行の問題は、まだ本番に入っていません。
+`1122B`（二次会）は司会が1問ずつ出す10問です。Q8は未定のままです。
 
-rooms/{roomId}                     ← roomId は 5 文字のルームコード（例: K7Q2M）
-│  title, hostUid
-│  phase: "lobby" | "question" | "closed" | "revealed" | "finished"
-│  currentQuestionId, currentNumber, totalQuestions
-│  questionStartedAt               出題した時刻（サーバー時刻）
-│  revealedQuestionIds: string[]   正解発表済みの問題
-│  reveal: { questionId, type, correctChoice, correctTexts } | null   ← 発表した正解をゲストに公開
-│
-├── questions/{questionId}         order, type("choice"|"text"), text, imageUrl, choices[]
-├── answerKeys/{questionId}        correctChoice, correctTexts[]      ← 主催者だけが読める
-├── participants/{uid}             nickname, score, totalTimeMs, joinedAt
-└── answers/{questionId}_{uid}     questionId, uid, nickname, choice | text, startedAt, answeredAt
-```
-
-**なぜこの形にしたか**
-
-- **主催者は合言葉で判定**：全員匿名ログインし、`admins/{uid}` を作れた端末だけが主催者です。ルールが `config/admin` の合言葉と照合するので、合言葉はブラウザに一切届きません。
-- **正解を別コレクションに分けた**：`questions` はゲストも読むので、正解を入れると開発者ツールで見えてしまいます。`answerKeys` は主催者専用にして、発表時に `rooms.reveal` へコピーします。
-- **ゲストは出題中の 1 問しか読めない**：問題の先読みもルールで禁止しています。
-- **回答 ID を `{問題ID}_{uid}` に固定**：1 人 1 問 1 回をルールで保証できます。締切後の回答、回答の書き換え、他人の回答の閲覧もルールで拒否します。
-- **回答時刻はサーバー時刻**：`startedAt` と `answeredAt` はどちらもサーバーの時刻で、ルールが改ざんを防ぎます。同点の場合は、正解した問題の回答時間の合計が短い人を上位にします。
-- **採点は毎回ゼロから計算**：「正解を発表する」を押すと、主催者のブラウザが発表済みの全問題・全回答から得点を計算し直して `participants.score` に書き込みます。二度押ししても、後から正解を直して「得点を再計算」しても結果はずれません（Cloud Functions が不要なので無料プランで動きます）。
-- ランキングと分析は、参加者と回答を購読してブラウザ側で並べ替え・集計します。100〜200 人規模なら十分軽く、複合インデックスも要りません。
-
-**正誤判定**（`src/lib/judge.ts`）
-- 選択式：選んだ番号が正解の番号と同じなら正解
-- 記述式：完全一致で判定します。ただし全角/半角・スペース・英字の大文字小文字の違いは同じとみなします。ひらがなとカタカナのような表記違いは、正解テキストに別解として 1 行ずつ追加してください。
+記述式の別解は、正解欄に 1 行ずつ足します（「河本直樹」「河本 直樹」のように）。
 
 ---
 
-## 3. ローカルで動かす
+## 画面
 
-必要なもの：**Node.js 20 以上**（`node -v` で確認）
+| URL | 使う人 | 内容 |
+|---|---|---|
+| `/` | ゲスト | 一次会・二次会への入口。コード手入力もできる |
+| `/play/{コード}` | ゲスト | ニックネーム → 待機 → 回答 → 正解/不正解 → 最終順位 |
+| `/admin` | 主催者 | 進行。`QUIZ_HOST_OPEN=true` のあいだ合言葉は不要。変数を外すと確認が戻る |
+| `/admin/{コード}` | 主催者 | 進行 / 問題 / ランキング / 分析 |
+| `/screen/{コード}` | 会場スクリーン | 合言葉不要。16:9。受付は QR、一次会は進捗と1問ずつの答え合わせ、二次会は30秒・正解・途中順位。最後は順位 |
 
-### A. Firebase プロジェクトを作らずに試す（エミュレータ）
+スクリーンはプロジェクターで全画面（F11）にします。進行は別のタブレットで `/admin/{コード}` を開いてください。スクリーンは、そのボタンに合わせて進みます。
 
-エミュレータの起動には Java 21 が必要です（未インストールなら `brew install openjdk@21`）。
+一次会: 「回答を締め切る」→「答え合わせを始める」→「第1問の正解を出す」→「次の問題へ」を繰り返し →「最終順位を発表する」。
+
+二次会: 「Q1 を表示する」→（30秒、または「回答を締め切る」）→「正解を発表する」→「途中順位を見る」→「次の問題」→ 最後に「最終結果を発表する」。
+
+---
+
+## 保存のしかた
+
+進行（出題・締め切り・正解）は部屋ごとの JSON にまとめてあります。入室と回答は、本番では参加者ごとのファイルに分けて保存します。同時に答えても、ほかの人の保存待ちで自分の回答が落ちません。この変更より前に部屋ファイルへ入った回答も、そのまま有効です。
+
+- **本番（Vercel）**: 非公開の [Vercel Blob](https://vercel.com/docs/vercel-blob)。東京リージョン（`hnd1`）。正解データは公開 URL に置きません
+- **手元**: `quiz-app/data/quiz-state.json`（git には入りません）。手元では部屋ファイルにまとめて保存します
+
+Firebase は使っていません。招待状サイトとは別の Vercel プロジェクトで、Root Directory を `quiz-app` にしてデプロイします。
+
+ゲストの画面は約 0.8 秒おきに最新状態を取りにいきます。会場の Wi-Fi が不安定でも、切れたタブを開き直せば続きから参加できます（同じブラウザならニックネームも残ります）。
+
+---
+
+## ローカルで動かす
+
+Node.js 22 以上。
 
 ```bash
 cd quiz-app
 npm install
-cp .env.local.example .env.local
-# .env.local は下の「B. エミュレータ」の 4 行だけを残し、先頭の # を外す
+npm run dev
 ```
 
-ターミナルを 2 つ開いて、それぞれで実行します。
+- ゲスト: http://localhost:3000
+- 主催者: http://localhost:3000/admin
+- 合言葉: `wedding2026`（変えるときは `QUIZ_HOST_PASSCODE`）
+- スクリーン: http://localhost:3000/screen/1122A
+
+別ブラウザやシークレットウィンドウを開くと、別のゲストとして参加できます。
 
 ```bash
-npm run emulators   # Firestore / Auth / Storage のエミュレータ（管理画面: http://localhost:4000）
-npm run dev         # アプリ本体: http://localhost:3000
+npm test
+npm run typecheck
 ```
 
-1. 合言葉を登録する（初回のみ。`npm run emulators` の起動中に、[Emulator UI](http://localhost:4000/firestore) で `config/admin` ドキュメントを作り、文字列フィールド `passcode` に 6 文字以上を入れる）
-2. PC で http://localhost:3000/admin を開き、合言葉を入力する
-3. ルームを作成し、「問題」タブで問題を追加する
-4. 「参加用QR」をスマホで読み取る（PC と同じ Wi-Fi に接続しておく）。シークレットウィンドウで `/play/{コード}` を開いても、別のゲストとして参加できます
-5. 「進行」タブで問題を表示し、締め切り、正解を発表する
+---
 
-### B. 実際の Firebase プロジェクトを使う
+## 本番（Vercel）
 
-1. https://console.firebase.google.com でプロジェクトを作成する
-2. **Authentication** →「始める」（匿名ログインは手順 6 の `firebase deploy --only auth` でも有効にできます）
-3. **Firestore Database** → データベースを作成（本番モード、リージョン `asia-northeast1`）
-4. **Storage** → 始める（※後述の注意あり）
-5. プロジェクトの設定 → マイアプリ →「</>」で Web アプリを追加し、表示された値を `.env.local` の A 欄に貼り付ける
-6. セキュリティルールを反映する
+招待状とは **別プロジェクト** にし、Root Directory を `quiz-app` にします。
 
-   ```bash
-   npx firebase login
-   npx firebase use --add          # 作ったプロジェクトを選ぶ
-   npm run deploy:rules            # firestore.rules と storage.rules をデプロイ
-   npx firebase deploy --only auth # 匿名ログインを有効化
-   ```
-7. 合言葉を登録する：Firestore コンソールで `config` コレクションに ID `admin` のドキュメントを作り、文字列フィールド `passcode` に 6 文字以上を入れる
-8. `npm run dev` を実行して http://localhost:3000/admin を開き、合言葉を入力する
+1. Vercel でプロジェクトを作る（Framework: Next.js、Root Directory: `quiz-app`）
+2. Storage で **Private** の Blob ストアを作り、このプロジェクトに接続する（`BLOB_STORE_ID` が付く）
+3. 環境変数 `QUIZ_HOST_PASSCODE` を、ソースコードに書かない合言葉で設定する。未設定だと主催者画面に入れません
+4. デプロイ後、`/admin` を開く。合言葉を戻したあとはそこで確認し、`/play/1122A` と `/screen/1122A` が開くことを確認する
 
-> **Storage の注意**：現在、Firebase Storage を使うには Blaze プラン（従量課金・クレジットカードの登録）が必要です。この規模なら無料枠に収まりますが、念のため予算アラートを設定してください。
-> Blaze にしたくない場合は、画像を `public/quiz/` に置き、問題編集画面の「画像 URL」欄に `/quiz/photo1.jpg` のように入力すれば、アップロードなしで使えます。
+関数リージョンは `vercel.json` で東京（`hnd1`）に固定しています。
 
 ---
 
-## 4. 本番公開（Vercel）
+## 当日
 
-招待状サイトとは別の Vercel プロジェクトとして作成します（招待状のデプロイには含まれないよう、`.vercelignore` で除外済みです）。
+- [ ] サンプル問題を、本番の問題に差し替えた
+- [ ] リハーサルが終わったら「参加者ごと全てリセット」（問題は残る）
+- [ ] スクリーンで `/screen/1122A`（二次会は `1122B`）を全画面にする
+- [ ] 進行は手元で `/admin/1122A`
+- [ ] 会場 Wi-Fi が弱いときは、モバイル回線でも参加できると伝える
+- [ ] 一次会が終わっても二次会のルームは別なので、リセットしなくても得点は混ざらない
 
-1. Vercel で「Add New → Project」→ 同じリポジトリを選ぶ
-2. **Root Directory** を `quiz-app` にする
-3. Environment Variables に `.env.local` の A 欄の値を入れる。`NEXT_PUBLIC_APP_URL` には公開 URL を入れる（例 `https://quiz.example.com`）
-
----
-
-## 5. 当日のチェックリスト
-
-- [ ] リハーサルが終わったら「進行」タブの「参加者ごと全てリセット」を押す
-- [ ] 会場スクリーンで `/screen/{コード}` を開き、全画面表示にする（主催者と同じブラウザで開く）
-- [ ] 進行用の画面は手元のタブレットか別ウィンドウで `/admin/{コード}` を開く
-- [ ] 会場の Wi-Fi が弱いときに備え、ゲストにはモバイル回線でも参加できると伝える
-- [ ] 合言葉を変えたいときは、Firestore コンソールで `config/admin` の `passcode` を書き換える（すでに入室済みの端末は `admins` コレクションから消すと締め出せる）
+得点は発表のたびに、発表済みの問題だけで計算し直します。正解を直したあとは「得点を再計算」を押してください。同点のときは、正解するまでの合計時間が短い人が上です。

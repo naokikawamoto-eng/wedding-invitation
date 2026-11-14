@@ -7,13 +7,25 @@ import {
   recalculateScores,
   resetRoom,
   revealAnswer,
+  setAnswerSeconds,
   showQuestion,
+  showStandings,
 } from "@/lib/quiz";
 import type { Answer, AnswerKey, Participant, Question, Room } from "@/lib/types";
 import { AnswerStats } from "../AnswerStats";
+import { Countdown } from "../Countdown";
 import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
+import { SelfControl } from "./SelfControl";
+
+const TIMER_OPTIONS = [
+  { seconds: 0, label: "無制限" },
+  { seconds: 20, label: "20秒" },
+  { seconds: 30, label: "30秒" },
+  { seconds: 45, label: "45秒" },
+  { seconds: 60, label: "60秒" },
+];
 
 const STEPS = [
   { phase: "question", label: "出題・回答受付" },
@@ -42,6 +54,10 @@ export function ControlPanel({
   const next = questions[index + 1];
   const answeredCount = answers.filter((a) => a.questionId === room.currentQuestionId).length;
 
+  if (room.mode === "self") {
+    return <SelfControl room={room} questions={questions} answers={answers} participants={participants} />;
+  }
+
   async function run(action: () => Promise<unknown>, confirmMessage?: string) {
     if (confirmMessage && !confirm(confirmMessage)) return;
     setBusy(true);
@@ -56,27 +72,58 @@ export function ControlPanel({
   }
 
   const primary = (() => {
-    switch (room.phase) {
-      case "lobby":
-      case "revealed":
-        return next
-          ? { label: `Q${index + 2} を表示する`, action: () => showQuestion(room.id, questions, next.id) }
-          : room.phase === "revealed"
-            ? { label: "最終結果を発表する", action: () => finishQuiz(room.id) }
-            : null;
-      case "question":
-        return { label: "回答を締め切る", action: () => closeAnswers(room.id) };
-      case "closed":
-        return { label: "正解を発表する", action: () => revealAnswer(room.id, room.currentQuestionId!) };
-      case "finished":
-        return null;
+    if (room.phase === "lobby") {
+      const first = questions[0];
+      return first ? { label: "Q1 を表示する", action: () => showQuestion(room.id, questions, first.id) } : null;
     }
+    if (room.phase === "question") return { label: "回答を締め切る", action: () => closeAnswers(room.id) };
+    if (room.phase === "closed") return { label: "正解を発表する", action: () => revealAnswer(room.id, room.currentQuestionId!) };
+    if (room.phase === "revealed" && !room.presentStandings) return { label: "途中順位を見る", action: () => showStandings(room.id) };
+    if (room.phase === "revealed") {
+      return next
+        ? { label: `Q${index + 2} を表示する`, action: () => showQuestion(room.id, questions, next.id) }
+        : { label: "最終結果を発表する", action: () => finishQuiz(room.id) };
+    }
+    return null;
   })();
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
       <div className="space-y-5">
         <Card className="space-y-5">
+          <a href={`/screen/${room.id}`} target="_blank" rel="noreferrer" className="block text-center text-sm font-bold text-blush-600 underline">
+            スクリーンを開く（/screen/{room.id}）
+          </a>
+          {questions.some((q) => q.sample && q.text.includes("未定")) && (
+            <p className="rounded-2xl bg-gold-100 px-4 py-3 text-sm">
+              未定の問題が残っています。プロフィールムービーの問題が決まったら、問題タブで差し替えてください。
+            </p>
+          )}
+          {questions.some((q) => q.sample && !q.text.includes("未定")) && (
+            <p className="rounded-2xl bg-gold-100 px-4 py-3 text-sm">
+              いま入っているのはサンプル問題です。問題タブで、二人のエピソードに差し替えてから当日を迎えてください。
+            </p>
+          )}
+
+          <div className="space-y-2">
+            <p className="text-center text-xs font-bold text-ink-soft">次の問題の制限時間（出題した瞬間から）</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {TIMER_OPTIONS.map((option) => (
+                <button
+                  key={option.seconds}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => run(() => setAnswerSeconds(room.id, option.seconds))}
+                  className={`rounded-full px-3 py-1 text-sm font-bold ${
+                    room.answerSeconds === option.seconds ? "bg-blush-500 text-white" : "bg-blush-50 text-ink-soft"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <ol className="flex gap-2 text-center text-xs font-bold">
             {STEPS.map((s) => (
               <li
@@ -99,9 +146,13 @@ export function ControlPanel({
           {room.phase === "finished" && (
             <p className="py-6 text-center font-bold text-gold-600">最終結果を発表中です 🎉</p>
           )}
+          {room.presentStandings && room.phase === "revealed" && (
+            <p className="text-center font-bold text-gold-600">スクリーンは途中順位を表示しています</p>
+          )}
           {current && room.phase !== "lobby" && room.phase !== "finished" && (
             <>
               <QuestionBody question={current} number={index + 1} total={questions.length} />
+              {room.phase === "question" && <Countdown endsAt={room.questionEndsAt} />}
               <div className="flex items-center justify-center gap-2 text-lg">
                 回答済み
                 <b className="text-3xl text-blush-600">{answeredCount}</b>/ {participants.length} 人

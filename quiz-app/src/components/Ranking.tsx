@@ -1,3 +1,4 @@
+import { prizeShort } from "@/lib/prizes";
 import { formatSeconds, rankParticipants } from "@/lib/scoring";
 import type { Participant } from "@/lib/types";
 
@@ -9,6 +10,8 @@ export function Ranking({
   limit,
   large = false,
   showTime = true,
+  byTime = true,
+  showPrize = false,
   onRemove,
 }: {
   participants: Participant[];
@@ -16,9 +19,13 @@ export function Ranking({
   limit?: number;
   large?: boolean;
   showTime?: boolean;
+  /** false のとき、正解数が同じなら同順位 */
+  byTime?: boolean;
+  /** 一次会の希望景品。順位には影響しない */
+  showPrize?: boolean;
   onRemove?: (p: Participant) => void;
 }) {
-  const ranked = rankParticipants(participants);
+  const ranked = rankParticipants(participants, byTime);
   const rows = limit ? ranked.slice(0, limit) : ranked;
   if (!rows.length) return <p className="py-6 text-center text-sm text-ink-soft">まだ参加者がいません</p>;
   return (
@@ -37,7 +44,10 @@ export function Ranking({
           <span className={`w-12 shrink-0 text-center font-display font-semibold ${large ? "text-3xl" : "text-xl"} text-gold-600`}>
             {MEDALS[p.rank] || p.rank}
           </span>
-          <span className="min-w-0 flex-1 truncate font-bold">{p.nickname}</span>
+          <span className="min-w-0 flex-1 truncate font-bold">
+            {p.nickname}
+            {showPrize && <span className="ml-2 text-[0.7em] font-bold text-ink-soft">{prizeShort(p.prizeWish)}</span>}
+          </span>
           {showTime && p.score > 0 && (
             <span className="hidden text-xs text-ink-soft sm:inline">{formatSeconds(p.totalTimeMs)}</span>
           )}

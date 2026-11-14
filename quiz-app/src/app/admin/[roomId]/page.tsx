@@ -10,6 +10,7 @@ import { QuestionManager } from "@/components/admin/QuestionManager";
 import { JoinQR } from "@/components/JoinQR";
 import { Ranking } from "@/components/Ranking";
 import { Button, Card, ErrorNote, Spinner } from "@/components/ui";
+import { EVENT_LABEL } from "@/lib/events";
 import { useHostData, useRoom } from "@/lib/hooks";
 import { removeParticipant } from "@/lib/quiz";
 import type { Room } from "@/lib/types";
@@ -31,7 +32,7 @@ export default function AdminRoomPage() {
 }
 
 function RoomGuard({ roomId }: { roomId: string }) {
-  const room = useRoom(roomId);
+  const room = useRoom(roomId, "host");
   if (room.error) return <ErrorNote error={room.error} />;
   if (room.data === undefined) return <Spinner />;
   if (!room.data) return <p className="py-20 text-center">ルーム「{roomId}」が見つかりません</p>;
@@ -49,7 +50,10 @@ function AdminRoom({ room }: { room: Room }) {
         <Link href="/admin" className="text-sm text-ink-soft hover:text-ink">
           ← ルーム一覧
         </Link>
-        <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{room.title}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-xl font-bold">
+          {room.title}
+          <span className="ml-2 text-sm font-bold text-ink-soft">{EVENT_LABEL[room.event]}</span>
+        </h1>
         <span className="text-sm text-ink-soft">
           コード <b className="font-display text-2xl tracking-widest text-gold-600">{room.id}</b>
         </span>
@@ -98,6 +102,9 @@ function AdminRoom({ room }: { room: Room }) {
         <Card>
           <Ranking
             participants={participants}
+            showPrize={room.event === "reception"}
+            byTime={room.event !== "reception"}
+            showTime={room.event !== "reception"}
             onRemove={(p) => {
               if (confirm(`「${p.nickname}」を削除しますか？`)) removeParticipant(room.id, p.id);
             }}
