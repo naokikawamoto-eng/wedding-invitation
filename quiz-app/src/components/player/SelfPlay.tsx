@@ -12,6 +12,7 @@ import { setPrizeWish, submitAnswer } from "@/lib/quiz";
 import type { Participant, Reveal, Room } from "@/lib/types";
 import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
+import { RankingHiddenNote } from "../admin/RankingToggle";
 import { Button, Card, Ornament, Title } from "../ui";
 
 /** 一次会。全員が全問を自分のペースで答え、締め切りまで選び直せる */
@@ -19,7 +20,8 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
   const packet = useGuestPacket(room.id);
   const participants = useParticipants(room.id).data ?? [];
   const ranked = rankParticipants(participants, false);
-  const myRank = ranked.find((p) => p.id === me.id)?.rank;
+  const rankingOpen = room.rankingVisible !== false;
+  const myRank = rankingOpen ? ranked.find((p) => p.id === me.id)?.rank : undefined;
   const [locals, setLocals] = useState<Record<string, LocalPick>>({});
   const answeredIds = new Set(packet.myAnswers.filter((answer) => answer.choice != null).map((answer) => answer.questionId));
   if (room.phase === "question") {
@@ -101,12 +103,15 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
               sheet={packet.answerSheet?.find((s) => s.questionId === question.id) ?? null}
             />
           ))}
-          {room.phase === "finished" && (
-            <Card>
-              <h2 className="mb-3 text-center font-bold">順位</h2>
-              <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} byTime={false} />
-            </Card>
-          )}
+          {room.phase === "finished" &&
+            (rankingOpen ? (
+              <Card>
+                <h2 className="mb-3 text-center font-bold">順位</h2>
+                <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} byTime={false} />
+              </Card>
+            ) : (
+              <RankingHiddenNote />
+            ))}
         </div>
       )}
     </div>

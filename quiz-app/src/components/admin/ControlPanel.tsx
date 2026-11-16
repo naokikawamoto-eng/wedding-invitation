@@ -17,6 +17,7 @@ import { Countdown } from "../Countdown";
 import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
+import { RankingToggle } from "./RankingToggle";
 import { SelfControl } from "./SelfControl";
 
 const TIMER_OPTIONS = [
@@ -161,6 +162,7 @@ export function ControlPanel({
             </>
           )}
 
+          <RankingToggle room={room} />
           <ErrorNote error={error} />
           {primary && (
             <Button

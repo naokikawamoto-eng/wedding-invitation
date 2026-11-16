@@ -40,6 +40,7 @@ export type Action =
   | { op: "revealAll"; roomId: string }
   | { op: "advanceReveal"; roomId: string }
   | { op: "showStandings"; roomId: string }
+  | { op: "setRankingVisible"; roomId: string; visible: boolean }
   | { op: "revealAnswer"; roomId: string; questionId: string }
   | { op: "recalculateScores"; roomId: string }
   | { op: "finishQuiz"; roomId: string }
@@ -78,6 +79,7 @@ export function publicRoom(room: RoomRecord): Room {
     presentIndex: room.presentIndex ?? null,
     presentAnswer: room.presentAnswer ?? false,
     presentStandings: room.presentStandings ?? false,
+    rankingVisible: room.rankingVisible !== false,
   };
 }
 
@@ -506,6 +508,12 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
       if (room.mode === "self") throw new Error("一次会の順位は、答え合わせの最後に出します");
       if (room.phase !== "revealed") throw new Error("正解を発表してから順位を出してください");
       return updateRoom(state, { ...room, presentStandings: true });
+    }
+    case "setRankingVisible": {
+      const room = mustRoom(state, action.roomId);
+      if (typeof action.visible !== "boolean") throw new Error("表示の切り替えを確認してください");
+      if ((room.rankingVisible !== false) === action.visible) return state;
+      return updateRoom(state, { ...room, rankingVisible: action.visible });
     }
     case "revealAnswer": {
       const room = mustRoom(state, action.roomId);

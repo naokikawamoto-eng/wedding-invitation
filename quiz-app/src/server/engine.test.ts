@@ -232,6 +232,24 @@ test("一次会の景品希望は順位を変えず、二次会には残さな�
   assert.equal(host.participants?.find((person) => person.id === "old")?.prizeWish, "any");
 });
 
+test("順位の表示切替は回答と得点を変えない", () => {
+  let state = room(1_000);
+  const screen = project(state, { view: "screen", roomId: RECEPTION_ROOM_ID }, 1_000);
+  assert.equal(screen.room?.rankingVisible, true);
+  state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "a", nickname: "A" }, 1_000);
+  state = applyAction(state, { op: "openQuiz", roomId: RECEPTION_ROOM_ID }, 1_100);
+  state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "a", questionId: "groom-sports", choice: 2 }, 1_200);
+  state = applyAction(state, { op: "setRankingVisible", roomId: RECEPTION_ROOM_ID, visible: false }, 1_300);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].rankingVisible, false);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].answers["groom-sports_a"].choice, 2);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].phase, "question");
+  const hidden = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 1_400);
+  assert.equal(hidden.room?.rankingVisible, false);
+  state = applyAction(state, { op: "setRankingVisible", roomId: AFTERPARTY_ROOM_ID, visible: false }, 1_500);
+  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].rankingVisible, false);
+  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].phase, "lobby");
+});
+
 test("二次会の回答は一次会の得点に入らない", () => {
   let state = room(0);
   state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "u", nickname: "ゲスト" }, 0);

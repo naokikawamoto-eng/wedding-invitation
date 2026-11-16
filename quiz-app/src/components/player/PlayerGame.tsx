@@ -9,6 +9,7 @@ import type { Participant, Room } from "@/lib/types";
 import { Countdown } from "../Countdown";
 import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
+import { RankingHiddenNote } from "../admin/RankingToggle";
 import { Card, Ornament, Spinner, Title } from "../ui";
 import { AnswerArea } from "./AnswerArea";
 import { SelfPlay } from "./SelfPlay";
@@ -16,8 +17,9 @@ import { SelfPlay } from "./SelfPlay";
 export function PlayerGame({ room, me }: { room: Room; me: Participant }) {
   const participants = useParticipants(room.id).data ?? [];
   const byTime = room.mode !== "self";
+  const rankingOpen = room.rankingVisible !== false;
   const ranked = useMemo(() => rankParticipants(participants, byTime), [participants, byTime]);
-  const myRank = ranked.find((p) => p.id === me.id)?.rank;
+  const myRank = rankingOpen ? ranked.find((p) => p.id === me.id)?.rank : undefined;
 
   if (room.mode === "self") return <SelfPlay room={room} me={me} />;
 
@@ -40,7 +42,8 @@ export function PlayerGame({ room, me }: { room: Room; me: Participant }) {
       </header>
 
       {room.phase === "lobby" && <Lobby room={room} count={participants.length} />}
-      {room.phase === "finished" && <FinalResult me={me} rank={myRank} participants={participants} />}
+      {room.phase === "finished" &&
+        (rankingOpen ? <FinalResult me={me} rank={myRank} participants={participants} /> : <RankingHiddenNote />)}
       {(room.phase === "question" || room.phase === "closed" || room.phase === "revealed") && (
         <QuestionStage room={room} me={me} />
       )}

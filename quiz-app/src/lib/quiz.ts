@@ -54,6 +54,10 @@ export async function showStandings(roomId: string) {
   await postAction({ op: "showStandings", roomId }, true);
 }
 
+export async function setRankingVisible(roomId: string, visible: boolean) {
+  await postAction({ op: "setRankingVisible", roomId, visible }, true);
+}
+
 export async function saveQuestion(roomId: string, draft: QuestionDraft, order: number, questionId?: string) {
   await postAction({ op: "saveQuestion", roomId, draft, order, questionId }, true);
 }

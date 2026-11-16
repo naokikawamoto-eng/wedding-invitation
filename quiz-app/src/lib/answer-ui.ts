@@ -52,7 +52,7 @@ export function syncStamp(body: SyncBody): string {
   return [
     body.version,
     room
-      ? `${room.phase}:${room.currentQuestionId ?? ""}:${room.questionEndsAt ?? ""}:${room.totalQuestions}:${room.presentIndex ?? ""}:${room.presentAnswer ? 1 : 0}:${room.presentStandings ? 1 : 0}`
+      ? `${room.phase}:${room.currentQuestionId ?? ""}:${room.questionEndsAt ?? ""}:${room.totalQuestions}:${room.presentIndex ?? ""}:${room.presentAnswer ? 1 : 0}:${room.presentStandings ? 1 : 0}:${room.rankingVisible === false ? 0 : 1}`
       : "",
     mine,
     one,

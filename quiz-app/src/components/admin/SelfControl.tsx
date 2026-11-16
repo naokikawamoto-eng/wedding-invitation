@@ -5,6 +5,7 @@ import { advanceReveal, closeAnswers, finishQuiz, openQuiz, recalculateScores, r
 import type { Answer, Participant, Question, Room } from "@/lib/types";
 import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
+import { RankingToggle } from "./RankingToggle";
 
 /** 一次会の進行。開始、手動締め切り、全問の正解発表 */
 export function SelfControl({
@@ -69,6 +70,7 @@ export function SelfControl({
             ))}
           </ul>
           <p className="text-center text-sm text-ink-soft">1問でも答えた人 {donePeople} 人</p>
+          <RankingToggle room={room} />
           <ErrorNote error={error} />
           {room.phase === "lobby" && (
             <Button size="lg" className="w-full" disabled={busy || !questions.length} onClick={() => run(() => openQuiz(room.id))}>

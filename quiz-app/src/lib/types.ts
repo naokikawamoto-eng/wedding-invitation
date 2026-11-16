@@ -46,6 +46,8 @@ export interface Room {
   presentAnswer?: boolean;
   /** 二次会で、正解のあとに途中順位を出しているか */
   presentStandings?: boolean;
+  /** ゲストとスクリーンに順位を出すか。未設定は表示する */
+  rankingVisible?: boolean;
 }
 
 export interface Question {

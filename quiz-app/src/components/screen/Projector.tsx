@@ -36,6 +36,18 @@ export function Projector({
     return <SelfBoard room={room} participants={participants} questions={questions} progress={progress} answeredCount={answeredCount} />;
   }
   if (room.phase === "finished" || (room.mode !== "self" && room.presentStandings)) {
+    if (room.rankingVisible === false) {
+      return (
+        <Stage>
+          <div className="grid h-full place-items-center text-center">
+            <div>
+              <p className="font-display text-5xl italic text-gold-600 sm:text-7xl">Ranking</p>
+              <p className="mt-6 text-3xl font-bold sm:text-5xl">順位は後ほど発表します</p>
+            </div>
+          </div>
+        </Stage>
+      );
+    }
     return <RankStage room={room} participants={participants} final={room.phase === "finished"} />;
   }
   if (room.mode === "self") {
