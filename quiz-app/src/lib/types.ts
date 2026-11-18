@@ -44,6 +44,8 @@ export interface Room {
   presentIndex?: number | null;
   /** いま出している問題の正解を、スクリーンとゲストに出してよいか */
   presentAnswer?: boolean;
+  /** 一次会で、全問の正解を1画面にまとめて出しているか */
+  presentAll?: boolean;
   /** 二次会で、正解のあとに途中順位を出しているか */
   presentStandings?: boolean;
   /** ゲストとスクリーンに順位を出すか。未設定は表示する */
@@ -116,4 +118,6 @@ export interface SyncBody {
   answeredCount?: number;
   /** 正解を出したあとの、選択肢ごとの人数。出す前は付けない */
   choiceCounts?: number[];
+  /** まとめて発表のとき、問題ごとの選択肢人数 */
+  choiceBoards?: { questionId: string; counts: number[] }[];
 }

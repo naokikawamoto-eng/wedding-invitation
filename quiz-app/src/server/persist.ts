@@ -315,7 +315,7 @@ export async function withGuestBlobs(
   return next;
 }
 
-const SNAPSHOT_OPS = new Set(["closeAnswers", "revealAll", "revealAnswer", "recalculateScores"]);
+const SNAPSHOT_OPS = new Set(["closeAnswers", "revealAll", "revealBoard", "revealAnswer", "recalculateScores"]);
 
 async function answerFast(action: Extract<Action, { op: "answer" }>, now: number): Promise<QuizState> {
   const roomId = cleanRoomId(action.roomId);

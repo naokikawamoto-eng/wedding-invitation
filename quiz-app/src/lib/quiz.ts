@@ -46,6 +46,10 @@ export async function revealAll(roomId: string) {
   await postAction({ op: "revealAll", roomId }, true);
 }
 
+export async function revealBoard(roomId: string) {
+  await postAction({ op: "revealBoard", roomId }, true);
+}
+
 export async function advanceReveal(roomId: string) {
   await postAction({ op: "advanceReveal", roomId }, true);
 }

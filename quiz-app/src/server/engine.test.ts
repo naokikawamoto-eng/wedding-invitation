@@ -174,6 +174,26 @@ test("一次会は締切まで回答を変えられ、同点は同順位", () =>
   assert.equal(nextQuestion.room?.presentAnswer, false);
 });
 
+test("一次会は締め切り後に全問の正解をまとめて出せる", () => {
+  let state = room(1_000);
+  state = applyAction(state, { op: "openQuiz", roomId: RECEPTION_ROOM_ID }, 1_000);
+  state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "a", nickname: "A" }, 1_000);
+  state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "a", questionId: "groom-sports", choice: 0 }, 1_200);
+  state = applyAction(state, { op: "closeAnswers", roomId: RECEPTION_ROOM_ID }, 2_000);
+  const closed = project(state, { view: "screen", roomId: RECEPTION_ROOM_ID }, 2_000);
+  assert.equal(JSON.stringify(closed).includes("correctChoice"), false);
+  state = applyAction(state, { op: "revealBoard", roomId: RECEPTION_ROOM_ID }, 2_100);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].answers["groom-sports_a"].choice, 0);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.a.score, 0);
+  const guest = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 2_100);
+  assert.equal(guest.answerSheet?.length, 6);
+  assert.equal(guest.answerSheet?.find((item) => item.questionId === "groom-sports")?.correctChoice, 2);
+  const screen = project(state, { view: "screen", roomId: RECEPTION_ROOM_ID }, 2_100);
+  assert.equal(screen.room?.presentAll, true);
+  assert.equal(screen.choiceBoards?.length, 6);
+  assert.throws(() => applyAction(state, { op: "revealBoard", roomId: AFTERPARTY_ROOM_ID }, 2_200), /1問ずつ/);
+});
+
 test("二次会は正解のあとだけ途中順位に進める", () => {
   let state = room(10_000);
   state = applyAction(state, { op: "join", roomId: AFTERPARTY_ROOM_ID, uid: "u", nickname: "ゲスト" }, 10_000);

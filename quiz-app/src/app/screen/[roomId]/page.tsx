@@ -22,6 +22,7 @@ export default function ScreenPage() {
       progress={screen.progress}
       answerSheet={screen.answerSheet}
       choiceCounts={screen.choiceCounts}
+      choiceBoards={screen.choiceBoards}
       answeredCount={screen.answeredCount}
       answerKey={screen.answerKey}
       answers={screen.answers}

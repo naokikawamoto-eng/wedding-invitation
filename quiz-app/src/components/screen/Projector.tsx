@@ -16,6 +16,7 @@ export function Projector({
   progress,
   answerSheet,
   choiceCounts,
+  choiceBoards,
   answeredCount,
   answerKey,
   answers,
@@ -27,6 +28,7 @@ export function Projector({
   progress: { questionId: string; answered: number }[];
   answerSheet: Reveal[] | null;
   choiceCounts?: number[];
+  choiceBoards?: { questionId: string; counts: number[] }[];
   answeredCount: number;
   answerKey: AnswerKey | null;
   answers: Answer[];
@@ -49,6 +51,9 @@ export function Projector({
       );
     }
     return <RankStage room={room} participants={participants} final={room.phase === "finished"} />;
+  }
+  if (room.mode === "self" && room.phase === "revealed" && room.presentAll) {
+    return <AllAnswers questions={questions} answerSheet={answerSheet} choiceBoards={choiceBoards} />;
   }
   if (room.mode === "self") {
     const current = question ?? questions[room.presentIndex ?? 0] ?? null;
@@ -165,6 +170,51 @@ function SelfBoard({
             })}
           </ul>
         </div>
+      </div>
+    </Stage>
+  );
+}
+
+function AllAnswers({
+  questions,
+  answerSheet,
+  choiceBoards,
+}: {
+  questions: Question[];
+  answerSheet: Reveal[] | null;
+  choiceBoards?: { questionId: string; counts: number[] }[];
+}) {
+  return (
+    <Stage>
+      <div className="flex h-full min-h-0 flex-col gap-3">
+        <header className="text-center">
+          <p className="font-display text-4xl italic text-gold-600 sm:text-6xl">Answers</p>
+          <p className="text-2xl font-bold sm:text-4xl">全問の正解</p>
+        </header>
+        <ul className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">
+          {questions.map((question, index) => {
+            const sheet = answerSheet?.find((item) => item.questionId === question.id);
+            const correct = sheet?.correctChoice ?? null;
+            const counts = choiceBoards?.find((item) => item.questionId === question.id)?.counts ?? [];
+            const total = counts.reduce((sum, count) => sum + count, 0);
+            return (
+              <li key={question.id} className="rounded-3xl bg-white/90 px-4 py-3 shadow">
+                <p className="font-display text-2xl text-gold-600 sm:text-3xl">Q{index + 1}</p>
+                <p className="line-clamp-2 text-lg font-bold leading-snug sm:text-2xl">{question.text}</p>
+                {correct != null && (
+                  <p className="mt-2 text-2xl font-bold text-gold-600 sm:text-4xl">
+                    {CHOICE_LETTERS[correct]} {question.choices[correct]}
+                  </p>
+                )}
+                {total > 0 && (
+                  <p className="mt-1 text-sm text-ink-soft sm:text-base">
+                    {question.choices.map((choice, i) => `${CHOICE_LETTERS[i]} ${counts[i] ?? 0}`).join("  ")}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </Stage>
   );

@@ -15,6 +15,7 @@ const HOST_OPS = new Set([
   "closeAnswers",
   "revealAnswer",
   "revealAll",
+  "revealBoard",
   "advanceReveal",
   "showStandings",
   "setRankingVisible",

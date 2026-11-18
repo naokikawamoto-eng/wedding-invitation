@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { advanceReveal, closeAnswers, finishQuiz, openQuiz, recalculateScores, resetRoom, revealAll } from "@/lib/quiz";
+import { advanceReveal, closeAnswers, finishQuiz, openQuiz, recalculateScores, resetRoom, revealAll, revealBoard } from "@/lib/quiz";
 import type { Answer, Participant, Question, Room } from "@/lib/types";
 import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
@@ -50,7 +50,8 @@ export function SelfControl({
           {room.phase === "lobby" && <p className="text-center font-bold">参加受付中です（{participants.length}人）</p>}
           {room.phase === "question" && <p className="text-center font-bold text-blush-600">回答受付中</p>}
           {room.phase === "closed" && <p className="text-center font-bold">締め切りました</p>}
-          {room.phase === "revealed" && (
+          {room.phase === "revealed" && room.presentAll && <p className="text-center font-bold text-gold-600">全問の正解を表示中</p>}
+          {room.phase === "revealed" && !room.presentAll && (
             <p className="text-center font-bold text-gold-600">
               答え合わせ中：第 {(room.presentIndex ?? 0) + 1} 問
               {room.presentAnswer ? "（正解を表示中）" : "（まだ正解は出していません）"}
@@ -83,21 +84,31 @@ export function SelfControl({
             </Button>
           )}
           {room.phase === "closed" && (
-            <Button variant="gold" size="lg" className="w-full" disabled={busy} onClick={() => run(() => revealAll(room.id))}>
-              {busy ? "処理中…" : "答え合わせを始める"}
+            <Button variant="gold" size="lg" className="w-full" disabled={busy} onClick={() => run(() => revealBoard(room.id))}>
+              {busy ? "処理中…" : "全問の正解をまとめて発表する"}
             </Button>
           )}
-          {room.phase === "revealed" && !room.presentAnswer && (
+          {room.phase === "closed" && (
+            <Button variant="outline" size="lg" className="w-full" disabled={busy} onClick={() => run(() => revealAll(room.id))}>
+              {busy ? "処理中…" : "1問ずつ答え合わせを始める"}
+            </Button>
+          )}
+          {room.phase === "revealed" && room.presentAll && (
+            <Button variant="gold" size="lg" className="w-full" disabled={busy} onClick={() => run(() => finishQuiz(room.id))}>
+              {busy ? "処理中…" : "最終順位を発表する"}
+            </Button>
+          )}
+          {room.phase === "revealed" && !room.presentAll && !room.presentAnswer && (
             <Button variant="gold" size="lg" className="w-full" disabled={busy} onClick={() => run(() => advanceReveal(room.id))}>
               {busy ? "処理中…" : `第 ${(room.presentIndex ?? 0) + 1} 問の正解を出す`}
             </Button>
           )}
-          {room.phase === "revealed" && room.presentAnswer && (room.presentIndex ?? 0) + 1 < questions.length && (
+          {room.phase === "revealed" && !room.presentAll && room.presentAnswer && (room.presentIndex ?? 0) + 1 < questions.length && (
             <Button size="lg" className="w-full" disabled={busy} onClick={() => run(() => advanceReveal(room.id))}>
               {busy ? "処理中…" : "次の問題へ"}
             </Button>
           )}
-          {room.phase === "revealed" && room.presentAnswer && (room.presentIndex ?? 0) + 1 >= questions.length && (
+          {room.phase === "revealed" && !room.presentAll && room.presentAnswer && (room.presentIndex ?? 0) + 1 >= questions.length && (
             <Button variant="gold" size="lg" className="w-full" disabled={busy} onClick={() => run(() => finishQuiz(room.id))}>
               {busy ? "処理中…" : "最終順位を発表する"}
             </Button>

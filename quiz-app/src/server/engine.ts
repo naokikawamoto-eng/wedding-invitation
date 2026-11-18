@@ -38,6 +38,7 @@ export type Action =
   | { op: "openQuiz"; roomId: string }
   | { op: "closeAnswers"; roomId: string }
   | { op: "revealAll"; roomId: string }
+  | { op: "revealBoard"; roomId: string }
   | { op: "advanceReveal"; roomId: string }
   | { op: "showStandings"; roomId: string }
   | { op: "setRankingVisible"; roomId: string; visible: boolean }
@@ -78,6 +79,7 @@ export function publicRoom(room: RoomRecord): Room {
     createdAt: room.createdAt,
     presentIndex: room.presentIndex ?? null,
     presentAnswer: room.presentAnswer ?? false,
+    presentAll: room.presentAll === true,
     presentStandings: room.presentStandings ?? false,
     rankingVisible: room.rankingVisible !== false,
   };
@@ -485,6 +487,24 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         reveal: null,
         presentIndex: 0,
         presentAnswer: false,
+        presentAll: false,
+        presentStandings: false,
+      });
+    }
+    case "revealBoard": {
+      const room = mustRoom(state, action.roomId);
+      if (room.mode !== "self") throw new Error("このルームは1問ずつ発表します");
+      if (room.phase !== "closed" && room.phase !== "revealed") throw new Error("締め切り後に発表できます");
+      const revealedIds = ordered(room).map((q) => q.id);
+      const scored = room.phase === "revealed" ? room : recompute(room, revealedIds);
+      return updateRoom(state, {
+        ...scored,
+        phase: "revealed",
+        revealedQuestionIds: revealedIds,
+        reveal: null,
+        presentIndex: null,
+        presentAnswer: true,
+        presentAll: true,
         presentStandings: false,
       });
     }
@@ -496,10 +516,10 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
       const index = room.presentIndex ?? 0;
       if (!room.presentAnswer) {
         if (!questions[index]) throw new Error("問題が見つかりません");
-        return updateRoom(state, { ...room, presentIndex: index, presentAnswer: true, presentStandings: false });
+        return updateRoom(state, { ...room, presentIndex: index, presentAnswer: true, presentAll: false, presentStandings: false });
       }
       if (index + 1 < questions.length) {
-        return updateRoom(state, { ...room, presentIndex: index + 1, presentAnswer: false, presentStandings: false });
+        return updateRoom(state, { ...room, presentIndex: index + 1, presentAnswer: false, presentAll: false, presentStandings: false });
       }
       throw new Error("最後の問題です。最終順位を発表してください");
     }
@@ -594,6 +614,7 @@ function publicAnswerIds(room: RoomRecord): Set<string> {
   if (room.mode !== "self") return new Set();
   if (room.phase === "finished") return new Set(room.revealedQuestionIds);
   if (room.phase !== "revealed") return new Set();
+  if (room.presentAll) return new Set(room.revealedQuestionIds);
   const list = ordered(room);
   const index = room.presentIndex ?? 0;
   const ids = list.slice(0, Math.max(0, index)).map((q) => q.id);
@@ -686,6 +707,9 @@ export function project(
       })),
       answerSheet: answerSheet(record),
       choiceCounts: presenting && shown.has(presenting.id) ? choiceCountsFor(record, presenting.id) : undefined,
+      choiceBoards: room.presentAll
+        ? questions.map((q) => ({ questionId: q.id, counts: choiceCountsFor(record, q.id) }))
+        : undefined,
       answeredCount: new Set(Object.values(record.answers).map((a) => a.uid)).size,
     };
   }

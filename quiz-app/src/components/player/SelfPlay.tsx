@@ -84,7 +84,9 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
           )}
           {room.phase === "revealed" && (
             <p className="rounded-2xl bg-gold-100 px-4 py-3 text-center text-sm font-bold text-gold-600">
-              答え合わせは会場のスクリーンで進みます。出た問題から、自分の回答に正解が付きます。
+              {room.presentAll
+                ? "全問の正解が出ました。自分の回答に ○ と × が付きます。"
+                : "答え合わせは会場のスクリーンで進みます。出た問題から、自分の回答に正解が付きます。"}
             </p>
           )}
           {packet.questions.map((question, index) => (
@@ -239,7 +241,9 @@ function SelfQuestion({
                   {CHOICE_LETTERS[i]}
                 </span>
                 <span className="min-w-0 flex-1">{choice}</span>
-                {correct && <span>⭕️</span>}
+                {sheet && picked && correct && <span>⭕️</span>}
+                {sheet && picked && !correct && <span>✖️</span>}
+                {sheet && correct && !picked && <span className="text-sm">正解</span>}
               </button>
             </li>
           );
