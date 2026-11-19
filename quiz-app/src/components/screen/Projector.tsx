@@ -101,7 +101,7 @@ function Welcome({ room, participants }: { room: Room; participants: Participant
           <p className="font-display text-5xl italic text-gold-600 sm:text-7xl">Wedding Quiz</p>
           <p className="text-2xl font-bold sm:text-4xl">{room.title}</p>
           <p className="text-lg text-ink-soft sm:text-2xl">{room.mode === "self" ? "着席のあと、スマホでご参加ください" : "まもなく始まります"}</p>
-          <JoinQR roomId={room.id} size={280} large />
+          <JoinQR roomId={room.id} size={320} large />
           {room.event === "reception" && <PrizeIntro compact />}
         </div>
         <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6">
@@ -145,7 +145,7 @@ function SelfBoard({
           <p className="font-display text-4xl italic text-gold-600 sm:text-6xl">{closed ? "Closed" : "Now Answering"}</p>
           <p className={`text-3xl font-bold sm:text-5xl ${closed ? "text-blush-600" : ""}`}>{closed ? "締め切りました" : "回答受付中"}</p>
           <p className="text-lg text-ink-soft sm:text-2xl">{closed ? "答え合わせまで、そのままお待ちください" : "締め切りまで、回答は変えられます"}</p>
-          <JoinQR roomId={room.id} size={220} large />
+          <JoinQR roomId={room.id} size={300} large />
           <PrizeIntro compact />
         </div>
         <div className="space-y-6">
@@ -186,47 +186,42 @@ function AllAnswers({
   correctRates?: { questionId: string; correct: number; submitted: number }[];
 }) {
   const rows = Math.max(1, Math.ceil(questions.length / 2));
-  const dense = questions.length >= 8;
-  const questionText = dense ? "text-sm leading-tight sm:text-base lg:text-lg" : questions.length >= 6 ? "text-base leading-snug sm:text-lg lg:text-xl" : "text-lg leading-snug sm:text-xl lg:text-2xl";
-  const answerText = dense ? "text-base sm:text-lg lg:text-xl" : questions.length >= 6 ? "text-lg sm:text-xl lg:text-2xl" : "text-xl sm:text-2xl lg:text-3xl";
   return (
-    <Stage>
-      <div className="flex h-full min-h-0 flex-1 flex-col">
-        <header className="shrink-0 pb-2 text-center">
-          <p className={`font-bold ${dense ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl"}`}>全問の正解</p>
-        </header>
-        <ul className="grid min-h-0 flex-1 grid-cols-2 gap-2 sm:gap-3" style={{ gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))` }}>
-          {questions.map((question, index) => {
-            const sheet = answerSheet?.find((item) => item.questionId === question.id);
-            const rate = correctRates?.find((item) => item.questionId === question.id);
-            const correct = sheet?.type === "text" ? sheet.correctTexts.join(" / ") : sheet?.correctChoice != null ? `${CHOICE_LETTERS[sheet.correctChoice]}  ${question.choices[sheet.correctChoice] ?? ""}` : "";
-            const submitted = rate?.submitted ?? 0;
-            const hits = rate?.correct ?? 0;
-            const pct = submitted ? Math.round((hits / submitted) * 100) : 0;
-            return (
-              <li key={question.id} className="flex min-h-0 flex-col justify-center overflow-hidden rounded-2xl bg-white/90 px-3 py-2 shadow sm:px-4">
-                <p className={`line-clamp-2 font-bold ${questionText}`}>
-                  <span className="mr-2 font-display text-gold-600">Q{index + 1}</span>
-                  {question.text}
-                </p>
-                <p className={`mt-1 truncate font-bold text-gold-600 ${answerText}`}>正解 {correct}</p>
-                <div className="mt-1.5 flex items-center gap-2">
-                  <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-blush-100">
-                    <span className="block h-full rounded-full bg-blush-400" style={{ width: `${pct}%` }} />
+    <main className="box-border flex h-dvh w-full flex-col overflow-hidden px-3 py-2 sm:px-5 sm:py-3">
+      <header className="shrink-0 pb-1 text-center">
+        <p className="text-[clamp(1.25rem,3vh,2rem)] font-bold leading-none">全問の正解</p>
+      </header>
+      <ul className="grid min-h-0 flex-1 grid-cols-2 gap-1.5 sm:gap-2" style={{ gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))` }}>
+        {questions.map((question, index) => {
+          const sheet = answerSheet?.find((item) => item.questionId === question.id);
+          const rate = correctRates?.find((item) => item.questionId === question.id);
+          const correct = sheet?.type === "text" ? sheet.correctTexts.join(" / ") : sheet?.correctChoice != null ? `${CHOICE_LETTERS[sheet.correctChoice]}  ${question.choices[sheet.correctChoice] ?? ""}` : "";
+          const submitted = rate?.submitted ?? 0;
+          const hits = rate?.correct ?? 0;
+          const pct = submitted ? Math.round((hits / submitted) * 100) : 0;
+          return (
+            <li key={question.id} className="flex min-h-0 flex-col justify-center overflow-hidden rounded-xl bg-white/95 px-3 py-1.5 shadow">
+              <p className="line-clamp-2 text-[clamp(0.85rem,1.9vh,1.35rem)] font-bold leading-tight">
+                <span className="mr-2 font-display text-gold-600">Q{index + 1}</span>
+                {question.text}
+              </p>
+              <p className="mt-0.5 line-clamp-2 text-[clamp(1rem,2.3vh,1.7rem)] font-bold leading-tight text-gold-600">正解 {correct}</p>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-blush-100">
+                  <span className="block h-full rounded-full bg-blush-500" style={{ width: `${pct}%` }} />
+                </span>
+                <span className="shrink-0 text-[clamp(0.8rem,1.7vh,1.15rem)] font-bold tabular-nums">
+                  正答率 {submitted ? `${pct}%` : "—"}
+                  <span className="ml-1.5 font-normal text-ink-soft">
+                    {hits}/{submitted}
                   </span>
-                  <span className={`shrink-0 font-bold tabular-nums ${dense ? "text-sm sm:text-base" : "text-base sm:text-lg"}`}>
-                    正答率 {submitted ? `${pct}%` : "—"}
-                    <span className="ml-2 font-normal text-ink-soft">
-                      {hits}/{submitted}
-                    </span>
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </Stage>
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </main>
   );
 }
 
