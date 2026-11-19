@@ -23,6 +23,7 @@ export default function ScreenPage() {
       answerSheet={screen.answerSheet}
       choiceCounts={screen.choiceCounts}
       choiceBoards={screen.choiceBoards}
+      correctRates={screen.correctRates}
       answeredCount={screen.answeredCount}
       answerKey={screen.answerKey}
       answers={screen.answers}

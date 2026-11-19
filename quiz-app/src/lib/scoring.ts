@@ -91,6 +91,27 @@ export function questionStats(q: Question, key: AnswerKey | undefined, answers: 
   };
 }
 
+/** まとめて発表用。分母は送信した人だけ。未送信の正解は数えない */
+export function submittedCorrectRates(
+  questions: Question[],
+  keys: Map<string, AnswerKey>,
+  answers: Answer[],
+  participants: Participant[],
+): { questionId: string; correct: number; submitted: number }[] {
+  const submitted = new Set(participants.filter((person) => person.submitted).map((person) => person.id));
+  return questions.map((question) => {
+    const key = keys.get(question.id);
+    let correct = 0;
+    if (key) {
+      for (const answer of answers) {
+        if (answer.questionId !== question.id || !submitted.has(answer.uid)) continue;
+        if (isCorrect(question.type, key, answer)) correct += 1;
+      }
+    }
+    return { questionId: question.id, correct, submitted: submitted.size };
+  });
+}
+
 export interface SubmissionRow {
   person: Participant;
   correct: number;

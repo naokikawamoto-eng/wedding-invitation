@@ -16,7 +16,7 @@ export function Projector({
   progress,
   answerSheet,
   choiceCounts,
-  choiceBoards,
+  correctRates,
   answeredCount,
   answerKey,
   answers,
@@ -29,6 +29,7 @@ export function Projector({
   answerSheet: Reveal[] | null;
   choiceCounts?: number[];
   choiceBoards?: { questionId: string; counts: number[] }[];
+  correctRates?: { questionId: string; correct: number; submitted: number }[];
   answeredCount: number;
   answerKey: AnswerKey | null;
   answers: Answer[];
@@ -53,7 +54,7 @@ export function Projector({
     return <RankStage room={room} participants={participants} final={room.phase === "finished"} />;
   }
   if (room.mode === "self" && room.phase === "revealed" && room.presentAll) {
-    return <AllAnswers questions={questions} answerSheet={answerSheet} choiceBoards={choiceBoards} />;
+    return <AllAnswers questions={questions} answerSheet={answerSheet} correctRates={correctRates} />;
   }
   if (room.mode === "self") {
     const current = question ?? questions[room.presentIndex ?? 0] ?? null;
@@ -178,39 +179,48 @@ function SelfBoard({
 function AllAnswers({
   questions,
   answerSheet,
-  choiceBoards,
+  correctRates,
 }: {
   questions: Question[];
   answerSheet: Reveal[] | null;
-  choiceBoards?: { questionId: string; counts: number[] }[];
+  correctRates?: { questionId: string; correct: number; submitted: number }[];
 }) {
+  const rows = Math.max(1, Math.ceil(questions.length / 2));
+  const dense = questions.length >= 8;
+  const questionText = dense ? "text-sm leading-tight sm:text-base lg:text-lg" : questions.length >= 6 ? "text-base leading-snug sm:text-lg lg:text-xl" : "text-lg leading-snug sm:text-xl lg:text-2xl";
+  const answerText = dense ? "text-base sm:text-lg lg:text-xl" : questions.length >= 6 ? "text-lg sm:text-xl lg:text-2xl" : "text-xl sm:text-2xl lg:text-3xl";
   return (
     <Stage>
-      <div className="flex h-full min-h-0 flex-col gap-3">
-        <header className="text-center">
-          <p className="font-display text-4xl italic text-gold-600 sm:text-6xl">Answers</p>
-          <p className="text-2xl font-bold sm:text-4xl">全問の正解</p>
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <header className="shrink-0 pb-2 text-center">
+          <p className={`font-bold ${dense ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl"}`}>全問の正解</p>
         </header>
-        <ul className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2">
+        <ul className="grid min-h-0 flex-1 grid-cols-2 gap-2 sm:gap-3" style={{ gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))` }}>
           {questions.map((question, index) => {
             const sheet = answerSheet?.find((item) => item.questionId === question.id);
-            const correct = sheet?.correctChoice ?? null;
-            const counts = choiceBoards?.find((item) => item.questionId === question.id)?.counts ?? [];
-            const total = counts.reduce((sum, count) => sum + count, 0);
+            const rate = correctRates?.find((item) => item.questionId === question.id);
+            const correct = sheet?.type === "text" ? sheet.correctTexts.join(" / ") : sheet?.correctChoice != null ? `${CHOICE_LETTERS[sheet.correctChoice]}  ${question.choices[sheet.correctChoice] ?? ""}` : "";
+            const submitted = rate?.submitted ?? 0;
+            const hits = rate?.correct ?? 0;
+            const pct = submitted ? Math.round((hits / submitted) * 100) : 0;
             return (
-              <li key={question.id} className="rounded-3xl bg-white/90 px-4 py-3 shadow">
-                <p className="font-display text-2xl text-gold-600 sm:text-3xl">Q{index + 1}</p>
-                <p className="line-clamp-2 text-lg font-bold leading-snug sm:text-2xl">{question.text}</p>
-                {correct != null && (
-                  <p className="mt-2 text-2xl font-bold text-gold-600 sm:text-4xl">
-                    {CHOICE_LETTERS[correct]} {question.choices[correct]}
-                  </p>
-                )}
-                {total > 0 && (
-                  <p className="mt-1 text-sm text-ink-soft sm:text-base">
-                    {question.choices.map((choice, i) => `${CHOICE_LETTERS[i]} ${counts[i] ?? 0}`).join("  ")}
-                  </p>
-                )}
+              <li key={question.id} className="flex min-h-0 flex-col justify-center overflow-hidden rounded-2xl bg-white/90 px-3 py-2 shadow sm:px-4">
+                <p className={`line-clamp-2 font-bold ${questionText}`}>
+                  <span className="mr-2 font-display text-gold-600">Q{index + 1}</span>
+                  {question.text}
+                </p>
+                <p className={`mt-1 truncate font-bold text-gold-600 ${answerText}`}>正解 {correct}</p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-blush-100">
+                    <span className="block h-full rounded-full bg-blush-400" style={{ width: `${pct}%` }} />
+                  </span>
+                  <span className={`shrink-0 font-bold tabular-nums ${dense ? "text-sm sm:text-base" : "text-base sm:text-lg"}`}>
+                    正答率 {submitted ? `${pct}%` : "—"}
+                    <span className="ml-2 font-normal text-ink-soft">
+                      {hits}/{submitted}
+                    </span>
+                  </span>
+                </div>
               </li>
             );
           })}

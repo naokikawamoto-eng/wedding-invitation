@@ -131,4 +131,6 @@ export interface SyncBody {
   choiceCounts?: number[];
   /** まとめて発表のとき、問題ごとの選択肢人数 */
   choiceBoards?: { questionId: string; counts: number[] }[];
+  /** まとめて発表のとき、送信した人のうち正解した人数 */
+  correctRates?: { questionId: string; correct: number; submitted: number }[];
 }

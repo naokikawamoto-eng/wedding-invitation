@@ -263,6 +263,7 @@ export function useScreen(roomId: string) {
     progress: sync.data?.progress ?? [],
     choiceCounts: sync.data?.choiceCounts,
     choiceBoards: sync.data?.choiceBoards,
+    correctRates: sync.data?.correctRates,
     answeredCount: sync.data?.answeredCount ?? 0,
     error: sync.error,
   };

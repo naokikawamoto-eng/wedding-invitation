@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Answer, AnswerKey, Participant, Question } from "./types";
-import { hostSubmissions } from "./scoring";
+import { hostSubmissions, submittedCorrectRates } from "./scoring";
 
 const questions: Question[] = [
   { id: "q1", order: 1, type: "choice", text: "1", imageUrl: null, choices: ["a", "b"] },
@@ -44,4 +44,17 @@ test("主催者の送信一覧は発表前でも正解数の多い順、同じ�
     board.pending.map((person) => person.nickname),
     ["未送信"],
   );
+});
+
+test("正答率の分母は送信した人だけで、未送信の正解は入らない", () => {
+  const rates = submittedCorrectRates(
+    questions,
+    keys,
+    [answer("sent", "q1", 1, 10), answer("sent", "q2", 1, 11), answer("skip", "q1", 1, 12), answer("skip", "q2", 0, 13)],
+    [person("sent", "送信", { submitted: true }), person("skip", "未送信")],
+  );
+  assert.deepEqual(rates, [
+    { questionId: "q1", correct: 1, submitted: 1 },
+    { questionId: "q2", correct: 0, submitted: 1 },
+  ]);
 });

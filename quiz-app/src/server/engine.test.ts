@@ -192,6 +192,9 @@ test("一次会は締め切り後に全問の正解をまとめて出せる", ()
   const screen = project(state, { view: "screen", roomId: RECEPTION_ROOM_ID }, 2_100);
   assert.equal(screen.room?.presentAll, true);
   assert.equal(screen.choiceBoards?.length, 6);
+  assert.equal(closed.correctRates, undefined);
+  assert.equal(screen.correctRates?.length, 6);
+  assert.equal(screen.correctRates?.every((item) => item.submitted === 0 && item.correct === 0), true);
   assert.throws(() => applyAction(state, { op: "revealBoard", roomId: AFTERPARTY_ROOM_ID }, 2_200), /1問ずつ/);
 });
 

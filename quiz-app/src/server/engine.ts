@@ -1,4 +1,4 @@
-import { computeScores } from "../lib/scoring";
+import { computeScores, submittedCorrectRates } from "../lib/scoring";
 import type {
   Answer,
   AnswerKey,
@@ -813,6 +813,14 @@ export function project(
       choiceCounts: presenting && shown.has(presenting.id) ? choiceCountsFor(record, presenting.id) : undefined,
       choiceBoards: room.presentAll
         ? questions.map((q) => ({ questionId: q.id, counts: choiceCountsFor(record, q.id) }))
+        : undefined,
+      correctRates: room.presentAll
+        ? submittedCorrectRates(
+            questions,
+            new Map(Object.entries(record.keys)),
+            Object.values(record.answers),
+            Object.values(record.participants),
+          )
         : undefined,
       answeredCount: new Set(Object.values(record.answers).map((a) => a.uid)).size,
     };
