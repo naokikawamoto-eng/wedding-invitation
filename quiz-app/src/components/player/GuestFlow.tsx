@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { PrizeChoices, PrizeIntro } from "@/components/player/Prizes";
 import { AFTERPARTY_ROOM_ID, RECEPTION_ROOM_ID } from "@/lib/events";
 import { guestById, readSeat, resetGuestSession, resolveGuestSession, writeSeat } from "@/lib/guest-session";
-import { useGuestId, useGuestSeat, useParticipant, useRoom } from "@/lib/hooks";
+import { useGuestId, useGuestPacket, useGuestSeat, useParticipant, useRoom } from "@/lib/hooks";
+import { afterpartyBadge, receptionBadge } from "@/lib/quiz-status";
 import type { PrizeId } from "@/lib/prizes";
 import { joinRoom } from "@/lib/quiz";
 import { RECEPTION_GUESTS } from "@/lib/reception-guests";
@@ -13,7 +14,7 @@ import { PlayerGame } from "./PlayerGame";
 import { SelfPlay } from "./SelfPlay";
 import { Button, Card, ErrorNote, Ornament, Spinner, Title, inputClass } from "../ui";
 
-type Step = "name" | "select" | "prize" | "reception" | "afterparty" | "review-reception" | "review-afterparty" | "accepted";
+type Step = "name" | "confirm" | "select" | "prize" | "reception" | "afterparty" | "review-reception" | "review-afterparty" | "closed-reception" | "closed-afterparty" | "accepted";
 
 export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM_ID | typeof AFTERPARTY_ROOM_ID }) {
   const uid = useGuestId();
@@ -30,6 +31,7 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
   const [prize, setPrize] = useState<PrizeId | "">("");
   const [joining, setJoining] = useState(false);
   const [query, setQuery] = useState("");
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   const loaded =
     !!uid &&
@@ -39,10 +41,14 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
     meAfter.data !== undefined &&
     reception.data !== null &&
     afterparty.data !== null;
-  const receptionDone =
-    !!meReception.data?.submitted ||
-    (reception.data != null && reception.data.phase !== "lobby" && reception.data.phase !== "question");
-  const afterpartyDone = afterparty.data?.phase === "finished";
+  const afterAnswers = useGuestPacket(uid ? AFTERPARTY_ROOM_ID : null);
+  const receptionStatus = reception.data ? receptionBadge(reception.data.phase, !!meReception.data?.submitted) : null;
+  const afterpartyStatus = afterparty.data
+    ? afterpartyBadge(
+        afterparty.data.phase,
+        afterAnswers.myAnswers.some((answer) => answer.choice != null || !!answer.text?.trim()),
+      )
+    : null;
   const ready = checkedUid === uid && !!seat;
 
   useEffect(() => {
@@ -67,12 +73,14 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
   function open(room: typeof RECEPTION_ROOM_ID | typeof AFTERPARTY_ROOM_ID) {
     setError(undefined);
     if (room === RECEPTION_ROOM_ID) {
-      if (receptionDone) setStep("review-reception");
+      if (receptionStatus === "submitted") setStep("review-reception");
+      else if (receptionStatus === "closed") setStep("closed-reception");
       else if (!meReception.data) setStep("prize");
       else setStep("reception");
       return;
     }
-    if (afterpartyDone) setStep("review-afterparty");
+    if (afterpartyStatus === "submitted") setStep("review-afterparty");
+    else if (afterpartyStatus === "closed") setStep("closed-afterparty");
     else setStep("afterparty");
   }
 
@@ -84,17 +92,19 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
       return;
     }
     if (initialRoom === RECEPTION_ROOM_ID) {
-      if (receptionDone) setStep("review-reception");
+      if (receptionStatus === "submitted") setStep("review-reception");
+      else if (receptionStatus === "closed") setStep("closed-reception");
       else if (!meReception.data) setStep("prize");
       else setStep("reception");
       return;
     }
-    if (afterpartyDone) setStep("review-afterparty");
+    if (afterpartyStatus === "submitted") setStep("review-afterparty");
+    else if (afterpartyStatus === "closed") setStep("closed-afterparty");
     else setStep("afterparty");
-  }, [ready, opened, initialRoom, receptionDone, afterpartyDone, meReception.data]);
+  }, [ready, opened, initialRoom, receptionStatus, afterpartyStatus, meReception.data]);
 
   useEffect(() => {
-    if (step !== "afterparty" || !uid || !seat || meAfter.data === undefined || meAfter.data || afterpartyDone) return;
+    if (step !== "afterparty" || !uid || !seat || meAfter.data === undefined || meAfter.data || afterpartyStatus) return;
     let cancel = false;
     setJoining(true);
     void joinRoom(AFTERPARTY_ROOM_ID, uid, seat.name)
@@ -107,11 +117,12 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
     return () => {
       cancel = true;
     };
-  }, [step, uid, seat, meAfter.data, afterpartyDone]);
+  }, [step, uid, seat, meAfter.data, afterpartyStatus]);
 
   useEffect(() => {
-    if (step === "afterparty" && afterpartyDone) setStep("review-afterparty");
-  }, [step, afterpartyDone]);
+    if (step === "afterparty" && afterpartyStatus === "submitted") setStep("review-afterparty");
+    if (step === "afterparty" && afterpartyStatus === "closed") setStep("closed-afterparty");
+  }, [step, afterpartyStatus]);
 
   useEffect(() => {
     if (step !== "accepted") return;
@@ -119,16 +130,22 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
     return () => window.clearTimeout(timer);
   }, [step]);
 
-  function pick(guestId: string) {
-    if (!uid) return;
+  function chooseName(guestId: string) {
+    setPendingId(guestId);
+    setStep("confirm");
+  }
+
+  function acceptName() {
+    if (!uid || !pendingId) return;
     const first = !seatId;
-    if (seatId && seatId !== guestId) resetGuestSession();
-    writeSeat(guestId);
+    if (seatId && seatId !== pendingId) resetGuestSession();
+    writeSeat(pendingId);
+    setPendingId(null);
     setError(undefined);
     setOpened(true);
     if (first && initialRoom) {
-      if (initialRoom === RECEPTION_ROOM_ID) setStep(receptionDone ? "review-reception" : "prize");
-      else setStep(afterpartyDone ? "review-afterparty" : "afterparty");
+      if (initialRoom === RECEPTION_ROOM_ID) setStep(receptionStatus === "submitted" ? "review-reception" : receptionStatus === "closed" ? "closed-reception" : "prize");
+      else setStep(afterpartyStatus === "submitted" ? "review-afterparty" : afterpartyStatus === "closed" ? "closed-afterparty" : "afterparty");
       return;
     }
     setStep("select");
@@ -154,7 +171,7 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
 
   return (
     <main className="mx-auto min-h-dvh max-w-md space-y-4 px-4 py-6">
-      {step !== "name" && nameBar}
+      {step === "select" && nameBar}
       {step === "name" && (
         <div className="space-y-4">
           {seat && (
@@ -177,7 +194,7 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
                 <li key={guest.id}>
                   <button
                     type="button"
-                    onClick={() => pick(guest.id)}
+                    onClick={() => chooseName(guest.id)}
                     className={`w-full rounded-2xl px-3 py-2 text-left font-bold ${seatId === guest.id ? "bg-blush-500 text-white" : "bg-white"}`}
                   >
                     {guest.name}
@@ -193,8 +210,8 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
       {step === "select" && seat && (
         <div className="space-y-3">
           <Title sub={seat.name}>Quiz</Title>
-          <QuizChoice label="一次会のクイズ" done={receptionDone} onClick={() => open(RECEPTION_ROOM_ID)} />
-          <QuizChoice label="二次会のクイズ" done={afterpartyDone} onClick={() => open(AFTERPARTY_ROOM_ID)} />
+          <QuizChoice label="一次会のクイズ" status={receptionStatus} onClick={() => open(RECEPTION_ROOM_ID)} />
+          <QuizChoice label="二次会のクイズ" status={afterpartyStatus} onClick={() => open(AFTERPARTY_ROOM_ID)} />
         </div>
       )}
 
@@ -254,6 +271,25 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
         </div>
       )}
 
+      {step === "confirm" && pendingId && guestById(pendingId) && (
+        <Card className="space-y-4 py-10 text-center">
+          <p className="text-lg font-bold">あなたは{guestById(pendingId)?.name}さんですか？</p>
+          <Button className="w-full" onClick={acceptName}>
+            はい
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              setPendingId(null);
+              setStep("name");
+            }}
+          >
+            いいえ（選び直す）
+          </Button>
+        </Card>
+      )}
+
       {step === "review-reception" && (
         <div className="space-y-3">
           <AnswerReview roomId={RECEPTION_ROOM_ID} />
@@ -263,9 +299,27 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
         </div>
       )}
 
+      {step === "closed-reception" && (
+        <div className="space-y-3">
+          <AnswerReview roomId={RECEPTION_ROOM_ID} label="受付終了" />
+          <Button variant="outline" className="w-full" onClick={() => setStep("select")}>
+            クイズの選択に戻る
+          </Button>
+        </div>
+      )}
+
       {step === "review-afterparty" && (
         <div className="space-y-3">
           <AnswerReview roomId={AFTERPARTY_ROOM_ID} />
+          <Button variant="outline" className="w-full" onClick={() => setStep("select")}>
+            クイズの選択に戻る
+          </Button>
+        </div>
+      )}
+
+      {step === "closed-afterparty" && (
+        <div className="space-y-3">
+          <AnswerReview roomId={AFTERPARTY_ROOM_ID} label="受付終了" />
           <Button variant="outline" className="w-full" onClick={() => setStep("select")}>
             クイズの選択に戻る
           </Button>
@@ -286,11 +340,12 @@ function GuestNameBar({ name, onChange }: { name: string; onChange: () => void }
   );
 }
 
-function QuizChoice({ label, done, onClick }: { label: string; done: boolean; onClick: () => void }) {
+function QuizChoice({ label, status, onClick }: { label: string; status: "submitted" | "closed" | null; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="block w-full rounded-3xl border border-white/80 bg-white/85 p-5 text-left shadow-lg">
       <span className="text-xl font-bold">{label}</span>
-      {done && <span className="mt-1 block text-sm font-bold text-blush-600">回答済み</span>}
+      {status === "submitted" && <span className="mt-1 block text-sm font-bold text-blush-600">回答済み</span>}
+      {status === "closed" && <span className="mt-1 block text-sm font-bold text-ink-soft">受付終了</span>}
     </button>
   );
 }
