@@ -23,14 +23,15 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
   const rankingOpen = room.rankingVisible !== false;
   const myRank = rankingOpen ? ranked.find((p) => p.id === me.id)?.rank : undefined;
   const [locals, setLocals] = useState<Record<string, LocalPick>>({});
-  const [revising, setRevising] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const locked = !!me.submitted;
   const savedCount = packet.questions.filter((question) =>
     packet.myAnswers.some((answer) => answer.questionId === question.id && answer.choice != null),
   ).length;
-  const readyToSend = packet.questions.length > 0 && savedCount === packet.questions.length && !locked;
+  const remaining = Math.max(0, packet.questions.length - savedCount);
+  const readyToSend = packet.questions.length > 0 && remaining === 0 && !locked;
   const answeredIds = new Set(packet.myAnswers.filter((answer) => answer.choice != null).map((answer) => answer.questionId));
   if (room.phase === "question") {
     for (const [questionId, local] of Object.entries(locals)) {
@@ -83,12 +84,7 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
           {room.phase === "question" && locked && (
             <p className="rounded-2xl bg-blush-100 px-4 py-3 text-center text-sm font-bold text-blush-600">回答を受け付けました</p>
           )}
-          {room.phase === "question" && !locked && !readyToSend && (
-            <p className="rounded-2xl bg-white/80 px-4 py-3 text-center text-sm">
-              全問に答えてから送信してください。送信するまでは回答を変えられます。
-            </p>
-          )}
-          {room.phase === "question" && readyToSend && !revising && (
+          {room.phase === "question" && confirming && !locked && (
             <Card className="space-y-3">
               <p className="text-center text-sm font-bold">回答を送信すると答えは変えられません。これでよろしいですか？</p>
               <ul className="space-y-2 text-sm">
@@ -109,22 +105,17 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
                   setSending(true);
                   setSendError("");
                   void submitAnswers(room.id, me.id)
-                    .then(() => setRevising(false))
+                    .then(() => setConfirming(false))
                     .catch((err) => setSendError(err instanceof Error ? err.message : "送信できませんでした"))
                     .finally(() => setSending(false));
                 }}
               >
                 {sending ? "送信しています…" : "送信する"}
               </Button>
-              <Button variant="outline" className="w-full" disabled={sending} onClick={() => setRevising(true)}>
+              <Button variant="outline" className="w-full" disabled={sending} onClick={() => setConfirming(false)}>
                 戻って直す
               </Button>
             </Card>
-          )}
-          {room.phase === "question" && readyToSend && revising && (
-            <Button variant="gold" className="w-full" onClick={() => setRevising(false)}>
-              回答を確認する
-            </Button>
           )}
           {room.phase === "closed" && (
             <p className="rounded-2xl bg-blush-100 px-4 py-3 text-center text-sm font-bold text-blush-600">
@@ -138,7 +129,8 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
                 : "答え合わせは会場のスクリーンで進みます。出た問題から、自分の回答に正解が付きます。"}
             </p>
           )}
-          {packet.questions.map((question, index) => (
+          {!(room.phase === "question" && confirming && !locked) &&
+            packet.questions.map((question, index) => (
             <SelfQuestion
               key={question.id}
               room={room}
@@ -152,9 +144,19 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
               local={locals[question.id] ?? null}
               onLocal={(pick) => setLocals((prev) => ({ ...prev, [question.id]: pick }))}
               sheet={packet.answerSheet?.find((s) => s.questionId === question.id) ?? null}
-              locked={locked || (readyToSend && !revising)}
+              locked={locked}
             />
           ))}
+          {room.phase === "question" && !locked && !confirming && (
+            <div className="space-y-2">
+              <Button className="w-full" disabled={!readyToSend} onClick={() => readyToSend && setConfirming(true)}>
+                回答を送信する
+              </Button>
+              {!readyToSend && (
+                <p className="text-center text-xs text-ink-soft">あと{remaining}問で送信できます</p>
+              )}
+            </div>
+          )}
           {room.phase === "finished" &&
             (rankingOpen ? (
               <Card>
