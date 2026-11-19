@@ -26,9 +26,9 @@ export const PRIZES = [
   },
   {
     id: "dryer",
-    name: "Supersonic Nural Lite",
-    short: "Supersonic Nural Lite",
-    detail: "髪を整える、Supersonic Nural Lite です。",
+    name: "Dyson Supersonic Nural Lite",
+    short: "Dyson Supersonic Nural Lite",
+    detail: "髪を整える、Dyson Supersonic Nural Lite です。",
   },
 ] as const;
 

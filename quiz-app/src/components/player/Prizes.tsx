@@ -6,7 +6,7 @@ export function PrizeIntro({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <p className="text-center text-sm text-ink-soft sm:text-xl">
-        正解数の上位3名に景品（ウォッチ、タブレット、イヤホン、ギフト券、Supersonic Nural Lite など）。当日のお楽しみです。
+        正解数の上位3名に景品（ウォッチ、タブレット、イヤホン、ギフト券、Dyson Supersonic Nural Lite など）。当日のお楽しみです。
       </p>
     );
   }
