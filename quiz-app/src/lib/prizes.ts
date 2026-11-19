@@ -26,9 +26,9 @@ export const PRIZES = [
   },
   {
     id: "dryer",
-    name: "高級ヘアドライヤー",
-    short: "ドライヤー",
-    detail: "髪を整える、高級なヘアドライヤーです。",
+    name: "Supersonic Nural Lite",
+    short: "Supersonic Nural Lite",
+    detail: "髪を整える、Supersonic Nural Lite です。",
   },
 ] as const;
 
