@@ -24,12 +24,15 @@ export function AnswerArea({
   const [picked, setPicked] = useState<number | null>(null);
   const [text, setText] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<unknown>();
 
   const now = useServerClock();
   const open =
-    room.phase === "question" && !myAnswer && (room.questionEndsAt == null || now < room.questionEndsAt);
+    room.phase === "question" && !myAnswer && status !== "saved" && (room.questionEndsAt == null || now < room.questionEndsAt);
   const selected = myAnswer ? myAnswer.choice : picked;
+  const ready = question.type === "choice" ? picked !== null : text.trim().length > 0;
+  const preview = question.type === "choice" && picked != null ? question.choices[picked] : text.trim();
 
   async function send(answer: { choice: number } | { text: string }) {
     setStatus("saving");
@@ -37,6 +40,7 @@ export function AnswerArea({
     try {
       await enqueueForUser(`${room.id}:${me.id}`, () => submitAnswer(room, me.id, me.nickname, answer));
       setStatus("saved");
+      setConfirming(false);
     } catch (err) {
       setStatus("error");
       setError(room.phase === "question" ? err : new Error("回答は締め切られました"));
@@ -53,7 +57,7 @@ export function AnswerArea({
             return (
               <li key={i}>
                 <button
-                  disabled={!open || status === "saving"}
+                  disabled={!open || status === "saving" || confirming}
                   onClick={() => setPicked(i)}
                   className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-4 text-left text-lg font-bold transition active:scale-[0.98] ${
                     isPicked ? `${CHOICE_STYLES[i].picked} text-white shadow-lg` : `${CHOICE_STYLES[i].idle} bg-white`
@@ -82,34 +86,45 @@ export function AnswerArea({
           className={`${inputClass} text-lg`}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          disabled={!open || status === "saving"}
+          disabled={!open || status === "saving" || confirming}
           maxLength={50}
           placeholder="回答を入力"
           enterKeyHint="send"
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.nativeEvent.isComposing && text.trim()) send({ text });
+            if (e.key === "Enter" && !e.nativeEvent.isComposing && text.trim()) setConfirming(true);
           }}
         />
       )}
 
       <ErrorNote error={error} />
-      {status === "saved" && open && (
-        <p className="text-center text-xs text-ink-soft" aria-live="polite">
-          保存しました
-        </p>
+
+      {open && confirming && (
+        <div className="space-y-3 rounded-3xl bg-white/90 p-4 shadow">
+          <p className="text-center text-sm font-bold">この回答で送信しますか？</p>
+          <p className="text-center text-lg font-bold">{preview}</p>
+          <Button
+            className="w-full"
+            disabled={status === "saving"}
+            onClick={() => void send(question.type === "choice" ? { choice: picked! } : { text: text.trim() })}
+          >
+            {status === "saving" ? "送信しています…" : "送信する"}
+          </Button>
+          <Button variant="outline" className="w-full" disabled={status === "saving"} onClick={() => setConfirming(false)}>
+            戻る
+          </Button>
+        </div>
       )}
 
-      {open ? (
-        <Button
-          variant="gold"
-          size="lg"
-          className="w-full"
-          disabled={status === "saving" || (question.type === "choice" ? picked === null : !text.trim())}
-          onClick={() => send(question.type === "choice" ? { choice: picked! } : { text })}
-        >
-          {status === "saving" ? "保存しています…" : status === "error" ? "もう一度保存する" : "この回答で決定"}
-        </Button>
-      ) : (
+      {open && !confirming ? (
+        <div className="space-y-2">
+          <Button variant="gold" size="lg" className="w-full" disabled={!ready || status === "saving"} onClick={() => ready && setConfirming(true)}>
+            回答を送信する
+          </Button>
+          {!ready && (
+            <p className="text-center text-xs text-ink-soft">{question.type === "choice" ? "選択肢を選ぶと送信できます" : "回答を入力すると送信できます"}</p>
+          )}
+        </div>
+      ) : confirming ? null : (
         !reveal && (
           <p className="rounded-full bg-white/80 py-3 text-center text-sm font-bold text-ink-soft">
             {myAnswer
