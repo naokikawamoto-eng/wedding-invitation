@@ -19,6 +19,7 @@ const HOST_OPS = new Set([
   "advanceReveal",
   "showStandings",
   "setRankingVisible",
+  "releaseGuest",
   "recalculateScores",
   "finishQuiz",
   "resetRoom",
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "形式を確認してください" }, { status: 400 });
   }
   const op = body?.op;
-  if (op !== "join" && op !== "answer" && op !== "setPrizeWish" && !HOST_OPS.has(op ?? "")) {
+  if (op !== "join" && op !== "answer" && op !== "setPrizeWish" && op !== "submitAnswers" && !HOST_OPS.has(op ?? "")) {
     return Response.json({ error: "操作を確認してください" }, { status: 400 });
   }
   if (HOST_OPS.has(op ?? "") && !isHost(req)) {

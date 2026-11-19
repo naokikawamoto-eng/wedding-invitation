@@ -23,14 +23,22 @@ export function overlayParticipants(state: QuizState, roomId: string, people: Pa
     if (!nickname || nickname.length > 20) continue;
     const prev = participants[person.id];
     const prizeWish = isPrizeId(person.prizeWish) ? person.prizeWish : prev?.prizeWish;
+    const extra = {
+      ...(person.guestId ? { guestId: person.guestId, table: person.table ?? null, relation: person.relation ?? null } : {}),
+      ...(person.submitted ? { submitted: true } : {}),
+      ...(person.claimReleased ? { claimReleased: true } : {}),
+    };
     const merged: Participant = prev
-      ? { ...prev, nickname, ...(prizeWish ? { prizeWish } : {}) }
-      : { id: person.id, nickname, score: 0, totalTimeMs: 0, joinedAt: person.joinedAt ?? null, ...(prizeWish ? { prizeWish } : {}) };
+      ? { ...prev, nickname, ...(prizeWish ? { prizeWish } : {}), ...extra }
+      : { id: person.id, nickname, score: 0, totalTimeMs: 0, joinedAt: person.joinedAt ?? null, ...(prizeWish ? { prizeWish } : {}), ...extra };
     if (
       prev &&
       prev.nickname === merged.nickname &&
       (prev.prizeWish ?? null) === (merged.prizeWish ?? null) &&
-      prev.score === merged.score
+      prev.score === merged.score &&
+      (prev.guestId ?? null) === (merged.guestId ?? null) &&
+      !!prev.submitted === !!merged.submitted &&
+      !!prev.claimReleased === !!merged.claimReleased
     ) {
       continue;
     }

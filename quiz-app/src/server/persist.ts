@@ -335,18 +335,36 @@ async function answerFast(action: Extract<Action, { op: "answer" }>, now: number
 async function joinFast(action: Extract<Action, { op: "join" }>, now: number): Promise<QuizState> {
   const roomId = cleanRoomId(action.roomId);
   return enqueueGuest(roomId, action.uid, async () => {
-    const [state, own] = await Promise.all([readState(now, { fresh: true }), readOwnGuest(roomId, action.uid)]);
-    const overlaid = overlayGuests(state, roomId, own ? [own] : []);
+    const [state, everyone] = await Promise.all([readState(now, { fresh: true }), readAllGuests(roomId, true)]);
+    const overlaid = overlayGuests(state, roomId, everyone);
+    const previous = action.guestId
+      ? Object.values(overlaid.rooms[roomId]?.participants ?? {}).find((person) => person.guestId === action.guestId && person.id !== action.uid)
+      : undefined;
     const next = applyAction(overlaid, action, now);
     const participant = next.rooms[roomId]?.participants[action.uid];
     if (!participant) throw new Error("入室できませんでした");
     const answers = Object.values(next.rooms[roomId].answers).filter((answer) => answer.uid === action.uid);
     await writeGuestBlob(roomId, participant, answers);
+    if (previous?.claimReleased) await del(guestBlobPath(roomId, previous.id)).catch(() => undefined);
+    if (guestListCache?.roomId === roomId) guestListCache = null;
     return overlaid;
   });
 }
 
-async function prizeFast(action: Extract<Action, { op: "setPrizeWish" }>, now: number): Promise<QuizState> {
+async function releaseFast(action: Extract<Action, { op: "releaseGuest" }>, now: number): Promise<QuizState> {
+  const roomId = cleanRoomId(action.roomId);
+  const [state, everyone] = await Promise.all([readState(now, { fresh: true }), readAllGuests(roomId, true)]);
+  const overlaid = overlayGuests(state, roomId, everyone);
+  const next = applyAction(overlaid, action, now);
+  const owner = Object.values(next.rooms[roomId]?.participants ?? {}).find((person) => person.guestId === action.guestId);
+  if (!owner) throw new Error("そのお名前は見つかりません");
+  const answers = Object.values(next.rooms[roomId].answers).filter((answer) => answer.uid === owner.id);
+  await writeGuestBlob(roomId, owner, answers);
+  if (guestListCache?.roomId === roomId) guestListCache = null;
+  return overlaid;
+}
+
+async function prizeFast(action: Extract<Action, { op: "setPrizeWish" | "submitAnswers" }>, now: number): Promise<QuizState> {
   const roomId = cleanRoomId(action.roomId);
   return enqueueGuest(roomId, action.uid, async () => {
     const [state, own] = await Promise.all([readState(now, { fresh: true }), readOwnGuest(roomId, action.uid)]);
@@ -388,8 +406,12 @@ export async function runAction(action: Action, now = Date.now()): Promise<{ sta
     const state = await joinFast(action, now);
     return { state };
   }
-  if (usingBlob() && action.op === "setPrizeWish") {
+  if (usingBlob() && (action.op === "setPrizeWish" || action.op === "submitAnswers")) {
     const state = await prizeFast(action, now);
+    return { state };
+  }
+  if (usingBlob() && action.op === "releaseGuest") {
+    const state = await releaseFast(action, now);
     return { state };
   }
   let createdRoomId: string | undefined;

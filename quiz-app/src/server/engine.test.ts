@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { AFTERPARTY_ROOM_ID, RECEPTION_ROOM_ID } from "../lib/events";
+import { RECEPTION_GUESTS } from "../lib/reception-guests";
 import { rankParticipants } from "../lib/scoring";
 import { applyAction, emptyState, normalize, project, type QuizState, type RoomRecord } from "./engine";
 
@@ -268,6 +269,61 @@ test("順位の表示切替は回答と得点を変えない", () => {
   state = applyAction(state, { op: "setRankingVisible", roomId: AFTERPARTY_ROOM_ID, visible: false }, 1_500);
   assert.equal(state.rooms[AFTERPARTY_ROOM_ID].rankingVisible, false);
   assert.equal(state.rooms[AFTERPARTY_ROOM_ID].phase, "lobby");
+});
+
+test("席次表は84名で、取った名前は二度目を拒み、未送信の回答も締切時に数える", () => {
+  assert.equal(RECEPTION_GUESTS.length, 84);
+  assert.equal(RECEPTION_GUESTS.filter((guest) => guest.side === "groom").length, 55);
+  assert.equal(RECEPTION_GUESTS.filter((guest) => guest.side === "bride").length, 29);
+  assert.equal(new Set(RECEPTION_GUESTS.map((guest) => guest.name)).size, 84);
+  const first = RECEPTION_GUESTS[0];
+  let state = room(1_000);
+  state = applyAction(state, { op: "openQuiz", roomId: RECEPTION_ROOM_ID }, 1_000);
+  state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "old", nickname: "ジョンソン" }, 1_000);
+  state = applyAction(
+    state,
+    { op: "join", roomId: RECEPTION_ROOM_ID, uid: "phone-a", nickname: first.name, guestId: first.id, prizeWish: "watch" },
+    1_100,
+  );
+  assert.throws(
+    () =>
+      applyAction(
+        state,
+        { op: "join", roomId: RECEPTION_ROOM_ID, uid: "phone-b", nickname: first.name, guestId: first.id, prizeWish: "pad" },
+        1_200,
+      ),
+    /回答は受付済みです/,
+  );
+  state = applyAction(
+    state,
+    { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "phone-a", questionId: "groom-sports", choice: 2 },
+    1_300,
+  );
+  state = applyAction(state, { op: "releaseGuest", roomId: RECEPTION_ROOM_ID, guestId: first.id }, 1_400);
+  state = applyAction(
+    state,
+    { op: "join", roomId: RECEPTION_ROOM_ID, uid: "phone-b", nickname: first.name, guestId: first.id, prizeWish: "pad" },
+    1_500,
+  );
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].answers[`groom-sports_phone-b`].choice, 2);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants["phone-a"], undefined);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.old.nickname, "ジョンソン");
+  for (const question of state.rooms[RECEPTION_ROOM_ID].questions) {
+    const choice = question.id === "groom-sports" ? 2 : 0;
+    state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "phone-b", questionId: question.id, choice }, 1_600);
+  }
+  state = applyAction(state, { op: "submitAnswers", roomId: RECEPTION_ROOM_ID, uid: "phone-b" }, 1_700);
+  assert.throws(
+    () => applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "phone-b", questionId: "groom-sports", choice: 1 }, 1_800),
+    /受け付けました/,
+  );
+  state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "partial", nickname: "ゆりか" }, 1_900);
+  state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "partial", questionId: "groom-sports", choice: 2 }, 1_950);
+  state = applyAction(state, { op: "closeAnswers", roomId: RECEPTION_ROOM_ID }, 2_000);
+  state = applyAction(state, { op: "revealBoard", roomId: RECEPTION_ROOM_ID }, 2_100);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants["phone-b"].score >= 1, true);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.partial.score, 1);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.old.nickname, "ジョンソン");
 });
 
 test("二次会の回答は一次会の得点に入らない", () => {

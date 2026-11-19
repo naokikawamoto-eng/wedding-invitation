@@ -8,7 +8,7 @@ import { EVENT_LABEL } from "@/lib/events";
 import { useGuestPacket, useParticipants } from "@/lib/hooks";
 import { rankParticipants } from "@/lib/scoring";
 import { prizeShort, type PrizeId } from "@/lib/prizes";
-import { setPrizeWish, submitAnswer } from "@/lib/quiz";
+import { setPrizeWish, submitAnswer, submitAnswers } from "@/lib/quiz";
 import type { Participant, Reveal, Room } from "@/lib/types";
 import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
@@ -23,6 +23,14 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
   const rankingOpen = room.rankingVisible !== false;
   const myRank = rankingOpen ? ranked.find((p) => p.id === me.id)?.rank : undefined;
   const [locals, setLocals] = useState<Record<string, LocalPick>>({});
+  const [revising, setRevising] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const locked = !!me.submitted;
+  const savedCount = packet.questions.filter((question) =>
+    packet.myAnswers.some((answer) => answer.questionId === question.id && answer.choice != null),
+  ).length;
+  const readyToSend = packet.questions.length > 0 && savedCount === packet.questions.length && !locked;
   const answeredIds = new Set(packet.myAnswers.filter((answer) => answer.choice != null).map((answer) => answer.questionId));
   if (room.phase === "question") {
     for (const [questionId, local] of Object.entries(locals)) {
@@ -72,10 +80,51 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
 
       {room.phase !== "lobby" && (
         <div className="space-y-4">
-          {room.phase === "question" && (
+          {room.phase === "question" && locked && (
+            <p className="rounded-2xl bg-blush-100 px-4 py-3 text-center text-sm font-bold text-blush-600">回答を受け付けました</p>
+          )}
+          {room.phase === "question" && !locked && !readyToSend && (
             <p className="rounded-2xl bg-white/80 px-4 py-3 text-center text-sm">
-              全問に答えてください。締め切りまで回答は変えられます。
+              全問に答えてから送信してください。送信するまでは回答を変えられます。
             </p>
+          )}
+          {room.phase === "question" && readyToSend && !revising && (
+            <Card className="space-y-3">
+              <p className="text-center text-sm font-bold">回答を送信すると答えは変えられません。これでよろしいですか？</p>
+              <ul className="space-y-2 text-sm">
+                {packet.questions.map((question, index) => {
+                  const choice = packet.myAnswers.find((answer) => answer.questionId === question.id)?.choice;
+                  return (
+                    <li key={question.id}>
+                      <span className="text-ink-soft">Q{index + 1}</span> {choice != null ? question.choices[choice] : "未回答"}
+                    </li>
+                  );
+                })}
+              </ul>
+              {sendError && <p className="text-center text-sm text-red-700">{sendError}</p>}
+              <Button
+                className="w-full"
+                disabled={sending}
+                onClick={() => {
+                  setSending(true);
+                  setSendError("");
+                  void submitAnswers(room.id, me.id)
+                    .then(() => setRevising(false))
+                    .catch((err) => setSendError(err instanceof Error ? err.message : "送信できませんでした"))
+                    .finally(() => setSending(false));
+                }}
+              >
+                {sending ? "送信しています…" : "送信する"}
+              </Button>
+              <Button variant="outline" className="w-full" disabled={sending} onClick={() => setRevising(true)}>
+                戻って直す
+              </Button>
+            </Card>
+          )}
+          {room.phase === "question" && readyToSend && revising && (
+            <Button variant="gold" className="w-full" onClick={() => setRevising(false)}>
+              回答を確認する
+            </Button>
           )}
           {room.phase === "closed" && (
             <p className="rounded-2xl bg-blush-100 px-4 py-3 text-center text-sm font-bold text-blush-600">
@@ -103,6 +152,7 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
               local={locals[question.id] ?? null}
               onLocal={(pick) => setLocals((prev) => ({ ...prev, [question.id]: pick }))}
               sheet={packet.answerSheet?.find((s) => s.questionId === question.id) ?? null}
+              locked={locked || (readyToSend && !revising)}
             />
           ))}
           {room.phase === "finished" &&
@@ -180,6 +230,7 @@ function SelfQuestion({
   local,
   onLocal,
   sheet,
+  locked = false,
 }: {
   room: Room;
   me: Participant;
@@ -192,10 +243,11 @@ function SelfQuestion({
   local: LocalPick | null;
   onLocal: (pick: LocalPick) => void;
   sheet: Reveal | null;
+  locked?: boolean;
 }) {
   const tokenRef = useRef(0);
   const [error, setError] = useState<string>();
-  const open = room.phase === "question";
+  const open = room.phase === "question" && !locked;
   const selected = visibleChoice(serverChoice, local, open);
   const status = open ? local?.status : undefined;
 

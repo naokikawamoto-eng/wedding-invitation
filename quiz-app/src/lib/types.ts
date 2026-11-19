@@ -72,6 +72,15 @@ export interface Participant {
   joinedAt: number | null;
   /** 一次会で希望した景品。未設定は未選択。順位には使わない */
   prizeWish?: string | null;
+  /** 席次表のID。テスト参加など名簿外は未設定 */
+  guestId?: string | null;
+  /** 卓。ゲストの選択画面には出さない */
+  table?: string | null;
+  relation?: string | null;
+  /** 送信済み。true のあいだ回答は変えられない */
+  submitted?: boolean;
+  /** 主催者が名前の再参加を許した */
+  claimReleased?: boolean;
 }
 
 export interface Answer {

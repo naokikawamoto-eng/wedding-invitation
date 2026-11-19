@@ -11,6 +11,7 @@ import type {
   Room,
   SyncBody,
 } from "../lib/types";
+import { receptionGuest } from "../lib/reception-guests";
 import { isPrizeId } from "../lib/prizes";
 import { PRESETS } from "./presets";
 
@@ -27,8 +28,10 @@ export interface QuizState {
 }
 
 export type Action =
-  | { op: "join"; roomId: string; uid: string; nickname: string; prizeWish?: string | null }
+  | { op: "join"; roomId: string; uid: string; nickname: string; prizeWish?: string | null; guestId?: string }
   | { op: "setPrizeWish"; roomId: string; uid: string; prizeWish: string }
+  | { op: "submitAnswers"; roomId: string; uid: string }
+  | { op: "releaseGuest"; roomId: string; guestId: string }
   | { op: "answer"; roomId: string; uid: string; questionId?: string; choice?: number | null; text?: string | null }
   | { op: "createRoom"; title: string; event: QuizEvent; hostUid: string }
   | { op: "saveQuestion"; roomId: string; draft: QuestionDraft; order: number; questionId?: string }
@@ -229,6 +232,65 @@ function updateRoom(state: QuizState, room: RoomRecord): QuizState {
 }
 
 /** 一次会だけ保存する。未指定なら今の希望を残す。二次会では保存しない */
+function joinFromGuestList(
+  state: QuizState,
+  room: RoomRecord,
+  action: Extract<Action, { op: "join" }>,
+  now: number,
+): QuizState {
+  if (room.event !== "reception") throw new Error("名簿は一次会だけです");
+  const seat = action.guestId ? receptionGuest(action.guestId) : undefined;
+  if (!seat) throw new Error("名簿からお名前を選んでください");
+  const owner = Object.values(room.participants).find((person) => person.guestId === seat.id);
+  if (owner && owner.id !== action.uid && !owner.claimReleased) throw new Error("回答は受付済みです");
+  if (!isPrizeId(action.prizeWish) && !owner?.prizeWish) throw new Error("景品を選んでください");
+  const prizeWish = isPrizeId(action.prizeWish) ? action.prizeWish : owner?.prizeWish;
+  if (owner && owner.id !== action.uid) {
+    const moved = moveParticipant(room, owner.id, action.uid);
+    const person = moved.participants[action.uid];
+    return updateRoom(state, {
+      ...moved,
+      participants: {
+        ...moved.participants,
+        [action.uid]: { ...person, prizeWish, claimReleased: false, nickname: seat.name, relation: seat.relation, table: seat.table },
+      },
+    });
+  }
+  const existing = room.participants[action.uid];
+  if (!existing && Object.keys(room.participants).length >= 400) throw new Error("参加者が上限に達しました");
+  const participant: Participant = existing
+    ? { ...existing, nickname: seat.name, guestId: seat.id, relation: seat.relation, table: seat.table, prizeWish, claimReleased: false }
+    : {
+        id: action.uid,
+        nickname: seat.name,
+        score: 0,
+        totalTimeMs: 0,
+        joinedAt: now,
+        guestId: seat.id,
+        relation: seat.relation,
+        table: seat.table,
+        prizeWish,
+      };
+  return updateRoom(state, { ...room, participants: { ...room.participants, [action.uid]: participant } });
+}
+
+function moveParticipant(room: RoomRecord, fromId: string, toId: string): RoomRecord {
+  const current = room.participants[fromId];
+  const participants = { ...room.participants };
+  delete participants[fromId];
+  participants[toId] = { ...current, id: toId };
+  const answers: Record<string, Answer> = {};
+  for (const answer of Object.values(room.answers)) {
+    if (answer.uid !== fromId) {
+      answers[answer.id] = answer;
+      continue;
+    }
+    const id = `${answer.questionId}_${toId}`;
+    answers[id] = { ...answer, id, uid: toId };
+  }
+  return { ...room, participants, answers };
+}
+
 function cleanPrizeWish(room: RoomRecord, value: string | null | undefined, current?: string | null): string | undefined {
   if (room.event !== "reception") return undefined;
   if (value == null || value === "") return current ?? undefined;
@@ -300,8 +362,9 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
   switch (action.op) {
     case "join": {
       const room = mustRoom(state, action.roomId);
-      const nickname = cleanNickname(action.nickname);
       if (!action.uid || action.uid.length > 80) throw new Error("参加者を確認できません");
+      if (action.guestId) return joinFromGuestList(state, room, action, now);
+      const nickname = cleanNickname(action.nickname);
       const existing = room.participants[action.uid];
       if (!existing && Object.keys(room.participants).length >= 400) throw new Error("参加者が上限に達しました");
       const prizeWish = cleanPrizeWish(room, action.prizeWish, existing?.prizeWish);
@@ -309,6 +372,36 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         ? { ...existing, nickname, ...(prizeWish ? { prizeWish } : {}) }
         : { id: action.uid, nickname, score: 0, totalTimeMs: 0, joinedAt: now, ...(prizeWish ? { prizeWish } : {}) };
       return updateRoom(state, { ...room, participants: { ...room.participants, [action.uid]: participant } });
+    }
+    case "submitAnswers": {
+      const room = mustRoom(state, action.roomId);
+      if (room.event !== "reception") throw new Error("送信は一次会だけです");
+      const participant = room.participants[action.uid];
+      if (!participant) throw new Error("先に入室してください");
+      if (participant.submitted) return state;
+      const mine = new Set(
+        Object.values(room.answers)
+          .filter((answer) => answer.uid === action.uid && answer.choice != null)
+          .map((answer) => answer.questionId),
+      );
+      if (room.questions.some((question) => !mine.has(question.id))) throw new Error("すべての問題に答えてから送信してください");
+      return updateRoom(state, {
+        ...room,
+        participants: { ...room.participants, [action.uid]: { ...participant, submitted: true } },
+      });
+    }
+    case "releaseGuest": {
+      const room = mustRoom(state, action.roomId);
+      if (room.event !== "reception") throw new Error("名簿の解除は一次会だけです");
+      const owner = Object.values(room.participants).find((person) => person.guestId === action.guestId);
+      if (!owner) throw new Error("そのお名前は見つかりません");
+      return updateRoom(state, {
+        ...room,
+        participants: {
+          ...room.participants,
+          [owner.id]: { ...owner, claimReleased: true, submitted: false },
+        },
+      });
     }
     case "setPrizeWish": {
       const room = mustRoom(state, action.roomId);
@@ -332,6 +425,7 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
       if (!question) throw new Error(room.mode === "self" ? "問題を選んでください" : "問題が見つかりません");
       const participant = room.participants[action.uid];
       if (!participant) throw new Error("先に入室してください");
+      if (participant.submitted) throw new Error("回答を受け付けました");
       const id = `${question.id}_${action.uid}`;
       const previous = room.answers[id];
       if (previous && room.mode !== "self") throw new Error("すでに回答済みです");

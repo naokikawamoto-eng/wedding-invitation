@@ -12,6 +12,8 @@ export function Ranking({
   showTime = true,
   byTime = true,
   showPrize = false,
+  showTable = false,
+  onRelease,
   onRemove,
 }: {
   participants: Participant[];
@@ -23,6 +25,8 @@ export function Ranking({
   byTime?: boolean;
   /** 一次会の希望景品。順位には影響しない */
   showPrize?: boolean;
+  showTable?: boolean;
+  onRelease?: (p: Participant) => void;
   onRemove?: (p: Participant) => void;
 }) {
   const ranked = rankParticipants(participants, byTime);
@@ -46,6 +50,7 @@ export function Ranking({
           </span>
           <span className="min-w-0 flex-1 truncate font-bold">
             {p.nickname}
+            {showTable && p.table && <span className="ml-2 text-[0.7em] font-bold text-ink-soft">{p.table}卓</span>}
             {showPrize && <span className="ml-2 text-[0.7em] font-bold text-ink-soft">{prizeShort(p.prizeWish)}</span>}
           </span>
           {showTime && p.score > 0 && (
@@ -55,6 +60,15 @@ export function Ranking({
             {p.score}
             <span className="text-[0.7em]"> 問</span>
           </span>
+          {onRelease && p.guestId && (
+            <button
+              onClick={() => onRelease(p)}
+              className="shrink-0 rounded-full px-2 text-xs text-ink-soft hover:bg-gold-50"
+              title="別のスマホで入り直せるようにする"
+            >
+              解除
+            </button>
+          )}
           {onRemove && (
             <button
               onClick={() => onRemove(p)}

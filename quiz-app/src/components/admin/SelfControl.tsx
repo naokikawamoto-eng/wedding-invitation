@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { advanceReveal, closeAnswers, finishQuiz, openQuiz, recalculateScores, resetRoom, revealAll, revealBoard } from "@/lib/quiz";
+import { advanceReveal, closeAnswers, finishQuiz, openQuiz, recalculateScores, releaseGuest, resetRoom, revealAll, revealBoard } from "@/lib/quiz";
 import type { Answer, Participant, Question, Room } from "@/lib/types";
 import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
@@ -141,7 +141,19 @@ export function SelfControl({
       </div>
       <Card className="h-fit">
         <h3 className="mb-3 font-bold">順位（正解数。同点は同順位）</h3>
-        <Ranking participants={participants} byTime={false} showTime={false} limit={10} showPrize />
+        <Ranking
+          participants={participants}
+          byTime={false}
+          showTime={false}
+          limit={10}
+          showPrize
+          showTable
+          onRelease={(person) => {
+            if (person.guestId && confirm(`「${person.nickname}」を別のスマホで入り直せるようにします。回答は残します。`)) {
+              void run(() => releaseGuest(room.id, person.guestId!));
+            }
+          }}
+        />
       </Card>
     </div>
   );

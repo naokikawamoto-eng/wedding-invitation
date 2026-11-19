@@ -103,6 +103,7 @@ function AdminRoom({ room }: { room: Room }) {
           <Ranking
             participants={participants}
             showPrize={room.event === "reception"}
+            showTable={room.event === "reception"}
             byTime={room.event !== "reception"}
             showTime={room.event !== "reception"}
             onRemove={(p) => {
