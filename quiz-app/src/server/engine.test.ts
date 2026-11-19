@@ -315,6 +315,7 @@ test("席次表は84名で、取った名前は二度目を拒み、未送信の
     state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "phone-b", questionId: question.id, choice }, 1_600);
   }
   state = applyAction(state, { op: "submitAnswers", roomId: RECEPTION_ROOM_ID, uid: "phone-b" }, 1_700);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].participants["phone-b"].submittedAt, 1_700);
   assert.throws(
     () => applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "phone-b", questionId: "groom-sports", choice: 1 }, 1_800),
     /受け付けました/,

@@ -79,6 +79,8 @@ export interface Participant {
   relation?: string | null;
   /** 送信済み。true のあいだ回答は変えられない */
   submitted?: boolean;
+  /** 送信した時刻。主催者の並びだけに使う */
+  submittedAt?: number | null;
   /** 主催者が名前の再参加を許した */
   claimReleased?: boolean;
 }

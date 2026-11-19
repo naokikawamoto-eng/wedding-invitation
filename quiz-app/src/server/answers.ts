@@ -25,7 +25,7 @@ export function overlayParticipants(state: QuizState, roomId: string, people: Pa
     const prizeWish = isPrizeId(person.prizeWish) ? person.prizeWish : prev?.prizeWish;
     const extra = {
       ...(person.guestId ? { guestId: person.guestId, table: person.table ?? null, relation: person.relation ?? null } : {}),
-      ...(person.submitted ? { submitted: true } : {}),
+      ...(person.submitted ? { submitted: true, ...(typeof person.submittedAt === "number" ? { submittedAt: person.submittedAt } : {}) } : {}),
       ...(person.claimReleased ? { claimReleased: true } : {}),
     };
     const merged: Participant = prev
@@ -38,6 +38,7 @@ export function overlayParticipants(state: QuizState, roomId: string, people: Pa
       prev.score === merged.score &&
       (prev.guestId ?? null) === (merged.guestId ?? null) &&
       !!prev.submitted === !!merged.submitted &&
+      (prev.submittedAt ?? null) === (merged.submittedAt ?? null) &&
       !!prev.claimReleased === !!merged.claimReleased
     ) {
       continue;

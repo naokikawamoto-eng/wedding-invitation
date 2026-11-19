@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { advanceReveal, closeAnswers, finishQuiz, openQuiz, recalculateScores, releaseGuest, resetRoom, revealAll, revealBoard } from "@/lib/quiz";
-import type { Answer, Participant, Question, Room } from "@/lib/types";
+import { hostSubmissions } from "@/lib/scoring";
+import type { Answer, AnswerKey, Participant, Question, Room } from "@/lib/types";
 import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
 import { RankingToggle } from "./RankingToggle";
@@ -11,11 +12,13 @@ import { RankingToggle } from "./RankingToggle";
 export function SelfControl({
   room,
   questions,
+  keys,
   answers,
   participants,
 }: {
   room: Room;
   questions: Question[];
+  keys: Map<string, AnswerKey>;
   answers: Answer[];
   participants: Participant[];
 }) {
@@ -36,6 +39,7 @@ export function SelfControl({
   }
 
   const donePeople = new Set(answers.map((a) => a.uid)).size;
+  const board = hostSubmissions(participants, questions, keys, answers);
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
@@ -139,8 +143,39 @@ export function SelfControl({
           </div>
         </Card>
       </div>
-      <Card className="h-fit">
-        <h3 className="mb-3 font-bold">順位（正解数。同点は同順位）</h3>
+      <Card className="h-fit space-y-4">
+        <div>
+          <h3 className="mb-3 font-bold">送信済み（{board.submitted.length}人）</h3>
+          {board.submitted.length === 0 ? (
+            <p className="text-sm text-ink-soft">まだ送信した人はいません</p>
+          ) : (
+            <ol className="space-y-2">
+              {board.submitted.map((row) => (
+                <li key={row.person.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/70 px-3 py-2 text-sm">
+                  <span className="min-w-0 truncate font-bold">{row.person.nickname}</span>
+                  <span className="shrink-0 font-bold text-blush-600">
+                    {row.correct}/{questions.length}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+        <div>
+          <h3 className="mb-3 font-bold">未送信（{board.pending.length}人）</h3>
+          {board.pending.length === 0 ? (
+            <p className="text-sm text-ink-soft">全員が送信済みです</p>
+          ) : (
+            <ul className="space-y-2">
+              {board.pending.map((person) => (
+                <li key={person.id} className="truncate rounded-2xl bg-white/70 px-3 py-2 text-sm">
+                  {person.nickname}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <h3 className="font-bold">順位（正解数。同点は同順位）</h3>
         <Ranking
           participants={participants}
           byTime={false}

@@ -2,17 +2,15 @@
 
 import { ANY_PRIZE, PRIZES, type PrizeId } from "@/lib/prizes";
 
+const PRIZE_LINE = "正解数の上位3名に景品（スマートウォッチ、タブレット、イヤホン、商品券、Dyson Supersonic Nural Lite など）。";
+
 export function PrizeIntro({ compact = false }: { compact?: boolean }) {
   if (compact) {
-    return (
-      <p className="text-center text-sm text-ink-soft sm:text-xl">
-        正解数の上位3名に景品（ウォッチ、タブレット、イヤホン、商品券、Dyson Supersonic Nural Lite など）。当日のお楽しみです。
-      </p>
-    );
+    return <p className="text-center text-sm text-ink-soft sm:text-xl">{PRIZE_LINE}</p>;
   }
   return (
     <section className="space-y-3 rounded-3xl bg-white/80 p-4 shadow-sm">
-      <h2 className="text-center text-base font-bold leading-snug">正解数の上位3名様に景品をプレゼント！</h2>
+      <h2 className="text-center text-base font-bold leading-snug">{PRIZE_LINE}</h2>
       <ul className="space-y-2">
         {PRIZES.map((prize) => (
           <li key={prize.id} className="rounded-2xl bg-blush-50/80 px-3 py-2">
@@ -21,7 +19,6 @@ export function PrizeIntro({ compact = false }: { compact?: boolean }) {
           </li>
         ))}
       </ul>
-      <p className="text-center text-xs leading-relaxed text-ink-soft">など。どの景品になるかは、当日のお楽しみです。</p>
     </section>
   );
 }

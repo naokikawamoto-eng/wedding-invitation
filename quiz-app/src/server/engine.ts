@@ -387,7 +387,7 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
       if (room.questions.some((question) => !mine.has(question.id))) throw new Error("すべての問題に答えてから送信してください");
       return updateRoom(state, {
         ...room,
-        participants: { ...room.participants, [action.uid]: { ...participant, submitted: true } },
+        participants: { ...room.participants, [action.uid]: { ...participant, submitted: true, submittedAt: now } },
       });
     }
     case "releaseGuest": {
@@ -399,7 +399,7 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         ...room,
         participants: {
           ...room.participants,
-          [owner.id]: { ...owner, claimReleased: true, submitted: false },
+          [owner.id]: { ...owner, claimReleased: true, submitted: false, submittedAt: null },
         },
       });
     }

@@ -91,6 +91,44 @@ export function questionStats(q: Question, key: AnswerKey | undefined, answers: 
   };
 }
 
+export interface SubmissionRow {
+  person: Participant;
+  correct: number;
+  submittedAt: number;
+}
+
+/** 主催者向け。発表前でも全問の正解数を数える。ゲストの得点や順位には使わない */
+export function hostSubmissions(
+  participants: Participant[],
+  questions: Question[],
+  keys: Map<string, AnswerKey>,
+  answers: Answer[],
+): { submitted: SubmissionRow[]; pending: Participant[] } {
+  const submitted: SubmissionRow[] = [];
+  const pending: Participant[] = [];
+  for (const person of participants) {
+    if (!person.submitted) {
+      pending.push(person);
+      continue;
+    }
+    let correct = 0;
+    for (const question of questions) {
+      const key = keys.get(question.id);
+      const answer = answers.find((item) => item.uid === person.id && item.questionId === question.id);
+      if (key && answer && isCorrect(question.type, key, answer)) correct += 1;
+    }
+    const latest = answers.reduce((max, item) => (item.uid === person.id && item.answeredAt ? Math.max(max, item.answeredAt) : max), 0);
+    submitted.push({
+      person,
+      correct,
+      submittedAt: typeof person.submittedAt === "number" ? person.submittedAt : latest || Number.POSITIVE_INFINITY,
+    });
+  }
+  submitted.sort((a, b) => b.correct - a.correct || a.submittedAt - b.submittedAt || a.person.nickname.localeCompare(b.person.nickname, "ja"));
+  pending.sort((a, b) => (a.joinedAt ?? 0) - (b.joinedAt ?? 0) || a.nickname.localeCompare(b.nickname, "ja"));
+  return { submitted, pending };
+}
+
 export function formatSeconds(ms: number): string {
   return `${(ms / 1000).toFixed(1)}秒`;
 }

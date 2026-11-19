@@ -56,7 +56,7 @@ export function ControlPanel({
   const answeredCount = answers.filter((a) => a.questionId === room.currentQuestionId).length;
 
   if (room.mode === "self") {
-    return <SelfControl room={room} questions={questions} answers={answers} participants={participants} />;
+    return <SelfControl room={room} questions={questions} keys={keys} answers={answers} participants={participants} />;
   }
 
   async function run(action: () => Promise<unknown>, confirmMessage?: string) {
