@@ -16,14 +16,13 @@ import { RankingHiddenNote } from "../admin/RankingToggle";
 import { Button, Card, Ornament, Title } from "../ui";
 
 /** 一次会。全員が全問を自分のペースで答え、締め切りまで選び直せる */
-export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
+export function SelfPlay({ room, me, onSubmitted }: { room: Room; me: Participant; onSubmitted?: () => void }) {
   const packet = useGuestPacket(room.id);
   const participants = useParticipants(room.id).data ?? [];
   const ranked = rankParticipants(participants, false);
   const rankingOpen = room.rankingVisible !== false;
   const myRank = rankingOpen ? ranked.find((p) => p.id === me.id)?.rank : undefined;
   const [locals, setLocals] = useState<Record<string, LocalPick>>({});
-  const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const locked = !!me.submitted;
@@ -81,42 +80,6 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
 
       {room.phase !== "lobby" && (
         <div className="space-y-4">
-          {room.phase === "question" && locked && (
-            <p className="rounded-2xl bg-blush-100 px-4 py-3 text-center text-sm font-bold text-blush-600">回答を受け付けました</p>
-          )}
-          {room.phase === "question" && confirming && !locked && (
-            <Card className="space-y-3">
-              <p className="text-center text-sm font-bold">回答を送信すると答えは変えられません。これでよろしいですか？</p>
-              <ul className="space-y-2 text-sm">
-                {packet.questions.map((question, index) => {
-                  const choice = packet.myAnswers.find((answer) => answer.questionId === question.id)?.choice;
-                  return (
-                    <li key={question.id}>
-                      <span className="text-ink-soft">Q{index + 1}</span> {choice != null ? question.choices[choice] : "未回答"}
-                    </li>
-                  );
-                })}
-              </ul>
-              {sendError && <p className="text-center text-sm text-red-700">{sendError}</p>}
-              <Button
-                className="w-full"
-                disabled={sending}
-                onClick={() => {
-                  setSending(true);
-                  setSendError("");
-                  void submitAnswers(room.id, me.id)
-                    .then(() => setConfirming(false))
-                    .catch((err) => setSendError(err instanceof Error ? err.message : "送信できませんでした"))
-                    .finally(() => setSending(false));
-                }}
-              >
-                {sending ? "送信しています…" : "送信する"}
-              </Button>
-              <Button variant="outline" className="w-full" disabled={sending} onClick={() => setConfirming(false)}>
-                戻って直す
-              </Button>
-            </Card>
-          )}
           {room.phase === "closed" && (
             <p className="rounded-2xl bg-blush-100 px-4 py-3 text-center text-sm font-bold text-blush-600">
               締め切りました。正解発表をお待ちください。
@@ -129,8 +92,7 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
                 : "答え合わせは会場のスクリーンで進みます。出た問題から、自分の回答に正解が付きます。"}
             </p>
           )}
-          {!(room.phase === "question" && confirming && !locked) &&
-            packet.questions.map((question, index) => (
+          {packet.questions.map((question, index) => (
             <SelfQuestion
               key={question.id}
               room={room}
@@ -147,14 +109,25 @@ export function SelfPlay({ room, me }: { room: Room; me: Participant }) {
               locked={locked}
             />
           ))}
-          {room.phase === "question" && !locked && !confirming && (
+          {room.phase === "question" && !locked && (
             <div className="space-y-2">
-              <Button className="w-full" disabled={!readyToSend} onClick={() => readyToSend && setConfirming(true)}>
-                回答を送信する
+              <Button
+                className="w-full"
+                disabled={!readyToSend || sending}
+                onClick={() => {
+                  if (!readyToSend || sending) return;
+                  setSending(true);
+                  setSendError("");
+                  void submitAnswers(room.id, me.id)
+                    .then(() => onSubmitted?.())
+                    .catch((err) => setSendError(err instanceof Error ? err.message : "送信できませんでした"))
+                    .finally(() => setSending(false));
+                }}
+              >
+                {sending ? "送信しています…" : "回答を送信する"}
               </Button>
-              {!readyToSend && (
-                <p className="text-center text-xs text-ink-soft">あと{remaining}問で送信できます</p>
-              )}
+              {sendError && <p className="text-center text-sm text-red-700">{sendError}</p>}
+              {!readyToSend && <p className="text-center text-xs text-ink-soft">あと{remaining}問で送信できます</p>}
             </div>
           )}
           {room.phase === "finished" &&

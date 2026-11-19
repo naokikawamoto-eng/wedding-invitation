@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { syncStamp } from "./answer-ui";
+import { readOrCreateGuestId, readSeat, subscribeGuestId, subscribeSeat } from "./guest-session";
 import type { Answer, AnswerKey, Participant, Question, SyncBody } from "./types";
 import { passcode } from "./transport";
 import { registerPuller } from "./refresh";
@@ -22,8 +23,6 @@ interface Entry {
 }
 
 const entries = new Map<string, Entry>();
-
-const UID_KEY = "wedding-quiz-guest-id";
 
 let serverNow = 0;
 let receivedAt = 0;
@@ -67,14 +66,19 @@ export function useServerClock() {
 export function useGuestId() {
   const [uid, setUid] = useState<string | null>(null);
   useEffect(() => {
-    let id = localStorage.getItem(UID_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(UID_KEY, id);
-    }
-    setUid(id);
+    setUid(readOrCreateGuestId());
+    return subscribeGuestId(setUid);
   }, []);
   return uid;
+}
+
+export function useGuestSeat() {
+  const [seatId, setSeatId] = useState<string | null>(null);
+  useEffect(() => {
+    setSeatId(readSeat());
+    return subscribeSeat(setSeatId);
+  }, []);
+  return seatId;
 }
 
 export function useGuestUser() {

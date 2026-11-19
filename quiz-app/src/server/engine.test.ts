@@ -339,3 +339,22 @@ test("二次会の回答は一次会の得点に入らない", () => {
   assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.u.score, 0);
   assert.equal(state.rooms[RECEPTION_ROOM_ID].phase, "lobby");
 });
+
+test("二次会が終わったあとは自分の回答だけ見え、未発表の正解は渡さない", () => {
+  let state = room(0);
+  state = applyAction(state, { op: "join", roomId: AFTERPARTY_ROOM_ID, uid: "u", nickname: "ゲスト" }, 0);
+  state = applyAction(state, { op: "showQuestion", roomId: AFTERPARTY_ROOM_ID, questionId: "nijie-1" }, 0);
+  state = applyAction(state, { op: "answer", roomId: AFTERPARTY_ROOM_ID, uid: "u", choice: 0 }, 10);
+  state = applyAction(state, { op: "revealAnswer", roomId: AFTERPARTY_ROOM_ID, questionId: "nijie-1" }, 20);
+  state = applyAction(state, { op: "finishQuiz", roomId: AFTERPARTY_ROOM_ID }, 30);
+  const guest = project(state, { view: "guest", roomId: AFTERPARTY_ROOM_ID, uid: "u" }, 40);
+  assert.equal(guest.questions?.length, 10);
+  assert.equal(guest.myAnswers?.length, 1);
+  assert.equal(guest.myAnswers?.[0].choice, 0);
+  assert.deepEqual(
+    guest.answerSheet?.map((item) => item.questionId),
+    ["nijie-1"],
+  );
+  assert.equal(guest.answerSheet?.[0].correctChoice, 2);
+  assert.equal(guest.answerSheet?.some((item) => item.questionId === "nijie-2"), false);
+});

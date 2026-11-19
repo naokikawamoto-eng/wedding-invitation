@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, Ornament, Title, inputClass } from "@/components/ui";
-import { EVENT_LABEL, PRESET_ROOMS } from "@/lib/events";
 
 export default function Home() {
   const router = useRouter();
@@ -16,22 +15,13 @@ export default function Home() {
       </div>
       <Title sub="河本直樹 & 磯野有梨花">Wedding Quiz</Title>
       <Ornament />
-      <div className="space-y-3">
-        {PRESET_ROOMS.map((room) => (
-          <Link
-            key={room.id}
-            href={`/play/${room.id}`}
-            className="block rounded-3xl border border-white/80 bg-white/85 p-5 shadow-lg shadow-blush-100/60 transition hover:shadow-xl"
-          >
-            <p className="text-xs font-bold text-blush-600">{EVENT_LABEL[room.event]}</p>
-            <p className="mt-1 text-xl font-bold">クイズに参加する</p>
-            <p className="mt-1 text-sm text-ink-soft">{room.hint}</p>
-            <p className="mt-1 text-sm text-ink-soft">
-              コード <span className="font-display text-lg tracking-widest text-gold-600">{room.id}</span>
-            </p>
-          </Link>
-        ))}
-      </div>
+      <Link
+        href="/play"
+        className="block rounded-3xl border border-white/80 bg-white/85 p-5 shadow-lg shadow-blush-100/60 transition hover:shadow-xl"
+      >
+        <p className="text-xl font-bold">クイズに参加する</p>
+        <p className="mt-1 text-sm text-ink-soft">お名前を選んでから、一次会と二次会のクイズに進みます</p>
+      </Link>
       <Card>
         <form
           className="space-y-4"

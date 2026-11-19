@@ -774,13 +774,23 @@ export function project(
     const active = room.phase === "question" || room.phase === "closed" || room.phase === "revealed";
     const found = active ? record.questions.find((q) => q.id === room.currentQuestionId) ?? null : null;
     const uid = query.uid ?? "";
+    const finished = room.phase === "finished";
+    const revealed = new Set(record.revealedQuestionIds);
+    const sheet = finished
+      ? ordered(record)
+          .filter((q) => revealed.has(q.id) && record.keys[q.id])
+          .map((q) => ({ questionId: q.id, type: q.type, ...record.keys[q.id] }))
+      : [];
     return {
       ...base,
       room: withoutReveal(room),
       question: found ? publicQuestion(found) : null,
+      questions: finished ? ordered(record).map(publicQuestion) : undefined,
       participants: withoutWishes(Object.values(record.participants), uid),
       me: record.participants[uid] ?? null,
       myAnswer: found ? record.answers[`${found.id}_${uid}`] ?? null : null,
+      myAnswers: finished ? Object.values(record.answers).filter((answer) => answer.uid === uid) : undefined,
+      answerSheet: sheet.length ? sheet : null,
     };
   }
 
