@@ -20,9 +20,9 @@ export const PRIZES = [
   },
   {
     id: "amazon",
-    name: "Amazonギフト券 10,000円分",
-    short: "ギフト券",
-    detail: "Amazonで使える 10,000円分のギフト券です。",
+    name: "商品券 10,000円分",
+    short: "商品券 10,000円分",
+    detail: "10,000円分の商品券です。",
   },
   {
     id: "dryer",
