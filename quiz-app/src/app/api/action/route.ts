@@ -19,6 +19,7 @@ const HOST_OPS = new Set([
   "advanceReveal",
   "showStandings",
   "setRankingVisible",
+  "setScreenMode",
   "releaseGuest",
   "recalculateScores",
   "finishQuiz",

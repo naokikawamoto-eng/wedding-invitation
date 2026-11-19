@@ -38,6 +38,25 @@ export function Projector({
   if (room.mode === "self" && (room.phase === "question" || room.phase === "closed")) {
     return <SelfBoard room={room} participants={participants} questions={questions} progress={progress} answeredCount={answeredCount} />;
   }
+  if (room.mode === "self" && (room.presentAll || room.phase === "finished" || room.screenMode === "board" || room.screenMode === "ranking")) {
+    const showRanking = room.screenMode === "ranking" || (room.screenMode !== "board" && room.phase === "finished");
+    if (showRanking) {
+      if (room.rankingVisible === false) {
+        return (
+          <Stage>
+            <div className="grid h-full place-items-center text-center">
+              <div>
+                <p className="font-display text-5xl italic text-gold-600 sm:text-7xl">Ranking</p>
+                <p className="mt-6 text-3xl font-bold sm:text-5xl">順位は後ほど発表します</p>
+              </div>
+            </div>
+          </Stage>
+        );
+      }
+      return <RankStage room={room} participants={participants} final />;
+    }
+    return <AllAnswers questions={questions} answerSheet={answerSheet} correctRates={correctRates} />;
+  }
   if (room.phase === "finished" || (room.mode !== "self" && room.presentStandings)) {
     if (room.rankingVisible === false) {
       return (

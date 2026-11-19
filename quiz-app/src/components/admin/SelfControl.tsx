@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { advanceReveal, closeAnswers, finishQuiz, openQuiz, recalculateScores, releaseGuest, resetRoom, revealAll, revealBoard } from "@/lib/quiz";
+import { advanceReveal, closeAnswers, finishQuiz, openQuiz, recalculateScores, releaseGuest, resetRoom, revealAll, revealBoard, setScreenMode } from "@/lib/quiz";
 import { hostSubmissions } from "@/lib/scoring";
 import type { Answer, AnswerKey, Participant, Question, Room } from "@/lib/types";
 import { Ranking } from "../Ranking";
@@ -40,6 +40,8 @@ export function SelfControl({
 
   const donePeople = new Set(answers.map((a) => a.uid)).size;
   const board = hostSubmissions(participants, questions, keys, answers);
+  const announced = room.presentAll || room.phase === "finished" || room.screenMode === "board" || room.screenMode === "ranking";
+  const showingRanking = room.screenMode === "ranking" || (room.screenMode !== "board" && room.phase === "finished");
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
@@ -54,14 +56,24 @@ export function SelfControl({
           {room.phase === "lobby" && <p className="text-center font-bold">参加受付中です（{participants.length}人）</p>}
           {room.phase === "question" && <p className="text-center font-bold text-blush-600">回答受付中</p>}
           {room.phase === "closed" && <p className="text-center font-bold">締め切りました</p>}
-          {room.phase === "revealed" && room.presentAll && <p className="text-center font-bold text-gold-600">全問の正解を表示中</p>}
+          {announced && !showingRanking && <p className="text-center font-bold text-gold-600">全問の正解を表示中</p>}
+          {announced && showingRanking && <p className="text-center font-bold text-gold-600">ランキングを表示中</p>}
           {room.phase === "revealed" && !room.presentAll && (
             <p className="text-center font-bold text-gold-600">
               答え合わせ中：第 {(room.presentIndex ?? 0) + 1} 問
               {room.presentAnswer ? "（正解を表示中）" : "（まだ正解は出していません）"}
             </p>
           )}
-          {room.phase === "finished" && <p className="text-center font-bold text-gold-600">最終結果を発表中です</p>}
+          {announced && (
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant={showingRanking ? "outline" : "gold"} size="lg" disabled={busy} onClick={() => run(() => setScreenMode(room.id, "board"))}>
+                正解発表を表示
+              </Button>
+              <Button variant={showingRanking ? "gold" : "outline"} size="lg" disabled={busy} onClick={() => run(() => setScreenMode(room.id, "ranking"))}>
+                ランキングを表示
+              </Button>
+            </div>
+          )}
 
           <ul className="space-y-2">
             {questions.map((q, i) => (

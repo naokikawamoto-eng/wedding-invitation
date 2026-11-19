@@ -46,6 +46,8 @@ export interface Room {
   presentAnswer?: boolean;
   /** 一次会で、全問の正解を1画面にまとめて出しているか */
   presentAll?: boolean;
+  /** 一次会のスクリーン。正解一覧と順位を行き来する */
+  screenMode?: "board" | "ranking";
   /** 二次会で、正解のあとに途中順位を出しているか */
   presentStandings?: boolean;
   /** ゲストとスクリーンに順位を出すか。未設定は表示する */

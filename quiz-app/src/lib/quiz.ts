@@ -66,6 +66,10 @@ export async function showStandings(roomId: string) {
   await postAction({ op: "showStandings", roomId }, true);
 }
 
+export async function setScreenMode(roomId: string, mode: "board" | "ranking") {
+  await postAction({ op: "setScreenMode", roomId, mode }, true);
+}
+
 export async function setRankingVisible(roomId: string, visible: boolean) {
   await postAction({ op: "setRankingVisible", roomId, visible }, true);
 }

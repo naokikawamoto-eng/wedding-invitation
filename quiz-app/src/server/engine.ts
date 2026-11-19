@@ -44,6 +44,7 @@ export type Action =
   | { op: "revealBoard"; roomId: string }
   | { op: "advanceReveal"; roomId: string }
   | { op: "showStandings"; roomId: string }
+  | { op: "setScreenMode"; roomId: string; mode: "board" | "ranking" }
   | { op: "setRankingVisible"; roomId: string; visible: boolean }
   | { op: "revealAnswer"; roomId: string; questionId: string }
   | { op: "recalculateScores"; roomId: string }
@@ -83,6 +84,7 @@ export function publicRoom(room: RoomRecord): Room {
     presentIndex: room.presentIndex ?? null,
     presentAnswer: room.presentAnswer ?? false,
     presentAll: room.presentAll === true,
+    screenMode: room.screenMode === "board" || room.screenMode === "ranking" ? room.screenMode : undefined,
     presentStandings: room.presentStandings ?? false,
     rankingVisible: room.rankingVisible !== false,
   };
@@ -600,6 +602,31 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         presentAnswer: true,
         presentAll: true,
         presentStandings: false,
+        screenMode: "board",
+      });
+    }
+    case "setScreenMode": {
+      const room = mustRoom(state, action.roomId);
+      if (room.mode !== "self") throw new Error("この切り替えは一次会だけです");
+      if (room.phase !== "revealed" && room.phase !== "finished") throw new Error("正解を発表してから切り替えられます");
+      if (action.mode !== "board" && action.mode !== "ranking") throw new Error("表示を選んでください");
+      const revealedIds = ordered(room).map((q) => q.id);
+      const scored = room.revealedQuestionIds.length === revealedIds.length ? room : recompute(room, revealedIds);
+      if (action.mode === "board") {
+        return updateRoom(state, {
+          ...scored,
+          revealedQuestionIds: revealedIds,
+          presentAll: true,
+          presentAnswer: true,
+          presentStandings: false,
+          screenMode: "board",
+        });
+      }
+      return updateRoom(state, {
+        ...scored,
+        revealedQuestionIds: revealedIds,
+        presentStandings: true,
+        screenMode: "ranking",
       });
     }
     case "advanceReveal": {
@@ -651,7 +678,7 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
     }
     case "finishQuiz": {
       const room = mustRoom(state, action.roomId);
-      return updateRoom(state, { ...room, phase: "finished", presentStandings: false });
+      return updateRoom(state, { ...room, phase: "finished", presentStandings: room.mode === "self", screenMode: room.mode === "self" ? "ranking" : room.screenMode });
     }
     case "resetRoom": {
       const room = mustRoom(state, action.roomId);
@@ -814,7 +841,7 @@ export function project(
       choiceBoards: room.presentAll
         ? questions.map((q) => ({ questionId: q.id, counts: choiceCountsFor(record, q.id) }))
         : undefined,
-      correctRates: room.presentAll
+      correctRates: room.presentAll || room.screenMode === "board"
         ? submittedCorrectRates(
             questions,
             new Map(Object.entries(record.keys)),

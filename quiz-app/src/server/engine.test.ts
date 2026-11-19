@@ -195,6 +195,25 @@ test("一次会は締め切り後に全問の正解をまとめて出せる", ()
   assert.equal(closed.correctRates, undefined);
   assert.equal(screen.correctRates?.length, 6);
   assert.equal(screen.correctRates?.every((item) => item.submitted === 0 && item.correct === 0), true);
+  assert.equal(screen.room?.screenMode, "board");
+  state = applyAction(state, { op: "setScreenMode", roomId: RECEPTION_ROOM_ID, mode: "ranking" }, 2_200);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].screenMode, "ranking");
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].presentAll, true);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].phase, "revealed");
+  state = applyAction(state, { op: "setScreenMode", roomId: RECEPTION_ROOM_ID, mode: "board" }, 2_300);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].screenMode, "board");
+  state = applyAction(state, { op: "setScreenMode", roomId: RECEPTION_ROOM_ID, mode: "ranking" }, 2_400);
+  state = applyAction(state, { op: "setRankingVisible", roomId: RECEPTION_ROOM_ID, visible: false }, 2_500);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].presentAll, true);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].answers["groom-sports_a"].choice, 0);
+  state = applyAction(state, { op: "finishQuiz", roomId: RECEPTION_ROOM_ID }, 2_600);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].phase, "finished");
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].screenMode, "ranking");
+  state = applyAction(state, { op: "setScreenMode", roomId: RECEPTION_ROOM_ID, mode: "board" }, 2_700);
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].phase, "finished");
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].screenMode, "board");
+  assert.equal(state.rooms[RECEPTION_ROOM_ID].presentAll, true);
+  assert.throws(() => applyAction(state, { op: "setScreenMode", roomId: AFTERPARTY_ROOM_ID, mode: "ranking" }, 2_800), /一次会/);
   assert.throws(() => applyAction(state, { op: "revealBoard", roomId: AFTERPARTY_ROOM_ID }, 2_200), /1問ずつ/);
 });
 
