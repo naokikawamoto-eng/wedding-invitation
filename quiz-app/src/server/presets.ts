@@ -23,7 +23,7 @@ export interface Preset {
 }
 
 /**
- * 一次会の本番に載せる確定8問。新婦の問題は未作成。
+ * 一次会の本番に載せる確定11問。
  * 旅行問題は下の HELD_RECEPTION に置き、採点対象にしない。
  * 二次会は披露宴の振り返り10問。Q8だけ未定。
  */
@@ -106,6 +106,30 @@ export const PRESETS: Preset[] = [
         text: "新郎直樹が最もスベったのではないかと思っている場面は？",
         choices: ["中学3年生の時の自己紹介", "高校生の時の弁論大会", "中学校の表彰授与の時", "結婚式での乾杯の挨拶"],
         correctChoice: 1,
+        correctTexts: [],
+      },
+      {
+        id: "bride-weight",
+        type: "choice",
+        text: "新婦 有梨花が生まれたときの体重は、何グラムだったでしょう？",
+        choices: ["2,970g", "3,180g", "3,490g", "4,020g"],
+        correctChoice: 2,
+        correctTexts: [],
+      },
+      {
+        id: "bride-abroad",
+        type: "choice",
+        text: "新婦 有梨花が初めての海外旅行で訪れたのは、どこでしょう？",
+        choices: ["ハワイ", "グアム", "サイパン", "台湾"],
+        correctChoice: 1,
+        correctTexts: [],
+      },
+      {
+        id: "bride-chips",
+        type: "choice",
+        text: "生後10か月の新婦 有梨花に起きた、あわやのハプニングとは？",
+        choices: ["お風呂で溺れかけた", "階段から落ちた", "ポテトチップスを喉に詰まらせた", "焼肉のコンロで火傷しかけた"],
+        correctChoice: 2,
         correctTexts: [],
       },
     ],
