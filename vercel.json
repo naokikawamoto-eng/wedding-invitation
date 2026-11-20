@@ -1,5 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/quiz",
+      "destination": "https://wedding-quiz-flame-alpha.vercel.app/play",
+      "permanent": false
+    },
+    {
+      "source": "/quiz/",
+      "destination": "https://wedding-quiz-flame-alpha.vercel.app/play",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
