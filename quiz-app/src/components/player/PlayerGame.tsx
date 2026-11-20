@@ -11,6 +11,7 @@ import { QuestionBody } from "../QuestionBody";
 import { Ranking } from "../Ranking";
 import { RankingHiddenNote } from "../admin/RankingToggle";
 import { Card, Ornament, Spinner, Title } from "../ui";
+import { PrizeIntro } from "./Prizes";
 import { AnswerArea } from "./AnswerArea";
 import { SelfPlay } from "./SelfPlay";
 
@@ -59,6 +60,7 @@ function Lobby({ room, count }: { room: Room; count: number }) {
       </div>
       <Title sub={room.title}>Ready?</Title>
       <p className="font-bold">まもなくクイズが始まります</p>
+      <PrizeIntro />
       <p className="text-sm text-ink-soft">現在 {count} 人が参加中</p>
     </Card>
   );
@@ -76,6 +78,7 @@ function QuestionStage({ room, me }: { room: Room; me: Participant }) {
   return (
     <div className="space-y-4">
       {room.phase === "question" && <Countdown endsAt={room.questionEndsAt} />}
+      <PrizeIntro compact />
       <Card>
         <QuestionBody question={question.data} number={room.currentNumber} total={room.totalQuestions} />
       </Card>

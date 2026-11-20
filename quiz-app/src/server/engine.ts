@@ -94,13 +94,16 @@ function ordered(room: RoomRecord): Question[] {
   return [...room.questions].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }
 
-function withoutWishes(people: Participant[], keepUid?: string): Participant[] {
-  return people.map((person) => {
-    if ((keepUid && person.id === keepUid) || !person.prizeWish) return person;
-    const next = { ...person };
-    delete next.prizeWish;
-    return next;
-  });
+function withoutWishes(people: Participant[]): Participant[] {
+  return people.map((person) => publicPerson(person));
+}
+
+/** ゲストとスクリーンには希望景品を渡さない */
+function publicPerson(person: Participant): Participant {
+  if (!person.prizeWish) return person;
+  const next = { ...person };
+  delete next.prizeWish;
+  return next;
 }
 
 function publicQuestion(q: Question): Question {
@@ -246,7 +249,6 @@ function joinFromGuestList(
   if (!seat) throw new Error("名簿からお名前を選んでください");
   const owner = Object.values(room.participants).find((person) => person.guestId === seat.id);
   if (owner && owner.id !== action.uid && !owner.claimReleased) throw new Error("回答は受付済みです");
-  if (!isPrizeId(action.prizeWish) && !owner?.prizeWish) throw new Error("景品を選んでください");
   const prizeWish = isPrizeId(action.prizeWish) ? action.prizeWish : owner?.prizeWish;
   if (owner && owner.id !== action.uid) {
     const moved = moveParticipant(room, owner.id, action.uid);
@@ -572,7 +574,8 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
         currentNumber: index + 1,
         totalQuestions: questions.length,
         questionStartedAt: now,
-        questionEndsAt: room.answerSeconds > 0 ? now + room.answerSeconds * 1000 : null,
+        answerSeconds: 30,
+        questionEndsAt: now + 30_000,
         reveal: null,
         presentStandings: false,
       });
@@ -801,8 +804,8 @@ export function project(
       room: withoutReveal(room),
       questions: open ? ordered(record).map(publicQuestion) : [],
       question: null,
-      participants: withoutWishes(Object.values(record.participants), uid),
-      me: record.participants[uid] ?? null,
+      participants: withoutWishes(Object.values(record.participants)),
+      me: record.participants[uid] ? publicPerson(record.participants[uid]) : null,
       myAnswers: open ? Object.values(record.answers).filter((a) => a.uid === uid) : [],
       answerSheet: answerSheet(record),
     };
@@ -824,8 +827,8 @@ export function project(
       room: withoutReveal(room),
       question: found ? publicQuestion(found) : null,
       questions: finished ? ordered(record).map(publicQuestion) : undefined,
-      participants: withoutWishes(Object.values(record.participants), uid),
-      me: record.participants[uid] ?? null,
+      participants: withoutWishes(Object.values(record.participants)),
+      me: record.participants[uid] ? publicPerson(record.participants[uid]) : null,
       myAnswer: found ? record.answers[`${found.id}_${uid}`] ?? null : null,
       myAnswers: finished ? Object.values(record.answers).filter((answer) => answer.uid === uid) : undefined,
       answerSheet: sheet.length ? sheet : null,

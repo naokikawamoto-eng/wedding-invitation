@@ -7,7 +7,6 @@ import {
   recalculateScores,
   resetRoom,
   revealAnswer,
-  setAnswerSeconds,
   showQuestion,
   showStandings,
 } from "@/lib/quiz";
@@ -19,14 +18,6 @@ import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
 import { RankingToggle } from "./RankingToggle";
 import { SelfControl } from "./SelfControl";
-
-const TIMER_OPTIONS = [
-  { seconds: 0, label: "無制限" },
-  { seconds: 20, label: "20秒" },
-  { seconds: 30, label: "30秒" },
-  { seconds: 45, label: "45秒" },
-  { seconds: 60, label: "60秒" },
-];
 
 const STEPS = [
   { phase: "question", label: "出題・回答受付" },
@@ -106,24 +97,7 @@ export function ControlPanel({
             </p>
           )}
 
-          <div className="space-y-2">
-            <p className="text-center text-xs font-bold text-ink-soft">次の問題の制限時間（出題した瞬間から）</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {TIMER_OPTIONS.map((option) => (
-                <button
-                  key={option.seconds}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => run(() => setAnswerSeconds(room.id, option.seconds))}
-                  className={`rounded-full px-3 py-1 text-sm font-bold ${
-                    room.answerSeconds === option.seconds ? "bg-blush-500 text-white" : "bg-blush-50 text-ink-soft"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <p className="rounded-2xl bg-blush-50 px-4 py-3 text-center text-sm font-bold">各問30秒です。出題した瞬間からカウントが始まります。</p>
 
           <ol className="flex gap-2 text-center text-xs font-bold">
             {STEPS.map((s) => (

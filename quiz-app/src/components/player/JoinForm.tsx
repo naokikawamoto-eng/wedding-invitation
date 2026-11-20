@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PrizeChoices, PrizeIntro } from "@/components/player/Prizes";
+import { PrizeIntro } from "@/components/player/Prizes";
 import { joinRoom } from "@/lib/quiz";
-import type { PrizeId } from "@/lib/prizes";
 import { RECEPTION_GUESTS } from "@/lib/reception-guests";
 import type { Room } from "@/lib/types";
 import { Button, Card, ErrorNote, Ornament, Title, inputClass } from "../ui";
@@ -12,12 +11,11 @@ export function JoinForm({ room, uid }: { room: Room; uid: string }) {
   const [nickname, setNickname] = useState("");
   const [guestId, setGuestId] = useState("");
   const [query, setQuery] = useState("");
-  const [prize, setPrize] = useState<PrizeId | "">("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const name = nickname.trim();
   const reception = room.event === "reception";
-  const ready = reception ? !!guestId && !!prize : !!name;
+  const ready = reception ? !!guestId : !!name;
   const matches = useMemo(() => {
     const q = query.replace(/\s+/g, "");
     if (!q) return RECEPTION_GUESTS;
@@ -40,7 +38,7 @@ export function JoinForm({ room, uid }: { room: Room; uid: string }) {
               if (reception) {
                 const guest = RECEPTION_GUESTS.find((item) => item.id === guestId);
                 if (!guest) throw new Error("名簿からお名前を選んでください");
-                await joinRoom(room.id, uid, guest.name, prize, guest.id);
+                await joinRoom(room.id, uid, guest.name, undefined, guest.id);
               } else {
                 await joinRoom(room.id, uid, name);
               }
@@ -93,7 +91,6 @@ export function JoinForm({ room, uid }: { room: Room; uid: string }) {
             </label>
           )}
           {!reception && <p className="text-xs text-ink-soft">ランキングに表示されます（20文字まで）</p>}
-          {reception && <PrizeChoices value={prize} onChange={setPrize} disabled={busy} />}
           <ErrorNote error={error} />
           <Button type="submit" size="lg" className="w-full" disabled={!ready || busy}>
             {busy ? "入室中…" : "入室する"}

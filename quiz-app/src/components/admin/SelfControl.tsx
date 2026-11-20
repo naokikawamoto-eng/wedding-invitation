@@ -193,7 +193,6 @@ export function SelfControl({
           byTime={false}
           showTime={false}
           limit={10}
-          showPrize
           showTable
           onRelease={(person) => {
             if (person.guestId && confirm(`「${person.nickname}」を別のスマホで入り直せるようにします。回答は残します。`)) {

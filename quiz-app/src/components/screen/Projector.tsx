@@ -121,7 +121,7 @@ function Welcome({ room, participants }: { room: Room; participants: Participant
           <p className="text-2xl font-bold sm:text-4xl">{room.title}</p>
           <p className="text-lg text-ink-soft sm:text-2xl">{room.mode === "self" ? "着席のあと、スマホでご参加ください" : "まもなく始まります"}</p>
           <JoinQR roomId={room.id} size={320} large />
-          {room.event === "reception" && <PrizeIntro compact />}
+          <PrizeIntro compact />
         </div>
         <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6">
           <p className="text-center text-2xl sm:text-3xl">
@@ -341,6 +341,7 @@ function QuestionStage({
             <span className="text-ink-soft">/ {participants} 人</span>
           </p>
           {!revealed && room.mode === "self" && <p className="text-xl text-ink-soft sm:text-3xl">正解は、このあと</p>}
+          {!revealed && room.mode !== "self" && <PrizeIntro compact />}
         </footer>
       </div>
     </Stage>
@@ -360,6 +361,7 @@ function RankStage({ room, participants, final }: { room: Room; participants: Pa
           <p className="font-display text-5xl italic text-gold-600 sm:text-7xl">{final ? "Final Ranking" : "Standings"}</p>
           <p className="mt-2 text-2xl font-bold sm:text-4xl">{final ? "最終順位" : "ここまでの順位"}</p>
           {room.mode === "self" && <p className="mt-2 text-lg text-ink-soft sm:text-2xl">正解数が同じなら、同順位です</p>}
+          <PrizeIntro compact />
         </header>
         <ol className="grid flex-1 content-center gap-4 sm:grid-cols-3">
           {top.map((person) => (

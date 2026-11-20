@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AdminGate } from "@/components/admin/AdminGate";
 import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
 import { ControlPanel } from "@/components/admin/ControlPanel";
+import { HostPrizes } from "@/components/admin/HostPrizes";
 import { QuestionManager } from "@/components/admin/QuestionManager";
 import { JoinQR } from "@/components/JoinQR";
 import { Ranking } from "@/components/Ranking";
@@ -91,6 +92,7 @@ function AdminRoom({ room }: { room: Room }) {
         ))}
       </nav>
 
+      <HostPrizes event={room.event} />
       <ErrorNote error={error} />
       {loading ? (
         <Spinner />
@@ -102,7 +104,6 @@ function AdminRoom({ room }: { room: Room }) {
         <Card>
           <Ranking
             participants={participants}
-            showPrize={room.event === "reception"}
             showTable={room.event === "reception"}
             byTime={room.event !== "reception"}
             showTime={room.event !== "reception"}

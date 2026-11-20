@@ -93,9 +93,10 @@ test("回答は1問1回、締め切り後は拒否、速く正解した人が同
 
 test("制限時間を過ぎるとサーバーが締め切る", () => {
   let state = room(0);
-  state = applyAction(state, { op: "setAnswerSeconds", roomId: AFTERPARTY_ROOM_ID, answerSeconds: 30 }, 0);
+  state = applyAction(state, { op: "setAnswerSeconds", roomId: AFTERPARTY_ROOM_ID, answerSeconds: 20 }, 0);
   state = applyAction(state, { op: "join", roomId: AFTERPARTY_ROOM_ID, uid: "u", nickname: "ゲスト" }, 0);
   state = applyAction(state, { op: "showQuestion", roomId: AFTERPARTY_ROOM_ID, questionId: "nijie-1" }, 1_000);
+  assert.equal(state.rooms[AFTERPARTY_ROOM_ID].answerSeconds, 30);
   assert.equal(state.rooms[AFTERPARTY_ROOM_ID].questionEndsAt, 31_000);
   assert.throws(
     () => applyAction(state, { op: "answer", roomId: AFTERPARTY_ROOM_ID, uid: "u", choice: 1 }, 31_000),
@@ -277,8 +278,10 @@ test("一次会の景品希望は順位を変えず、二次会には残さな�
   );
   assert.equal(state.rooms[AFTERPARTY_ROOM_ID].participants.a.prizeWish, undefined);
   const guest = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 1_700);
-  assert.equal(guest.me?.prizeWish, "pad");
-  assert.equal(guest.participants?.find((person) => person.id === "old")?.prizeWish, undefined);
+  assert.equal(guest.me?.prizeWish, undefined);
+  assert.equal(guest.participants?.find((person) => person.id === "a")?.prizeWish, undefined);
+  assert.equal(JSON.stringify(guest).includes("ドライヤー"), false);
+  assert.equal(JSON.stringify(guest).includes("スマートウォッチ"), false);
   const host = project(state, { view: "host", roomId: RECEPTION_ROOM_ID }, 1_700);
   assert.equal(host.participants?.find((person) => person.id === "old")?.prizeWish, "any");
 });
@@ -287,6 +290,8 @@ test("順位の表示切替は回答と得点を変えない", () => {
   let state = room(1_000);
   const screen = project(state, { view: "screen", roomId: RECEPTION_ROOM_ID }, 1_000);
   assert.equal(screen.room?.rankingVisible, true);
+  assert.equal(JSON.stringify(screen).includes("ドライヤー"), false);
+  assert.equal(JSON.stringify(screen).includes("馬券"), false);
   state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "a", nickname: "A" }, 1_000);
   state = applyAction(state, { op: "openQuiz", roomId: RECEPTION_ROOM_ID }, 1_100);
   state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "a", questionId: "groom-sports", choice: 2 }, 1_200);
