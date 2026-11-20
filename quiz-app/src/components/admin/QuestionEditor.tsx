@@ -26,6 +26,7 @@ export function QuestionEditor({
   const [choices, setChoices] = useState<string[]>(question?.choices.length ? question.choices : ["", "", "", ""]);
   const [correctChoice, setCorrectChoice] = useState<number | null>(answerKey?.correctChoice ?? null);
   const [correctTexts, setCorrectTexts] = useState((answerKey?.correctTexts ?? []).join("\n"));
+  const [note, setNote] = useState(answerKey?.note ?? "");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>();
@@ -64,7 +65,7 @@ export function QuestionEditor({
   }
 
   async function onSave() {
-    const draft: QuestionDraft = { type, text, imageUrl: imageUrl || null, choices, correctChoice, correctTexts: textAnswers };
+    const draft: QuestionDraft = { type, text, imageUrl: imageUrl || null, choices, correctChoice, correctTexts: textAnswers, note: note.trim() || undefined };
     setSaving(true);
     setError(undefined);
     try {
@@ -190,6 +191,11 @@ export function QuestionEditor({
           </span>
         </label>
       )}
+
+      <label className="block text-sm font-bold">
+        解説（任意。正解発表のときだけ表示）
+        <input className={`${inputClass} mt-1`} value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} placeholder="例：あんまり言われないから。" />
+      </label>
 
       <ErrorNote error={error} />
       <div className="flex items-center justify-end gap-3">

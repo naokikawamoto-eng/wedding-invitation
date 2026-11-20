@@ -156,6 +156,7 @@ function buildPreset(preset: (typeof PRESETS)[number], now: number): RoomRecord 
     keys[q.id] = {
       correctChoice: q.type === "choice" ? q.correctChoice : null,
       correctTexts: q.type === "text" ? q.correctTexts : [],
+      ...(q.note ? { note: q.note } : {}),
     };
   }
   return blankRoom({
@@ -336,6 +337,13 @@ export function rescoreIfPublished(state: QuizState, roomId: string): QuizState 
   return updateRoom(state, next);
 }
 
+function cleanNote(value: string | undefined): string | undefined {
+  const note = value?.trim();
+  if (!note) return undefined;
+  if (note.length > 80) throw new Error("解説は80文字以内にしてください");
+  return note;
+}
+
 function validateDraft(draft: QuestionDraft): QuestionDraft {
   const text = (draft.text ?? "").trim();
   const imageUrl = draft.imageUrl?.trim() || null;
@@ -349,12 +357,14 @@ function validateDraft(draft: QuestionDraft): QuestionDraft {
     if (draft.correctChoice == null || !Number.isInteger(draft.correctChoice) || draft.correctChoice < 0 || draft.correctChoice >= choices.length) {
       throw new Error("正解の選択肢を選んでください");
     }
-    return { type: "choice", text, imageUrl, choices, correctChoice: draft.correctChoice, correctTexts: [], sample: draft.sample };
+    const note = cleanNote(draft.note);
+    return { type: "choice", text, imageUrl, choices, correctChoice: draft.correctChoice, correctTexts: [], sample: draft.sample, ...(note ? { note } : {}) };
   }
   if (draft.type === "text") {
     const correctTexts = (draft.correctTexts ?? []).map((t) => t.trim()).filter(Boolean);
     if (!correctTexts.length || correctTexts.some((t) => t.length > 50)) throw new Error("正解テキストを入力してください");
-    return { type: "text", text, imageUrl, choices: [], correctChoice: null, correctTexts, sample: draft.sample };
+    const note = cleanNote(draft.note);
+    return { type: "text", text, imageUrl, choices: [], correctChoice: null, correctTexts, sample: draft.sample, ...(note ? { note } : {}) };
   }
   throw new Error("問題の形式が不正です");
 }
@@ -499,6 +509,7 @@ export function applyAction(state: QuizState, action: Action, now: number): Quiz
       const key: AnswerKey = {
         correctChoice: draft.type === "choice" ? draft.correctChoice : null,
         correctTexts: draft.type === "text" ? draft.correctTexts : [],
+        ...(draft.note ? { note: draft.note } : {}),
       };
       let next: RoomRecord = { ...room, questions, keys: { ...room.keys, [id]: key }, totalQuestions: questions.length };
       if (next.revealedQuestionIds.includes(id)) next = recompute(next, next.revealedQuestionIds);

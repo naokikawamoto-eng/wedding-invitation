@@ -27,6 +27,7 @@ export function AnswerReview({ roomId, label = "回答済み" }: { roomId: strin
             </p>
             {sheet && own && <Announced sheet={sheet} choices={question.choices} mine={mine?.choice ?? null} />}
             {sheet && !own && <Announced sheet={sheet} choices={question.choices} mine={null} unanswered />}
+            {sheet?.note && <p className="text-sm text-ink-soft">{sheet.note}</p>}
           </Card>
         );
       })}

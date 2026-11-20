@@ -10,6 +10,8 @@ export interface PresetQuestion {
   correctTexts: string[];
   /** 未定・仮問題。主催者画面に印が出る */
   sample?: boolean;
+  /** 正解発表のときだけ出す短い解説 */
+  note?: string;
 }
 
 export interface Preset {
@@ -21,7 +23,7 @@ export interface Preset {
 }
 
 /**
- * 一次会の本番に載せる確定6問。新婦の問題は未作成。
+ * 一次会の本番に載せる確定8問。新婦の問題は未作成。
  * 旅行問題は下の HELD_RECEPTION に置き、採点対象にしない。
  * 二次会は披露宴の振り返り10問。Q8だけ未定。
  */
@@ -87,6 +89,23 @@ export const PRESETS: Preset[] = [
         text: "結婚式の前撮りを撮影した場所は？",
         choices: ["札幌", "ハワイ", "江ノ島", "グアム"],
         correctChoice: 0,
+        correctTexts: [],
+      },
+      {
+        id: "groom-praise",
+        type: "choice",
+        text: "新郎直樹が一番言われて嬉しい褒め言葉は？",
+        choices: ["奥さん綺麗ですね", "イケメンですね", "男らしいですね", "運動神経いいですね"],
+        correctChoice: 3,
+        correctTexts: [],
+        note: "あんまり言われないから。",
+      },
+      {
+        id: "groom-flop",
+        type: "choice",
+        text: "新郎直樹が最もスベったのではないかと思っている場面は？",
+        choices: ["中学3年生の時の自己紹介", "高校生の時の弁論大会", "中学校の表彰授与の時", "結婚式での乾杯の挨拶"],
+        correctChoice: 1,
         correctTexts: [],
       },
     ],

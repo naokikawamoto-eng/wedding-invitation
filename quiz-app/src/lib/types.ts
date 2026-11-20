@@ -11,6 +11,8 @@ export interface AnswerKey {
   correctChoice: number | null;
   /** 記述式の正解（別解を含めて複数可） */
   correctTexts: string[];
+  /** 正解発表のときだけ見せる短い解説 */
+  note?: string;
 }
 
 export interface Reveal extends AnswerKey {
@@ -106,6 +108,7 @@ export interface QuestionDraft {
   correctChoice: number | null;
   correctTexts: string[];
   sample?: boolean;
+  note?: string;
 }
 
 /** ポーリングで受け取る画面用のスナップショット。閲覧者ごとに中身が違う */

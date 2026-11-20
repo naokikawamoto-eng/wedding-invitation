@@ -224,7 +224,8 @@ function AllAnswers({
                 <span className="mr-2 font-display text-gold-600">Q{index + 1}</span>
                 {question.text}
               </p>
-              <p className="mt-0.5 line-clamp-2 text-[clamp(1rem,2.3vh,1.7rem)] font-bold leading-tight text-gold-600">正解 {correct}</p>
+                <p className="mt-0.5 line-clamp-2 text-[clamp(1rem,2.3vh,1.7rem)] font-bold leading-tight text-gold-600">正解 {correct}</p>
+                {sheet?.note && <p className="line-clamp-1 text-[clamp(0.7rem,1.4vh,0.95rem)] text-ink-soft">{sheet.note}</p>}
               <div className="mt-1 flex items-center gap-2">
                 <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-blush-100">
                   <span className="block h-full rounded-full bg-blush-500" style={{ width: `${pct}%` }} />
