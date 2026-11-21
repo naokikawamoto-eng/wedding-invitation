@@ -4,6 +4,7 @@ import { useState } from "react";
 import { advanceReveal, closeAnswers, finishQuiz, openQuiz, recalculateScores, releaseGuest, resetRoom, revealAll, revealBoard, setScreenMode } from "@/lib/quiz";
 import { hostSubmissions } from "@/lib/scoring";
 import type { Answer, AnswerKey, Participant, Question, Room } from "@/lib/types";
+import { PrizeHostNote } from "../PrizePlanNote";
 import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
 import { RankingToggle } from "./RankingToggle";
@@ -188,6 +189,7 @@ export function SelfControl({
           )}
         </div>
         <h3 className="font-bold">順位（正解数。同点は同順位）</h3>
+        <PrizeHostNote participants={participants} byTime={false} />
         <Ranking
           participants={participants}
           byTime={false}

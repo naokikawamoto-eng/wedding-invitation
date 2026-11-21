@@ -9,6 +9,7 @@ import { ControlPanel } from "@/components/admin/ControlPanel";
 import { HostPrizes } from "@/components/admin/HostPrizes";
 import { QuestionManager } from "@/components/admin/QuestionManager";
 import { JoinQR } from "@/components/JoinQR";
+import { PrizeHostNote } from "@/components/PrizePlanNote";
 import { Ranking } from "@/components/Ranking";
 import { Button, Card, ErrorNote, Spinner } from "@/components/ui";
 import { AFTERPARTY_ROOM_ID, EVENT_LABEL } from "@/lib/events";
@@ -107,6 +108,7 @@ function AdminRoom({ room }: { room: Room }) {
         <QuestionManager room={room} questions={questions} keys={keys} />
       ) : tab === "ranking" ? (
         <Card>
+          <PrizeHostNote participants={participants} byTime={room.event !== "reception"} />
           <Ranking
             participants={participants}
             showTable={room.event === "reception"}

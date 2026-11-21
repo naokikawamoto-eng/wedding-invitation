@@ -11,6 +11,7 @@ import { rankParticipants } from "@/lib/scoring";
 import { submitAnswer, submitAnswers } from "@/lib/quiz";
 import type { Participant, Reveal, Room } from "@/lib/types";
 import { QuestionBody } from "../QuestionBody";
+import { GuestJankenNote } from "../PrizePlanNote";
 import { Ranking } from "../Ranking";
 import { RankingHiddenNote } from "../admin/RankingToggle";
 import { Button, Card, Ornament, Title } from "../ui";
@@ -134,6 +135,7 @@ export function SelfPlay({ room, me, onSubmitted }: { room: Room; me: Participan
             (rankingOpen ? (
               <Card>
                 <h2 className="mb-3 text-center font-bold">順位</h2>
+                <GuestJankenNote participants={participants} byTime={false} uid={me.id} />
                 <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} byTime={false} honorific />
               </Card>
             ) : (

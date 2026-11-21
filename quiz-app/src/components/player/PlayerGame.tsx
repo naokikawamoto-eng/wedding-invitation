@@ -9,6 +9,7 @@ import { rankParticipants } from "@/lib/scoring";
 import type { Participant, Room } from "@/lib/types";
 import { Countdown } from "../Countdown";
 import { QuestionBody } from "../QuestionBody";
+import { GuestJankenNote } from "../PrizePlanNote";
 import { Ranking } from "../Ranking";
 import { RankingHiddenNote } from "../admin/RankingToggle";
 import { Card, Ornament, Spinner, Title } from "../ui";
@@ -45,7 +46,7 @@ export function PlayerGame({ room, me }: { room: Room; me: Participant }) {
 
       {room.phase === "lobby" && <Lobby room={room} count={participants.length} />}
       {room.phase === "finished" &&
-        (rankingOpen ? <FinalResult me={me} rank={myRank} participants={participants} /> : <RankingHiddenNote />)}
+        (rankingOpen ? <FinalResult me={me} rank={myRank} participants={participants} byTime={byTime} /> : <RankingHiddenNote />)}
       {(room.phase === "question" || room.phase === "closed" || room.phase === "revealed") && (
         <QuestionStage room={room} me={me} />
       )}
@@ -111,9 +112,10 @@ function QuestionStage({ room, me }: { room: Room; me: Participant }) {
   );
 }
 
-function FinalResult({ me, rank, participants }: { me: Participant; rank?: number; participants: Participant[] }) {
+function FinalResult({ me, rank, participants, byTime }: { me: Participant; rank?: number; participants: Participant[]; byTime: boolean }) {
   return (
     <div className="space-y-4">
+      <GuestJankenNote participants={participants} byTime={byTime} uid={me.id} />
       <Card className="space-y-3 py-8 text-center">
         <p className="text-sm text-ink-soft">クイズ終了！あなたの順位は</p>
         <p className="animate-pop font-display text-7xl font-semibold italic text-gold-600">
@@ -128,7 +130,7 @@ function FinalResult({ me, rank, participants }: { me: Participant; rank?: numbe
       </Card>
       <Card>
         <h2 className="mb-3 text-center font-bold">最終ランキング</h2>
-        <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} honorific />
+        <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} byTime={byTime} honorific />
       </Card>
     </div>
   );

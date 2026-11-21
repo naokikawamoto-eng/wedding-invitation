@@ -14,6 +14,7 @@ import type { Answer, AnswerKey, Participant, Question, Room } from "@/lib/types
 import { AnswerStats } from "../AnswerStats";
 import { Countdown } from "../Countdown";
 import { QuestionBody } from "../QuestionBody";
+import { PrizeHostNote } from "../PrizePlanNote";
 import { Ranking } from "../Ranking";
 import { Button, Card, ErrorNote } from "../ui";
 import { RankingToggle } from "./RankingToggle";
@@ -195,6 +196,7 @@ export function ControlPanel({
 
       <Card className="h-fit">
         <h3 className="mb-3 font-bold">ランキング（上位10名）</h3>
+        <PrizeHostNote participants={participants} byTime />
         <Ranking participants={participants} limit={10} />
       </Card>
     </div>

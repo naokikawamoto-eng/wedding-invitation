@@ -6,6 +6,8 @@ import { PrizeIntro } from "@/components/player/Prizes";
 import { CHOICE_LETTERS, CHOICE_STYLES } from "@/components/choice";
 import { useServerClock } from "@/lib/hooks";
 import { withHonorific } from "@/lib/honorific";
+import { jankenStepLabel, prizePlan } from "@/lib/prize-places";
+import { jankenSummary } from "@/components/PrizePlanNote";
 import { rankParticipants } from "@/lib/scoring";
 import type { Answer, AnswerKey, Participant, Question, Reveal, Room } from "@/lib/types";
 
@@ -352,41 +354,61 @@ function QuestionStage({
 function RankStage({ room, participants, final }: { room: Room; participants: Participant[]; final: boolean }) {
   const byTime = room.mode !== "self";
   const ranked = rankParticipants(participants, byTime);
-  const top = ranked.slice(0, 3);
-  const rest = ranked.slice(3, 10);
-  const tied = ranked.some((person, index) => index > 0 && person.rank === ranked[index - 1].rank);
+  const plan = prizePlan(ranked);
+  const top = plan.podium.length ? plan.podium : ranked.slice(0, 3);
+  const topIds = new Set(top.map((person) => person.id));
+  const rest = ranked.filter((person) => !topIds.has(person.id)).slice(0, 6);
+  const columns = top.length <= 1 ? 1 : top.length <= 4 ? top.length : top.length <= 8 ? 4 : 5;
+  const rows = Math.max(1, Math.ceil(top.length / columns));
+  const compact = top.length > 3;
   return (
     <Stage>
-      <div className="flex h-full flex-col gap-6">
-        <header className="text-center">
-          <p className="font-display text-5xl italic text-gold-600 sm:text-7xl">{final ? "Final Ranking" : "Standings"}</p>
-          <p className="mt-2 text-2xl font-bold sm:text-4xl">{final ? "最終順位" : "ここまでの順位"}</p>
-          {room.mode === "self" && <p className="mt-2 text-lg text-ink-soft sm:text-2xl">正解数が同じなら、同順位です</p>}
+      <div className="flex h-full min-h-0 flex-col gap-3">
+        <header className="shrink-0 text-center">
+          <p className={`font-display italic text-gold-600 ${compact ? "text-3xl sm:text-5xl" : "text-5xl sm:text-7xl"}`}>{final ? "Final Ranking" : "Standings"}</p>
+          <p className={`font-bold ${compact ? "text-xl sm:text-2xl" : "mt-2 text-2xl sm:text-4xl"}`}>{final ? "最終順位" : "ここまでの順位"}</p>
+          {room.mode === "self" && <p className="text-sm text-ink-soft sm:text-lg">正解数が同じなら、同順位です</p>}
           <PrizeIntro compact />
+          {final && plan.janken.length > 0 && (
+            <div className="mt-2 space-y-1">
+              <p className="text-[clamp(1rem,2.4vh,1.8rem)] font-bold text-blush-600">同率の方は前へ！ジャンケンで景品を決めます</p>
+              {plan.janken.map((group, index) => (
+                <p key={group.rank} className="text-[clamp(0.85rem,1.8vh,1.25rem)] font-bold">
+                  {jankenStepLabel(index, plan.janken.length)}
+                  {group.rank}位　{jankenSummary(group)}
+                </p>
+              ))}
+            </div>
+          )}
         </header>
-        <ol className="grid flex-1 content-center gap-4 sm:grid-cols-3">
+        <ol
+          className="grid min-h-0 flex-1 content-stretch gap-2"
+          style={{
+            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+          }}
+        >
           {top.map((person) => (
-            <li key={person.id} className="animate-pop rounded-[1.8rem] bg-white/90 px-4 py-6 text-center shadow-lg">
-              <p className="text-6xl font-bold tabular-nums text-gold-600 sm:text-8xl">{person.rank}</p>
-              <p className="mt-2 truncate text-3xl font-bold sm:text-4xl">{withHonorific(person.nickname)}</p>
-              <p className="mt-2 text-2xl">
-                <b className="text-4xl text-blush-600 sm:text-5xl">{person.score}</b> 問
+            <li key={person.id} className="flex min-h-0 min-w-0 flex-col justify-center overflow-hidden rounded-[1.2rem] bg-white/90 px-2 py-2 text-center shadow-lg sm:px-3">
+              <p className={`font-bold tabular-nums leading-none text-gold-600 ${compact ? "text-[clamp(1.4rem,3.5vh,2.6rem)]" : "text-6xl sm:text-8xl"}`}>{person.rank}</p>
+              <p className={`font-bold leading-tight ${compact ? "line-clamp-2 text-[clamp(0.85rem,1.8vh,1.35rem)]" : "mt-2 truncate text-3xl sm:text-4xl"}`}>{withHonorific(person.nickname)}</p>
+              <p className={compact ? "text-sm" : "mt-2 text-2xl"}>
+                <b className={`text-blush-600 ${compact ? "text-[clamp(1rem,2.4vh,1.8rem)]" : "text-4xl sm:text-5xl"}`}>{person.score}</b> 問
               </p>
             </li>
           ))}
         </ol>
         {rest.length > 0 && (
-          <ol className="grid gap-2 sm:grid-cols-2">
+          <ol className="grid max-h-[22%] shrink-0 grid-cols-2 gap-1 overflow-hidden">
             {rest.map((person) => (
-              <li key={person.id} className="flex items-center gap-3 rounded-2xl bg-white/80 px-4 py-2 text-xl sm:text-2xl">
-                <span className="w-10 text-3xl font-bold tabular-nums text-gold-600">{person.rank}</span>
+              <li key={person.id} className="flex min-w-0 items-center gap-2 rounded-xl bg-white/80 px-3 py-1 text-sm sm:text-base">
+                <span className="w-6 font-bold tabular-nums text-gold-600">{person.rank}</span>
                 <span className="min-w-0 flex-1 truncate font-bold">{withHonorific(person.nickname)}</span>
                 <span className="font-bold text-blush-600">{person.score} 問</span>
               </li>
             ))}
           </ol>
         )}
-        {tied && room.mode === "self" && <p className="text-center text-xl text-ink-soft">同じ数字は同順位です</p>}
       </div>
     </Stage>
   );
