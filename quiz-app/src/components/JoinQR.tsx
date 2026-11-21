@@ -2,27 +2,44 @@
 
 import { QRCodeSVG } from "qrcode.react";
 import { useSyncExternalStore } from "react";
+import { quizEntryUrl } from "@/lib/join-url";
 
-/** 参加者に配る URL。本番は NEXT_PUBLIC_APP_URL、ローカルでは PC の LAN アドレスを優先する */
+/** 参加者に配る URL。会場では公開入口、手元の開発ではその端末の入口 */
 export function joinUrl(roomId: string): string {
   if (typeof window === "undefined") return "";
-  const configured = process.env.NEXT_PUBLIC_APP_URL;
-  const local = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-  const origin = configured || (local && process.env.NEXT_PUBLIC_DEV_LAN_ORIGIN) || window.location.origin;
-  return `${origin.replace(/\/$/, "")}/play/${roomId}`;
+  return quizEntryUrl({
+    hostname: window.location.hostname,
+    origin: window.location.origin,
+    roomId,
+    lanOrigin: process.env.NEXT_PUBLIC_DEV_LAN_ORIGIN,
+  });
 }
 
 const noop = () => () => {};
 
-export function JoinQR({ roomId, size = 180, showUrl = true }: { roomId: string; size?: number; showUrl?: boolean }) {
+export function JoinQR({
+  roomId,
+  size = 180,
+  showUrl = true,
+  large = false,
+}: {
+  roomId: string;
+  size?: number;
+  showUrl?: boolean;
+  large?: boolean;
+}) {
   const url = useSyncExternalStore(noop, () => joinUrl(roomId), () => "");
   if (!url) return null;
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="rounded-3xl bg-white p-4 shadow-md">
-        <QRCodeSVG value={url} size={size} fgColor="#4a3a40" marginSize={0} />
+      <div className="rounded-2xl bg-white p-2 shadow-md">
+        <QRCodeSVG value={url} size={size} level="Q" marginSize={4} bgColor="#ffffff" fgColor="#000000" title="クイズに参加" />
       </div>
-      {showUrl && <p className="break-all text-center text-xs text-ink-soft">{url}</p>}
+      {showUrl && (
+        <p className={large ? "break-all text-center text-sm font-bold tracking-wide sm:text-lg" : "break-all text-center text-xs text-ink-soft"}>
+          {url}
+        </p>
+      )}
     </div>
   );
 }

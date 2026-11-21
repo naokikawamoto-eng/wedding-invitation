@@ -20,7 +20,7 @@ const cormorant = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   title: "Wedding Quiz",
-  description: "二次会クイズ",
+  description: "一次会・二次会のリアルタイムクイズ",
   robots: { index: false, follow: false },
 };
 

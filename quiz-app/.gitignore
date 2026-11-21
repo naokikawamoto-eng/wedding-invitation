@@ -7,3 +7,6 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 .emulator-data/
+data/
+public/quiz/*
+!public/quiz/.gitkeep

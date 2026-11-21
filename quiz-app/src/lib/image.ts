@@ -1,6 +1,4 @@
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { storage } from "./firebase";
-import { randomCode } from "./quiz";
+import { passcode } from "./transport";
 
 /** 会場の回線でも軽く表示できるよう、長辺 1280px の JPEG に縮小する */
 async function resize(file: File, maxSize = 1280, quality = 0.85): Promise<Blob> {
@@ -10,7 +8,7 @@ async function resize(file: File, maxSize = 1280, quality = 0.85): Promise<Blob>
   canvas.width = Math.round(bitmap.width * scale);
   canvas.height = Math.round(bitmap.height * scale);
   const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = "#fff"; // 透過 PNG の背景が黒くならないように
+  ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   return new Promise((resolve, reject) =>
@@ -18,14 +16,21 @@ async function resize(file: File, maxSize = 1280, quality = 0.85): Promise<Blob>
   );
 }
 
-export async function uploadQuestionImage(roomId: string, file: File): Promise<string> {
-  // GIF はアニメーションを残すためそのまま。縮小に失敗した形式（HEIC など）も原本を送る
+export async function uploadQuestionImage(_roomId: string, file: File): Promise<string> {
   const blob = file.type === "image/gif" ? file : await resize(file).catch(() => file);
-  const ext = blob.type === "image/jpeg" ? "jpg" : (file.name.split(".").pop() ?? "img");
-  const imageRef = ref(storage(), `rooms/${roomId}/images/${Date.now()}-${randomCode(6)}.${ext}`);
-  await uploadBytes(imageRef, blob, {
-    contentType: blob.type || "image/jpeg",
-    cacheControl: "public, max-age=31536000",
-  });
-  return getDownloadURL(imageRef);
+  const form = new FormData();
+  form.set("file", blob, file.name);
+  let res: Response;
+  try {
+    res = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "x-quiz-passcode": passcode() },
+      body: form,
+    });
+  } catch {
+    throw new Error("通信できませんでした");
+  }
+  const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+  if (!res.ok || !data.url) throw new Error(data.error || "アップロードに失敗しました");
+  return data.url;
 }
