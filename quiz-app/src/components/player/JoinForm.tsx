@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { PrizeIntro } from "@/components/player/Prizes";
+import { withHonorific } from "@/lib/honorific";
 import { joinRoom } from "@/lib/quiz";
 import { RECEPTION_GUESTS } from "@/lib/reception-guests";
 import type { Room } from "@/lib/types";
@@ -70,7 +71,7 @@ export function JoinForm({ room, uid }: { room: Room; uid: string }) {
                         guestId === guest.id ? "bg-blush-500 text-white" : "bg-white"
                       }`}
                     >
-                      {guest.name}
+                      {withHonorific(guest.name)}
                     </button>
                   </li>
                 ))}

@@ -5,6 +5,7 @@ import { JoinQR } from "@/components/JoinQR";
 import { PrizeIntro } from "@/components/player/Prizes";
 import { CHOICE_LETTERS, CHOICE_STYLES } from "@/components/choice";
 import { useServerClock } from "@/lib/hooks";
+import { withHonorific } from "@/lib/honorific";
 import { rankParticipants } from "@/lib/scoring";
 import type { Answer, AnswerKey, Participant, Question, Reveal, Room } from "@/lib/types";
 
@@ -132,7 +133,7 @@ function Welcome({ room, participants }: { room: Room; participants: Participant
           <ul className="flex max-h-[46vh] flex-wrap content-start justify-center gap-3 overflow-y-auto">
             {participants.map((person) => (
               <li key={person.id} className="animate-pop rounded-full bg-white/90 px-5 py-2 text-xl font-bold shadow sm:text-2xl">
-                {person.nickname}
+                {withHonorific(person.nickname)}
               </li>
             ))}
           </ul>
@@ -367,7 +368,7 @@ function RankStage({ room, participants, final }: { room: Room; participants: Pa
           {top.map((person) => (
             <li key={person.id} className="animate-pop rounded-[1.8rem] bg-white/90 px-4 py-6 text-center shadow-lg">
               <p className="text-6xl font-bold tabular-nums text-gold-600 sm:text-8xl">{person.rank}</p>
-              <p className="mt-2 truncate text-3xl font-bold sm:text-4xl">{person.nickname}</p>
+              <p className="mt-2 truncate text-3xl font-bold sm:text-4xl">{withHonorific(person.nickname)}</p>
               <p className="mt-2 text-2xl">
                 <b className="text-4xl text-blush-600 sm:text-5xl">{person.score}</b> 問
               </p>
@@ -379,7 +380,7 @@ function RankStage({ room, participants, final }: { room: Room; participants: Pa
             {rest.map((person) => (
               <li key={person.id} className="flex items-center gap-3 rounded-2xl bg-white/80 px-4 py-2 text-xl sm:text-2xl">
                 <span className="w-10 text-3xl font-bold tabular-nums text-gold-600">{person.rank}</span>
-                <span className="min-w-0 flex-1 truncate font-bold">{person.nickname}</span>
+                <span className="min-w-0 flex-1 truncate font-bold">{withHonorific(person.nickname)}</span>
                 <span className="font-bold text-blush-600">{person.score} 問</span>
               </li>
             ))}

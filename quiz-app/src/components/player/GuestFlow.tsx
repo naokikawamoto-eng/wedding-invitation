@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PrizeIntro } from "@/components/player/Prizes";
 import { AFTERPARTY_ROOM_ID, RECEPTION_ROOM_ID } from "@/lib/events";
 import { guestById, readSeat, resetGuestSession, resolveGuestSession, writeSeat } from "@/lib/guest-session";
+import { withHonorific } from "@/lib/honorific";
 import { useGuestId, useGuestPacket, useGuestSeat, useParticipant, useRoom } from "@/lib/hooks";
 import { afterpartyBadge, receptionBadge } from "@/lib/quiz-status";
 import { joinRoom } from "@/lib/quiz";
@@ -149,17 +150,21 @@ export function GuestFlow({
 
   function acceptName() {
     if (!uid || !pendingId) return;
-    const first = !seatId;
-    if (seatId && seatId !== pendingId) resetGuestSession();
+    if (seatId) {
+      setPendingId(null);
+      setOpened(true);
+      setStep(initialRace ? "race" : "select");
+      return;
+    }
     writeSeat(pendingId);
     setPendingId(null);
     setError(undefined);
     setOpened(true);
-    if (first && initialRace) {
+    if (initialRace) {
       setStep("race");
       return;
     }
-    if (first && initialRoom) {
+    if (initialRoom) {
       if (initialRoom === RECEPTION_ROOM_ID) setStep(receptionStatus === "submitted" ? "review-reception" : receptionStatus === "closed" ? "closed-reception" : "reception");
       else setStep(afterpartyStatus === "submitted" ? "review-afterparty" : afterpartyStatus === "closed" ? "closed-afterparty" : "afterparty");
       return;
@@ -182,22 +187,16 @@ export function GuestFlow({
     );
   }
 
-  const nameBar = seat ? <GuestNameBar name={seat.name} onChange={() => setStep("name")} /> : null;
+  const nameBar = seat ? <GuestNameBar name={withHonorific(seat.name)} /> : null;
   const matches = RECEPTION_GUESTS.filter((guest) => guest.name.includes(query.replace(/\s+/g, "")));
+  const choosing = step === "name" && !seat;
+  const atSelect = !!seat && (step === "select" || step === "name");
 
   return (
     <main className="mx-auto min-h-dvh max-w-md space-y-4 px-4 py-6">
-      {step === "select" && nameBar}
-      {step === "name" && (
+      {atSelect && nameBar}
+      {choosing && (
         <div className="space-y-4">
-          {seat && (
-            <div className="flex items-center justify-between gap-3">
-              <p className="min-w-0 truncate text-sm font-bold">{seat.name}</p>
-              <button type="button" className="shrink-0 text-sm font-bold text-blush-600 underline" onClick={() => setStep("select")}>
-                クイズの選択に戻る
-              </button>
-            </div>
-          )}
           <Title sub="河本直樹 & 磯野有梨花">Welcome</Title>
           <Ornament />
           <Card>
@@ -213,7 +212,7 @@ export function GuestFlow({
                     onClick={() => chooseName(guest.id)}
                     className={`w-full rounded-2xl px-3 py-2 text-left font-bold ${seatId === guest.id ? "bg-blush-500 text-white" : "bg-white"}`}
                   >
-                    {guest.name}
+                    {withHonorific(guest.name)}
                   </button>
                 </li>
               ))}
@@ -223,9 +222,9 @@ export function GuestFlow({
         </div>
       )}
 
-      {step === "select" && seat && (
+      {atSelect && seat && (
         <div className="space-y-3">
-          <Title sub={seat.name}>Quiz</Title>
+          <Title sub={withHonorific(seat.name)}>Quiz</Title>
           <QuizChoice label="一次会のクイズ" status={receptionStatus} onClick={() => open(RECEPTION_ROOM_ID)} />
           <QuizChoice label="二次会のクイズ" status={afterpartyStatus} onClick={() => open(AFTERPARTY_ROOM_ID)} />
           <QuizChoice label="競馬企画" status={null} onClick={() => setStep("race")} />
@@ -276,7 +275,7 @@ export function GuestFlow({
 
       {step === "confirm" && pendingId && guestById(pendingId) && (
         <Card className="space-y-4 py-10 text-center">
-          <p className="text-lg font-bold">あなたは{guestById(pendingId)?.name}さんですか？</p>
+          <p className="text-lg font-bold">あなたは{withHonorific(guestById(pendingId)?.name ?? "")}ですか？</p>
           <Button className="w-full" onClick={acceptName}>
             はい
           </Button>
@@ -332,13 +331,10 @@ export function GuestFlow({
   );
 }
 
-function GuestNameBar({ name, onChange }: { name: string; onChange: () => void }) {
+function GuestNameBar({ name }: { name: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-full bg-white/80 px-4 py-2 text-sm shadow-sm">
-      <span className="min-w-0 truncate font-bold">{name}</span>
-      <button type="button" className="shrink-0 font-bold text-blush-600 underline" onClick={onChange}>
-        名前を変える
-      </button>
+    <div className="rounded-full bg-white/80 px-4 py-2 text-sm shadow-sm">
+      <span className="block truncate font-bold">{name}</span>
     </div>
   );
 }

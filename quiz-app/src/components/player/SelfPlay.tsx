@@ -5,6 +5,7 @@ import { PrizeIntro } from "@/components/player/Prizes";
 import { CHOICE_LETTERS, CHOICE_STYLES } from "@/components/choice";
 import { enqueueForUser, visibleChoice, type LocalPick } from "@/lib/answer-ui";
 import { EVENT_LABEL } from "@/lib/events";
+import { withHonorific } from "@/lib/honorific";
 import { useGuestPacket, useParticipants } from "@/lib/hooks";
 import { rankParticipants } from "@/lib/scoring";
 import { submitAnswer, submitAnswers } from "@/lib/quiz";
@@ -42,7 +43,7 @@ export function SelfPlay({ room, me, onSubmitted }: { room: Room; me: Participan
     <div className="space-y-4">
       <header className="flex items-center justify-between rounded-full bg-white/80 px-4 py-2 text-sm shadow-sm">
         <span className="min-w-0 truncate font-bold">
-          {me.nickname}
+          {withHonorific(me.nickname)}
           <span className="ml-2 font-normal text-ink-soft">· {EVENT_LABEL[room.event]}</span>
         </span>
         <span className="shrink-0 text-ink-soft">
@@ -133,7 +134,7 @@ export function SelfPlay({ room, me, onSubmitted }: { room: Room; me: Participan
             (rankingOpen ? (
               <Card>
                 <h2 className="mb-3 text-center font-bold">順位</h2>
-                <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} byTime={false} />
+                <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} byTime={false} honorific />
               </Card>
             ) : (
               <RankingHiddenNote />

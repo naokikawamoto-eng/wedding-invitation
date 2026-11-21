@@ -1,5 +1,6 @@
 "use client";
 
+import { withHonorific } from "@/lib/honorific";
 import { RACE_BOUGHT, RACE_NONE, RACE_RULE, RACE_TITLE, RACE_WHEN, RACE_WINNERS, oddsLabel, type RaceView } from "@/lib/race";
 import { ErrorNote } from "../ui";
 import { useRace } from "./useRace";
@@ -30,7 +31,7 @@ function Board({ race }: { race: RaceView }) {
       </header>
       <ul className="grid min-h-0 flex-1 grid-cols-2 grid-rows-3 gap-2">
         {race.horses.map((horse) => {
-          const names = race.picks.filter((pick) => pick.horseId === horse.id).map((pick) => pick.nickname);
+          const names = race.picks.filter((pick) => pick.horseId === horse.id).map((pick) => withHonorific(pick.nickname));
           return (
             <li key={horse.id} className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white/95 px-3 py-2 shadow">
               <div className="flex items-start justify-between gap-2">
@@ -77,7 +78,7 @@ function Result({ race }: { race: RaceView }) {
     );
   }
   const horse = race.horses.find((item) => item.id === race.winnerId);
-  const names = horse ? race.picks.filter((pick) => pick.horseId === horse.id).map((pick) => pick.nickname) : [];
+  const names = horse ? race.picks.filter((pick) => pick.horseId === horse.id).map((pick) => withHonorific(pick.nickname)) : [];
   return (
     <main className="box-border flex h-dvh flex-col overflow-hidden px-6 py-4 text-center">
       <p className="font-display text-[clamp(1.6rem,4vh,3rem)] italic text-gold-600">Mile CS</p>

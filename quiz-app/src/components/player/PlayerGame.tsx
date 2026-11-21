@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { EVENT_LABEL } from "@/lib/events";
+import { withHonorific } from "@/lib/honorific";
 import { useMyAnswer, useParticipants, useQuestion } from "@/lib/hooks";
 import { isCorrect } from "@/lib/judge";
 import { rankParticipants } from "@/lib/scoring";
@@ -28,7 +29,7 @@ export function PlayerGame({ room, me }: { room: Room; me: Participant }) {
     <div className="space-y-4">
       <header className="flex items-center justify-between rounded-full bg-white/80 px-4 py-2 text-sm shadow-sm">
         <span className="min-w-0 truncate font-bold">
-          {me.nickname}
+          {withHonorific(me.nickname)}
           <span className="ml-2 font-normal text-ink-soft">· {EVENT_LABEL[room.event]}</span>
         </span>
         <span className="shrink-0 text-ink-soft">
@@ -127,7 +128,7 @@ function FinalResult({ me, rank, participants }: { me: Participant; rank?: numbe
       </Card>
       <Card>
         <h2 className="mb-3 text-center font-bold">最終ランキング</h2>
-        <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} />
+        <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} honorific />
       </Card>
     </div>
   );

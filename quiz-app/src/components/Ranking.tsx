@@ -1,3 +1,4 @@
+import { withHonorific } from "@/lib/honorific";
 import { formatSeconds, rankParticipants } from "@/lib/scoring";
 import type { Participant } from "@/lib/types";
 
@@ -11,6 +12,7 @@ export function Ranking({
   showTime = true,
   byTime = true,
   showTable = false,
+  honorific = false,
   onRelease,
   onRemove,
 }: {
@@ -22,6 +24,8 @@ export function Ranking({
   /** false のとき、正解数が同じなら同順位 */
   byTime?: boolean;
   showTable?: boolean;
+  /** ゲストとスクリーンだけ。保存名はそのまま */
+  honorific?: boolean;
   onRelease?: (p: Participant) => void;
   onRemove?: (p: Participant) => void;
 }) {
@@ -45,7 +49,7 @@ export function Ranking({
             {MEDALS[p.rank] || p.rank}
           </span>
           <span className="min-w-0 flex-1 truncate font-bold">
-            {p.nickname}
+            {honorific ? withHonorific(p.nickname) : p.nickname}
             {showTable && p.table && <span className="ml-2 text-[0.7em] font-bold text-ink-soft">{p.table}卓</span>}
           </span>
           {showTime && p.score > 0 && (
