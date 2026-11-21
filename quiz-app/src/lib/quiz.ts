@@ -117,3 +117,27 @@ export async function removeParticipant(roomId: string, uid: string) {
 export async function setAnswerSeconds(roomId: string, answerSeconds: number) {
   await postAction({ op: "setAnswerSeconds", roomId, answerSeconds }, true);
 }
+
+export async function openRace() {
+  await postAction({ op: "raceOpen" }, true);
+}
+
+export async function closeRace() {
+  await postAction({ op: "raceClose" }, true);
+}
+
+export async function saveRaceHorses(horses: { id: string; number: number; name: string; sexAge: string; jockey: string; odds: string }[]) {
+  await postAction({ op: "raceSaveHorses", horses }, true);
+}
+
+export async function setRaceWinner(winnerId: string) {
+  await postAction({ op: "raceSetWinner", winnerId }, true);
+}
+
+export async function clearRaceResult() {
+  await postAction({ op: "raceClearResult" }, true);
+}
+
+export async function pickRaceHorse(uid: string, nickname: string, horseId: string) {
+  await postAction({ op: "racePick", uid, nickname, horseId });
+}

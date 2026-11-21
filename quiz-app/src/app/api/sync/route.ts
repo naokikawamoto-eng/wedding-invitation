@@ -6,7 +6,7 @@ import { readState, withGuestBlobs } from "@/server/persist";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const VIEWS = new Set(["guest", "screen", "host", "list"]);
+const VIEWS = new Set(["guest", "screen", "host", "list", "race"]);
 
 export async function GET(req: NextRequest) {
   const view = req.nextUrl.searchParams.get("view") ?? "guest";

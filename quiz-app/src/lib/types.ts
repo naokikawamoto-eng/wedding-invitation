@@ -138,4 +138,5 @@ export interface SyncBody {
   choiceBoards?: { questionId: string; counts: number[] }[];
   /** まとめて発表のとき、送信した人のうち正解した人数 */
   correctRates?: { questionId: string; correct: number; submitted: number }[];
+  race?: import("./race").RaceView | null;
 }

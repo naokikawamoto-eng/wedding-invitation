@@ -11,7 +11,7 @@ import { QuestionManager } from "@/components/admin/QuestionManager";
 import { JoinQR } from "@/components/JoinQR";
 import { Ranking } from "@/components/Ranking";
 import { Button, Card, ErrorNote, Spinner } from "@/components/ui";
-import { EVENT_LABEL } from "@/lib/events";
+import { AFTERPARTY_ROOM_ID, EVENT_LABEL } from "@/lib/events";
 import { useHostData, useRoom } from "@/lib/hooks";
 import { removeParticipant } from "@/lib/quiz";
 import type { Room } from "@/lib/types";
@@ -64,6 +64,11 @@ function AdminRoom({ room }: { room: Room }) {
         <Button variant="outline" size="sm" onClick={() => setShowQR(!showQR)}>
           参加用QR
         </Button>
+        {room.id === AFTERPARTY_ROOM_ID && (
+          <Link href="/admin/race" className="text-sm font-bold text-gold-600 underline">
+            競馬企画
+          </Link>
+        )}
         <a href={`/screen/${room.id}`} target="_blank" rel="noreferrer">
           <Button variant="gold" size="sm">
             スクリーン表示 ↗

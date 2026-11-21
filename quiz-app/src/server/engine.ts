@@ -14,6 +14,8 @@ import type {
 import { receptionGuest } from "../lib/reception-guests";
 import { isPrizeId } from "../lib/prizes";
 import { PRESETS } from "./presets";
+import type { RaceBoard } from "../lib/race";
+import { applyRace, isRaceAction, raceView, type RaceAction } from "./race";
 
 export interface RoomRecord extends Room {
   questions: Question[];
@@ -25,6 +27,8 @@ export interface RoomRecord extends Room {
 export interface QuizState {
   version: number;
   rooms: Record<string, RoomRecord>;
+  /** 二次会の競馬企画。未作成のあいだは保存しない */
+  race?: RaceBoard;
 }
 
 export type Action =
@@ -51,7 +55,8 @@ export type Action =
   | { op: "finishQuiz"; roomId: string }
   | { op: "resetRoom"; roomId: string; removeParticipants: boolean }
   | { op: "removeParticipant"; roomId: string; uid: string }
-  | { op: "setAnswerSeconds"; roomId: string; answerSeconds: number };
+  | { op: "setAnswerSeconds"; roomId: string; answerSeconds: number }
+  | RaceAction;
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -373,6 +378,7 @@ function validateDraft(draft: QuestionDraft): QuestionDraft {
 
 export function applyAction(state: QuizState, action: Action, now: number): QuizState {
   state = normalize(state, now);
+  if (isRaceAction(action)) return applyRace(state, action, now);
   switch (action.op) {
     case "join": {
       const room = mustRoom(state, action.roomId);
@@ -782,10 +788,11 @@ function answerSheet(room: RoomRecord): Reveal[] | null {
 /** 画面ごとの見える範囲。ゲストとスクリーンには未発表の正解を渡さない */
 export function project(
   state: QuizState,
-  query: { view: "guest" | "screen" | "host" | "list"; roomId?: string; uid?: string },
+  query: { view: "guest" | "screen" | "host" | "list" | "race"; roomId?: string; uid?: string },
   now: number,
 ): SyncBody {
   const base = { serverNow: now, version: state.version };
+  if (query.view === "race") return { ...base, race: raceView(state) };
   if (query.view === "list") {
     const rooms = Object.values(state.rooms)
       .map((room) => ({ ...publicRoom(room), reveal: null }))

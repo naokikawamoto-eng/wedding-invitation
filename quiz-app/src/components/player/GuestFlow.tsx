@@ -8,14 +8,21 @@ import { useGuestId, useGuestPacket, useGuestSeat, useParticipant, useRoom } fro
 import { afterpartyBadge, receptionBadge } from "@/lib/quiz-status";
 import { joinRoom } from "@/lib/quiz";
 import { RECEPTION_GUESTS } from "@/lib/reception-guests";
+import { RaceGuest } from "../race/RaceGuest";
 import { AnswerReview } from "./AnswerReview";
 import { PlayerGame } from "./PlayerGame";
 import { SelfPlay } from "./SelfPlay";
 import { Button, Card, ErrorNote, Ornament, Spinner, Title, inputClass } from "../ui";
 
-type Step = "name" | "confirm" | "select" | "reception" | "afterparty" | "review-reception" | "review-afterparty" | "closed-reception" | "closed-afterparty" | "accepted";
+type Step = "name" | "confirm" | "select" | "reception" | "afterparty" | "race" | "review-reception" | "review-afterparty" | "closed-reception" | "closed-afterparty" | "accepted";
 
-export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM_ID | typeof AFTERPARTY_ROOM_ID }) {
+export function GuestFlow({
+  initialRoom,
+  initialRace = false,
+}: {
+  initialRoom?: typeof RECEPTION_ROOM_ID | typeof AFTERPARTY_ROOM_ID;
+  initialRace?: boolean;
+}) {
   const uid = useGuestId();
   const seatId = useGuestSeat();
   const seat = guestById(seatId);
@@ -83,6 +90,10 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
   useEffect(() => {
     if (!ready || opened) return;
     setOpened(true);
+    if (initialRace) {
+      setStep("race");
+      return;
+    }
     if (!initialRoom) {
       setStep("select");
       return;
@@ -96,7 +107,7 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
     if (afterpartyStatus === "submitted") setStep("review-afterparty");
     else if (afterpartyStatus === "closed") setStep("closed-afterparty");
     else setStep("afterparty");
-  }, [ready, opened, initialRoom, receptionStatus, afterpartyStatus, meReception.data]);
+  }, [ready, opened, initialRoom, initialRace, receptionStatus, afterpartyStatus, meReception.data]);
 
   useEffect(() => {
     if (step !== "reception" || !uid || !seat || meReception.data === undefined || meReception.data || receptionStatus) return;
@@ -144,6 +155,10 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
     setPendingId(null);
     setError(undefined);
     setOpened(true);
+    if (first && initialRace) {
+      setStep("race");
+      return;
+    }
     if (first && initialRoom) {
       if (initialRoom === RECEPTION_ROOM_ID) setStep(receptionStatus === "submitted" ? "review-reception" : receptionStatus === "closed" ? "closed-reception" : "reception");
       else setStep(afterpartyStatus === "submitted" ? "review-afterparty" : afterpartyStatus === "closed" ? "closed-afterparty" : "afterparty");
@@ -213,6 +228,7 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
           <Title sub={seat.name}>Quiz</Title>
           <QuizChoice label="一次会のクイズ" status={receptionStatus} onClick={() => open(RECEPTION_ROOM_ID)} />
           <QuizChoice label="二次会のクイズ" status={afterpartyStatus} onClick={() => open(AFTERPARTY_ROOM_ID)} />
+          <QuizChoice label="競馬企画" status={null} onClick={() => setStep("race")} />
           <PrizeIntro />
         </div>
       )}
@@ -233,6 +249,15 @@ export function GuestFlow({ initialRoom }: { initialRoom?: typeof RECEPTION_ROOM
           ) : (
             <Spinner />
           )}
+          <Button variant="outline" className="w-full" onClick={() => setStep("select")}>
+            クイズの選択に戻る
+          </Button>
+        </div>
+      )}
+
+      {step === "race" && uid && seat && (
+        <div className="space-y-3">
+          <RaceGuest uid={uid} nickname={seat.name} />
           <Button variant="outline" className="w-full" onClick={() => setStep("select")}>
             クイズの選択に戻る
           </Button>
