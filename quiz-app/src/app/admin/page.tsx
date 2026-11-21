@@ -31,6 +31,11 @@ function RoomList({ uid }: { uid: string }) {
         <SignOutButton />
       </div>
 
+      <Link href="/admin/letters" className="block rounded-3xl bg-white/85 p-5 shadow-md">
+        <p className="text-xs font-bold text-ink-soft">主催者</p>
+        <p className="mt-1 font-bold">手紙の確認</p>
+        <p className="text-sm text-ink-soft">1人ずつ読む。参加データは変わりません</p>
+      </Link>
       <Link href="/admin/race" className="block rounded-3xl bg-gold-100/80 p-5 shadow-md">
         <p className="text-xs font-bold text-gold-600">二次会</p>
         <p className="mt-1 font-bold">競馬企画</p>

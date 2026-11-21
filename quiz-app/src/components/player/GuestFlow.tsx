@@ -9,6 +9,7 @@ import { useGuestId, useGuestPacket, useGuestSeat, useParticipant, useRoom } fro
 import { afterpartyBadge, receptionBadge } from "@/lib/quiz-status";
 import { joinRoom } from "@/lib/quiz";
 import { RECEPTION_GUESTS } from "@/lib/reception-guests";
+import { PersonalLetter } from "./PersonalLetter";
 import { RaceGuest } from "../race/RaceGuest";
 import { AnswerReview } from "./AnswerReview";
 import { PlayerGame } from "./PlayerGame";
@@ -194,6 +195,7 @@ export function GuestFlow({
 
   return (
     <main className="mx-auto min-h-dvh max-w-md space-y-4 px-4 py-6">
+      {seat && step !== "name" && step !== "confirm" && <PersonalLetter guestId={seat.id} />}
       {atSelect && nameBar}
       {choosing && (
         <div className="space-y-4">
