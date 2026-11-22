@@ -373,12 +373,12 @@ test("順位の表示切替は回答と得点を変えない", () => {
 
 test("席次表は84名で、取った名前は二度目を拒み、未送信の回答も締切時に数える", () => {
   const seated = RECEPTION_GUESTS.filter((guest) => !guest.test);
-  assert.equal(seated.length, 84);
-  assert.equal(seated.filter((guest) => guest.side === "groom").length, 55);
+  assert.equal(seated.length, 85);
+  assert.equal(seated.filter((guest) => guest.side === "groom").length, 56);
   assert.equal(seated.filter((guest) => guest.side === "bride").length, 29);
   assert.equal(RECEPTION_GUESTS.filter((guest) => guest.test).length, 0);
   assert.equal(RECEPTION_GUESTS.some((guest) => guest.name.startsWith("テストユーザー")), false);
-  assert.equal(new Set(RECEPTION_GUESTS.map((guest) => guest.name)).size, 84);
+  assert.equal(new Set(RECEPTION_GUESTS.map((guest) => guest.name)).size, 85);
   const first = RECEPTION_GUESTS[0];
   let state = room(1_000);
   state = applyAction(state, { op: "openQuiz", roomId: RECEPTION_ROOM_ID }, 1_000);

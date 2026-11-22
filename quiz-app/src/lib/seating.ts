@@ -24,6 +24,7 @@ export const SEAT_TABLES: SeatTable[] = [
       { name: "佐久間善之", relation: "新郎大学先輩" },
       { name: "小牟田清英", relation: "新郎大学先輩" },
       { name: "畠山博行", relation: "新郎大学先輩" },
+      { name: "林", relation: "新郎" },
     ],
   },
   {

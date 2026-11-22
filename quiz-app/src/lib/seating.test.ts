@@ -5,11 +5,11 @@ import { findSeat, SEAT_TABLES, seatKey } from "./seating";
 
 test("席次表は最新の卓順で、手紙や試し参加を含まない", () => {
   const guests = SEAT_TABLES.flatMap((table) => table.guests.map((guest) => ({ ...guest, tableId: table.id })));
-  assert.equal(guests.length, 83);
+  assert.equal(guests.length, 84);
   assert.deepEqual(
     SEAT_TABLES.map((table) => [table.id, table.guests.length]),
     [
-      ["A", 6],
+      ["A", 7],
       ["B", 6],
       ["C", 7],
       ["D", 6],

@@ -12,9 +12,9 @@ test("手紙は空白と様を除いた氏名で新郎55人にだけ結び、本
     assert.equal(raw.includes(banned), false, banned);
   }
   const ids = letterGuestIds();
-  assert.equal(ids.length, 55);
+  assert.equal(ids.length, 56);
   const groom = RECEPTION_GUESTS.filter((guest) => guest.side === "groom" && !guest.test);
-  assert.equal(groom.length, 55);
+  assert.equal(groom.length, 56);
   for (const guest of groom) {
     const letter = letterForGuest(guest.id);
     assert.ok(letter?.body, guest.name);
@@ -26,6 +26,20 @@ test("手紙は空白と様を除いた氏名で新郎55人にだけ結び、本
   const draft = letterForGuest("a6");
   assert.equal(draft?.body.includes("畠さん"), true);
   assert.equal(draft?.body.includes("竜泉寺"), false);
+  const hayashi = letterForGuest("a7");
+  assert.equal(
+    hayashi?.body,
+    [
+      "今日は来てくれてありがとう！",
+      "結婚式の梯子までしてくれる誠実さにめちゃくちゃ感謝してます！",
+      "林とは1番テニスもしたし、1番熱い話したね。",
+      "林はめちゃくちゃいい後輩で、仲間思いのムードメーカー。",
+      "俺みたいなクールぶってる偏屈な先輩（もはや後輩か？笑）と仲良くしてくれてありがとう。",
+      "実はゆりかちゃんと結婚したのって林がいたると別れたの教えてくれたからなんやで笑",
+      "これからもよろしくな！",
+      "近々、相模大野か海老名で飲もう！",
+    ].join("\n"),
+  );
   const akaba = letterForGuest("b6");
   assert.equal(akaba?.callName, "赤羽さん");
   assert.equal(akaba?.body.endsWith("NAOKIより"), true);

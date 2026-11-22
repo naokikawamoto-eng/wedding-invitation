@@ -19,6 +19,7 @@ export const RECEPTION_GUESTS: ReceptionGuest[] = [
   g("a4", "佐久間善之", "新郎大学先輩", "groom", "A"),
   g("a5", "小牟田清英", "新郎大学先輩", "groom", "A"),
   g("a6", "畠山博行", "新郎大学先輩", "groom", "A"),
+  g("a7", "林", "新郎", "groom", "A"),
   g("b1", "尾関大地", "新郎友人", "groom", "B"),
   g("b2", "後藤田祐孝", "新郎大学先輩", "groom", "B"),
   g("b3", "奥村裕貴", "新郎友人", "groom", "B"),
