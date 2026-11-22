@@ -5,7 +5,6 @@ export type ReceptionGuest = {
   relation: string;
   side: "groom" | "bride";
   table: string;
-  /** 試し参加用。本番の席次ではない。外すときは test: true の行だけ消す */
   test?: boolean;
 };
 
@@ -98,10 +97,6 @@ export const RECEPTION_GUESTS: ReceptionGuest[] = [
   g("l4", "法花義人", "新婦祖父", "bride", "L"),
   g("l5", "法花美貴代", "新婦叔母", "bride", "L"),
   g("l6", "磯野敏之", "新婦父", "bride", "L"),
-  // 試し用。席次表の84名ではない。外すときは test: true の10人だけ消す。
-  ...Array.from({ length: 10 }, (_, index) =>
-    g(`test${index + 1}`, `テストユーザー${index + 1}`, "テスト", "groom", "-", true),
-  ),
 ];
 
 export function receptionGuest(id: string): ReceptionGuest | undefined {

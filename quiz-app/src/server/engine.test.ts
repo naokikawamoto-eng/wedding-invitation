@@ -327,8 +327,9 @@ test("席次表は84名で、取った名前は二度目を拒み、未送信の
   assert.equal(seated.length, 84);
   assert.equal(seated.filter((guest) => guest.side === "groom").length, 55);
   assert.equal(seated.filter((guest) => guest.side === "bride").length, 29);
-  assert.equal(RECEPTION_GUESTS.filter((guest) => guest.test).length, 10);
-  assert.equal(new Set(RECEPTION_GUESTS.map((guest) => guest.name)).size, 94);
+  assert.equal(RECEPTION_GUESTS.filter((guest) => guest.test).length, 0);
+  assert.equal(RECEPTION_GUESTS.some((guest) => guest.name.startsWith("テストユーザー")), false);
+  assert.equal(new Set(RECEPTION_GUESTS.map((guest) => guest.name)).size, 84);
   const first = RECEPTION_GUESTS[0];
   let state = room(1_000);
   state = applyAction(state, { op: "openQuiz", roomId: RECEPTION_ROOM_ID }, 1_000);

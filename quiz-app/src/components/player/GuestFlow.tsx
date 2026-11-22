@@ -229,7 +229,7 @@ export function GuestFlow({
           <Title sub={withHonorific(seat.name)}>Quiz</Title>
           <QuizChoice label="一次会のクイズ" status={receptionStatus} onClick={() => open(RECEPTION_ROOM_ID)} />
           <QuizChoice label="二次会のクイズ" status={afterpartyStatus} onClick={() => open(AFTERPARTY_ROOM_ID)} />
-          <QuizChoice label="競馬企画" status={null} onClick={() => setStep("race")} />
+          {reception.raceGuestOpen && <QuizChoice label="競馬企画" status={null} onClick={() => setStep("race")} />}
           <PrizeIntro />
         </div>
       )}
@@ -258,7 +258,13 @@ export function GuestFlow({
 
       {step === "race" && uid && seat && (
         <div className="space-y-3">
-          <RaceGuest uid={uid} nickname={seat.name} />
+          {reception.raceGuestOpen ? (
+            <RaceGuest uid={uid} nickname={seat.name} />
+          ) : (
+            <Card className="space-y-2 py-10 text-center">
+              <p className="text-lg font-bold">競馬企画は、16:00からご参加いただけます。</p>
+            </Card>
+          )}
           <Button variant="outline" className="w-full" onClick={() => setStep("select")}>
             クイズの選択に戻る
           </Button>

@@ -14,7 +14,7 @@ import type {
 import { receptionGuest } from "../lib/reception-guests";
 import { isPrizeId } from "../lib/prizes";
 import { PRESETS } from "./presets";
-import type { RaceBoard } from "../lib/race";
+import { RACE_GUEST_OPENS_AT, raceGuestOpen, type RaceBoard } from "../lib/race";
 import { applyRace, isRaceAction, raceView, type RaceAction } from "./race";
 
 export interface RoomRecord extends Room {
@@ -791,8 +791,8 @@ export function project(
   query: { view: "guest" | "screen" | "host" | "list" | "race"; roomId?: string; uid?: string },
   now: number,
 ): SyncBody {
-  const base = { serverNow: now, version: state.version };
-  if (query.view === "race") return { ...base, race: raceView(state) };
+  const base = { serverNow: now, version: state.version, raceGuestOpen: raceGuestOpen(now), raceOpensAt: RACE_GUEST_OPENS_AT };
+  if (query.view === "race") return { ...base, race: raceView(state, now) };
   if (query.view === "list") {
     const rooms = Object.values(state.rooms)
       .map((room) => ({ ...publicRoom(room), reveal: null }))

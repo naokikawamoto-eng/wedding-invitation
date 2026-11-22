@@ -35,6 +35,15 @@ export interface RaceView {
   horses: RaceHorse[];
   picks: RacePick[];
   winnerId: string | null;
+  /** サーバー時刻で、ゲストに出してよいか */
+  guestOpen: boolean;
+}
+
+/** ゲストへ競馬企画を出す時刻。2026-11-22 16:00 JST */
+export const RACE_GUEST_OPENS_AT = Date.parse("2026-11-22T07:00:00.000Z");
+
+export function raceGuestOpen(now: number): boolean {
+  return now >= RACE_GUEST_OPENS_AT;
 }
 
 export const RACE_TITLE = "マイルチャンピオンシップ";

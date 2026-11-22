@@ -1,4 +1,4 @@
-import { DEFAULT_RACE_HORSES, type RaceBoard, type RaceHorse, type RacePick, type RaceView } from "../lib/race";
+import { DEFAULT_RACE_HORSES, raceGuestOpen, type RaceBoard, type RaceHorse, type RacePick, type RaceView } from "../lib/race";
 import type { QuizState } from "./engine";
 
 export type RaceAction =
@@ -15,16 +15,18 @@ export function isRaceAction(action: { op: string }): action is RaceAction {
   return action.op.startsWith("race");
 }
 
-export function raceView(state: QuizState): RaceView {
+export function raceView(state: QuizState, now = Date.now()): RaceView {
+  const guestOpen = raceGuestOpen(now);
   const board = state.race;
   if (!board) {
-    return { phase: "waiting", horses: DEFAULT_RACE_HORSES, picks: [], winnerId: null };
+    return { phase: "waiting", horses: DEFAULT_RACE_HORSES, picks: [], winnerId: null, guestOpen };
   }
   return {
     phase: board.phase,
     horses: [...board.horses].sort((a, b) => a.popularity - b.popularity || a.number - b.number),
     picks: Object.values(board.picks).sort((a, b) => a.nickname.localeCompare(b.nickname, "ja") || a.uid.localeCompare(b.uid)),
     winnerId: board.winnerId,
+    guestOpen,
   };
 }
 
@@ -62,6 +64,7 @@ export function applyRace(state: QuizState, action: RaceAction, now: number): Qu
       return { ...state, race: { ...current, phase: "locked", winnerId: null } };
     }
     case "racePick": {
+      if (!raceGuestOpen(now)) throw new Error("競馬企画は16:00から始まります");
       const current = state.race;
       if (!current || current.phase !== "open") throw new Error("いまは選べません");
       if (!current.horses.some((horse) => horse.id === action.horseId)) throw new Error("馬を選んでください");

@@ -139,4 +139,8 @@ export interface SyncBody {
   /** まとめて発表のとき、送信した人のうち正解した人数 */
   correctRates?: { questionId: string; correct: number; submitted: number }[];
   race?: import("./race").RaceView | null;
+  /** サーバー時刻で、ゲストに競馬企画を出してよいか */
+  raceGuestOpen?: boolean;
+  /** ゲスト公開の時刻（UNIXミリ秒） */
+  raceOpensAt?: number;
 }

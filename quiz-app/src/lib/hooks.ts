@@ -180,9 +180,9 @@ function useSync(view: View, roomId: string | null, enabled = true) {
 
 export function useRoom(roomId: string | null, view: "guest" | "host" | "screen" = "guest") {
   const sync = useSync(view, roomId);
-  if (sync.error && !sync.data) return { data: undefined, error: sync.error };
-  if (!sync.data) return { data: undefined, error: sync.error };
-  return { data: sync.data.room ?? null, error: sync.error };
+  if (sync.error && !sync.data) return { data: undefined, error: sync.error, raceGuestOpen: false };
+  if (!sync.data) return { data: undefined, error: sync.error, raceGuestOpen: false };
+  return { data: sync.data.room ?? null, error: sync.error, raceGuestOpen: sync.data.raceGuestOpen === true };
 }
 
 export function useParticipants(roomId: string | null) {
