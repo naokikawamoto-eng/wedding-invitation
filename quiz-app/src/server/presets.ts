@@ -23,7 +23,7 @@ export interface Preset {
 }
 
 /**
- * 一次会の本番に載せる確定11問。
+ * 一次会の本番に載せる確定12問。
  * 旅行問題は下の HELD_RECEPTION に置き、採点対象にしない。
  * 二次会は披露宴の振り返り10問。Q8だけ未定。
  */
@@ -50,6 +50,15 @@ export const PRESETS: Preset[] = [
         choices: ["中学2年生", "高校2年生", "大学2年生", "社会人2年目"],
         correctChoice: 1,
         correctTexts: [],
+      },
+      {
+        id: "groom-favorite",
+        type: "choice",
+        text: "新郎がもっとも好きな作品は？",
+        choices: ["ハリーポッター", "とある魔術の禁書目録", "アイドルマスター", "シュタインズゲート"],
+        correctChoice: 3,
+        correctTexts: [],
+        note: "1番ハマったゲームはアイマス、1番好きなキャラクターはとあるですが、好きな作品はシュタゲです。",
       },
       {
         id: "groom-name",

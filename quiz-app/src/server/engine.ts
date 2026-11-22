@@ -224,25 +224,66 @@ function ensureModes(state: QuizState): QuizState {
 
 const RECEPTION_Q1_OLD_TEXT = "次のうち、新郎が習ったことのないスポーツは？";
 
-/** 保存済みの一次会1問目だけを新しい文面へ替える。他の問題・進行・参加者は変えない */
+const RECEPTION_Q2_ID = "groom-favorite";
+
+/** 保存済みの一次会で、1問目の文面と、その直後の作品問題だけを足す。他の問題・進行・参加者は変えない */
 function upgradeReceptionOpening(state: QuizState): QuizState {
-  const preset = PRESETS.flatMap((item) => item.questions).find((item) => item.id === "groom-sports");
-  if (!preset) return state;
+  const questions = PRESETS.flatMap((item) => item.questions);
+  const openingPreset = questions.find((item) => item.id === "groom-sports");
+  const favoritePreset = questions.find((item) => item.id === RECEPTION_Q2_ID);
+  if (!openingPreset || !favoritePreset) return state;
   let rooms = state.rooms;
   let changed = false;
   for (const id of Object.keys(rooms)) {
     const room = rooms[id];
-    const index = room.questions.findIndex((question) => question.id === "groom-sports" && question.text === RECEPTION_Q1_OLD_TEXT);
-    if (index < 0) continue;
-    const questions = room.questions.slice();
-    questions[index] = { ...room.questions[index], text: preset.text, choices: [...preset.choices] };
-    const prev = room.keys["groom-sports"] ?? { correctChoice: null, correctTexts: [] };
-    const keys = {
-      ...room.keys,
-      "groom-sports": { ...prev, correctChoice: preset.correctChoice, correctTexts: [...preset.correctTexts] },
-    };
+    if (!room.questions.some((question) => question.id === "groom-sports")) continue;
+    let nextQuestions = room.questions;
+    let keys = room.keys;
+    let roomChanged = false;
+    const openingIndex = nextQuestions.findIndex((question) => question.id === "groom-sports" && question.text === RECEPTION_Q1_OLD_TEXT);
+    if (openingIndex >= 0) {
+      nextQuestions = nextQuestions.slice();
+      nextQuestions[openingIndex] = {
+        ...nextQuestions[openingIndex],
+        text: openingPreset.text,
+        choices: [...openingPreset.choices],
+      };
+      const prev = keys["groom-sports"] ?? { correctChoice: null, correctTexts: [] };
+      keys = {
+        ...keys,
+        "groom-sports": { ...prev, correctChoice: openingPreset.correctChoice, correctTexts: [...openingPreset.correctTexts] },
+      };
+      roomChanged = true;
+    }
+    if (!nextQuestions.some((question) => question.id === RECEPTION_Q2_ID)) {
+      if (nextQuestions === room.questions) nextQuestions = nextQuestions.slice();
+      const at = nextQuestions.findIndex((question) => question.id === "groom-sports");
+      const opening = nextQuestions[at];
+      let order = opening.order + 1;
+      if (nextQuestions.some((question) => question.order === order)) {
+        nextQuestions = nextQuestions.map((question) => (question.order >= order ? { ...question, order: question.order + 1 } : question));
+      }
+      nextQuestions.splice(at + 1, 0, {
+        id: RECEPTION_Q2_ID,
+        order,
+        type: "choice",
+        text: favoritePreset.text,
+        imageUrl: null,
+        choices: [...favoritePreset.choices],
+      });
+      keys = {
+        ...keys,
+        [RECEPTION_Q2_ID]: {
+          correctChoice: favoritePreset.correctChoice,
+          correctTexts: [...favoritePreset.correctTexts],
+          ...(favoritePreset.note ? { note: favoritePreset.note } : {}),
+        },
+      };
+      roomChanged = true;
+    }
+    if (!roomChanged) continue;
     if (!changed) rooms = { ...rooms };
-    rooms[id] = { ...room, questions, keys };
+    rooms[id] = { ...room, questions: nextQuestions, keys, totalQuestions: nextQuestions.length };
     changed = true;
   }
   return changed ? { ...state, rooms } : state;
