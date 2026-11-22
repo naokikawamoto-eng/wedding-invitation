@@ -46,9 +46,9 @@ export const PRESETS: Preset[] = [
       {
         id: "groom-sports",
         type: "choice",
-        text: "次のうち、新郎が習ったことのないスポーツは？",
-        choices: ["剣道", "サッカー", "野球", "テニス"],
-        correctChoice: 2,
+        text: "新郎が1番尖っていた時期は？",
+        choices: ["中学2年生", "高校2年生", "大学2年生", "社会人2年目"],
+        correctChoice: 1,
         correctTexts: [],
       },
       {

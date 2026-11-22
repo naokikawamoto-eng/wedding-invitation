@@ -26,7 +26,7 @@ function opened() {
   state = applyAction(state, { op: "openQuiz", roomId: "1122A" }, 1_000);
   state = applyAction(state, { op: "join", roomId: "1122A", uid: "a", nickname: "A" }, 1_000);
   state = applyAction(state, { op: "join", roomId: "1122A", uid: "b", nickname: "B" }, 1_100);
-  state = applyAction(state, { op: "answer", roomId: "1122A", uid: "a", questionId: "groom-sports", choice: 2 }, 2_000);
+  state = applyAction(state, { op: "answer", roomId: "1122A", uid: "a", questionId: "groom-sports", choice: 1 }, 2_000);
   state = applyAction(state, { op: "answer", roomId: "1122A", uid: "a", questionId: "couple-photo", choice: 1 }, 2_100);
   state = applyAction(state, { op: "answer", roomId: "1122A", uid: "b", questionId: "groom-sports", choice: 0 }, 2_200);
   return state;
@@ -47,7 +47,7 @@ test("古い個人回答は新しい選択を戻さず、別の問題と別の�
     },
   ]);
   const room = state.rooms["1122A"];
-  assert.equal(room.answers["groom-sports_a"].choice, 2);
+  assert.equal(room.answers["groom-sports_a"].choice, 1);
   assert.equal(room.answers["couple-photo_a"].choice, 1);
   assert.equal(room.answers["couple-golf_a"].choice, 1);
   assert.equal(room.answers["groom-sports_b"].choice, 0);

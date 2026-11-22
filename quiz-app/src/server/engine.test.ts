@@ -158,8 +158,8 @@ test("一次会は締切まで回答を変えられ、同点は同順位", () =>
   state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "a", nickname: "A" }, 1_000);
   state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "b", nickname: "B" }, 1_100);
   state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "a", questionId: "groom-sports", choice: 0 }, 1_200);
-  state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "a", questionId: "groom-sports", choice: 2 }, 5_000);
-  state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "b", questionId: "groom-sports", choice: 2 }, 1_300);
+  state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "a", questionId: "groom-sports", choice: 1 }, 5_000);
+  state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "b", questionId: "groom-sports", choice: 1 }, 1_300);
   const guest = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 5_100);
   assert.equal(guest.questions?.length, 11);
   assert.equal(JSON.stringify(guest).includes("あんまり言われない"), false);
@@ -182,14 +182,48 @@ test("一次会は締切まで回答を変えられ、同点は同順位", () =>
   assert.equal(JSON.stringify(hiddenScreen).includes("correctChoice"), false);
   state = applyAction(state, { op: "advanceReveal", roomId: RECEPTION_ROOM_ID }, 9_300);
   const revealed = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 9_300);
-  assert.equal(revealed.answerSheet?.find((s) => s.questionId === "groom-sports")?.correctChoice, 2);
+  assert.equal(revealed.answerSheet?.find((s) => s.questionId === "groom-sports")?.correctChoice, 1);
   assert.equal(revealed.answerSheet?.length, 1);
   const screen = project(state, { view: "screen", roomId: RECEPTION_ROOM_ID }, 9_300);
-  assert.equal(screen.choiceCounts?.[2], 2);
+  assert.equal(screen.choiceCounts?.[1], 2);
   state = applyAction(state, { op: "advanceReveal", roomId: RECEPTION_ROOM_ID }, 9_400);
   const nextQuestion = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 9_400);
   assert.equal(nextQuestion.answerSheet?.length, 1);
   assert.equal(nextQuestion.room?.presentAnswer, false);
+});
+
+test("保存済みの一次会1問目だけを差し替え、他の問題と進行は残す", () => {
+  let state = room(1_000);
+  const current = state.rooms[RECEPTION_ROOM_ID];
+  const questions = current.questions.map((question) =>
+    question.id === "groom-sports"
+      ? { ...question, text: "次のうち、新郎が習ったことのないスポーツは？", choices: ["剣道", "サッカー", "野球", "テニス"] }
+      : question,
+  );
+  state = {
+    ...state,
+    rooms: {
+      ...state.rooms,
+      [RECEPTION_ROOM_ID]: {
+        ...current,
+        phase: "lobby",
+        questions,
+        keys: { ...current.keys, "groom-sports": { correctChoice: 2, correctTexts: [] } },
+      },
+    },
+  };
+  const drink = current.questions.find((question) => question.id === "groom-drink")?.text;
+  const next = normalize(state, 2_000);
+  const roomAfter = next.rooms[RECEPTION_ROOM_ID];
+  const opening = roomAfter.questions.find((question) => question.id === "groom-sports");
+  assert.equal(opening?.text, "新郎が1番尖っていた時期は？");
+  assert.deepEqual(opening?.choices, ["中学2年生", "高校2年生", "大学2年生", "社会人2年目"]);
+  assert.equal(opening?.order, 1);
+  assert.equal(roomAfter.keys["groom-sports"].correctChoice, 1);
+  assert.equal(roomAfter.questions.find((question) => question.id === "groom-drink")?.text, drink);
+  assert.equal(roomAfter.phase, "lobby");
+  assert.equal(roomAfter.questions.length, current.questions.length);
+  assert.equal(normalize(next, 3_000), next);
 });
 
 test("一次会は締め切り後に全問の正解をまとめて出せる", () => {
@@ -209,7 +243,7 @@ test("一次会は締め切り後に全問の正解をまとめて出せる", ()
   const guest = project(state, { view: "guest", roomId: RECEPTION_ROOM_ID, uid: "a" }, 2_100);
   assert.equal(guest.answerSheet?.length, 11);
   assert.equal(guest.answerSheet?.find((item) => item.questionId === "groom-praise")?.note, "あんまり言われないから。");
-  assert.equal(guest.answerSheet?.find((item) => item.questionId === "groom-sports")?.correctChoice, 2);
+  assert.equal(guest.answerSheet?.find((item) => item.questionId === "groom-sports")?.correctChoice, 1);
   assert.equal(guest.answerSheet?.find((item) => item.questionId === "bride-weight")?.correctChoice, 2);
   assert.equal(guest.answerSheet?.find((item) => item.questionId === "bride-abroad")?.correctChoice, 1);
   assert.equal(guest.answerSheet?.find((item) => item.questionId === "bride-chips")?.correctChoice, 2);
@@ -363,7 +397,7 @@ test("席次表は84名で、取った名前は二度目を拒み、未送信の
   assert.equal(state.rooms[RECEPTION_ROOM_ID].participants["phone-a"], undefined);
   assert.equal(state.rooms[RECEPTION_ROOM_ID].participants.old.nickname, "ジョンソン");
   for (const question of state.rooms[RECEPTION_ROOM_ID].questions) {
-    const choice = question.id === "groom-sports" ? 2 : 0;
+    const choice = question.id === "groom-sports" ? 1 : 0;
     state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "phone-b", questionId: question.id, choice }, 1_600);
   }
   state = applyAction(state, { op: "submitAnswers", roomId: RECEPTION_ROOM_ID, uid: "phone-b" }, 1_700);
@@ -373,7 +407,7 @@ test("席次表は84名で、取った名前は二度目を拒み、未送信の
     /受け付けました/,
   );
   state = applyAction(state, { op: "join", roomId: RECEPTION_ROOM_ID, uid: "partial", nickname: "ゆりか" }, 1_900);
-  state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "partial", questionId: "groom-sports", choice: 2 }, 1_950);
+  state = applyAction(state, { op: "answer", roomId: RECEPTION_ROOM_ID, uid: "partial", questionId: "groom-sports", choice: 1 }, 1_950);
   state = applyAction(state, { op: "closeAnswers", roomId: RECEPTION_ROOM_ID }, 2_000);
   state = applyAction(state, { op: "revealBoard", roomId: RECEPTION_ROOM_ID }, 2_100);
   assert.equal(state.rooms[RECEPTION_ROOM_ID].participants["phone-b"].score >= 1, true);

@@ -222,8 +222,34 @@ function ensureModes(state: QuizState): QuizState {
   return changed ? { ...state, rooms } : state;
 }
 
+const RECEPTION_Q1_OLD_TEXT = "次のうち、新郎が習ったことのないスポーツは？";
+
+/** 保存済みの一次会1問目だけを新しい文面へ替える。他の問題・進行・参加者は変えない */
+function upgradeReceptionOpening(state: QuizState): QuizState {
+  const preset = PRESETS.flatMap((item) => item.questions).find((item) => item.id === "groom-sports");
+  if (!preset) return state;
+  let rooms = state.rooms;
+  let changed = false;
+  for (const id of Object.keys(rooms)) {
+    const room = rooms[id];
+    const index = room.questions.findIndex((question) => question.id === "groom-sports" && question.text === RECEPTION_Q1_OLD_TEXT);
+    if (index < 0) continue;
+    const questions = room.questions.slice();
+    questions[index] = { ...room.questions[index], text: preset.text, choices: [...preset.choices] };
+    const prev = room.keys["groom-sports"] ?? { correctChoice: null, correctTexts: [] };
+    const keys = {
+      ...room.keys,
+      "groom-sports": { ...prev, correctChoice: preset.correctChoice, correctTexts: [...preset.correctTexts] },
+    };
+    if (!changed) rooms = { ...rooms };
+    rooms[id] = { ...room, questions, keys };
+    changed = true;
+  }
+  return changed ? { ...state, rooms } : state;
+}
+
 export function normalize(state: QuizState, now: number): QuizState {
-  return tick(ensureModes(ensurePresets(state, now)), now);
+  return tick(ensureModes(upgradeReceptionOpening(ensurePresets(state, now))), now);
 }
 
 function mustRoom(state: QuizState, roomId: string): RoomRecord {
