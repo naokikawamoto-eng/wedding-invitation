@@ -1,24 +1,38 @@
 "use client";
 
 import { useMemo } from "react";
+import { EVENT_LABEL } from "@/lib/events";
+import { withHonorific } from "@/lib/honorific";
 import { useMyAnswer, useParticipants, useQuestion } from "@/lib/hooks";
 import { isCorrect } from "@/lib/judge";
 import { rankParticipants } from "@/lib/scoring";
 import type { Participant, Room } from "@/lib/types";
+import { Countdown } from "../Countdown";
 import { QuestionBody } from "../QuestionBody";
+import { GuestJankenNote } from "../PrizePlanNote";
 import { Ranking } from "../Ranking";
+import { RankingHiddenNote } from "../admin/RankingToggle";
 import { Card, Ornament, Spinner, Title } from "../ui";
+import { PrizeIntro } from "./Prizes";
 import { AnswerArea } from "./AnswerArea";
+import { SelfPlay } from "./SelfPlay";
 
 export function PlayerGame({ room, me }: { room: Room; me: Participant }) {
   const participants = useParticipants(room.id).data ?? [];
-  const ranked = useMemo(() => rankParticipants(participants), [participants]);
-  const myRank = ranked.find((p) => p.id === me.id)?.rank;
+  const byTime = room.mode !== "self";
+  const rankingOpen = room.rankingVisible !== false;
+  const ranked = useMemo(() => rankParticipants(participants, byTime), [participants, byTime]);
+  const myRank = rankingOpen ? ranked.find((p) => p.id === me.id)?.rank : undefined;
+
+  if (room.mode === "self") return <SelfPlay room={room} me={me} />;
 
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between rounded-full bg-white/80 px-4 py-2 text-sm shadow-sm">
-        <span className="min-w-0 truncate font-bold">{me.nickname}</span>
+        <span className="min-w-0 truncate font-bold">
+          {withHonorific(me.nickname)}
+          <span className="ml-2 font-normal text-ink-soft">· {EVENT_LABEL[room.event]}</span>
+        </span>
         <span className="shrink-0 text-ink-soft">
           正解 <b className="text-lg text-blush-600">{me.score}</b>
           {room.revealedQuestionIds.length > 0 && myRank && (
@@ -31,7 +45,8 @@ export function PlayerGame({ room, me }: { room: Room; me: Participant }) {
       </header>
 
       {room.phase === "lobby" && <Lobby room={room} count={participants.length} />}
-      {room.phase === "finished" && <FinalResult me={me} rank={myRank} participants={participants} />}
+      {room.phase === "finished" &&
+        (rankingOpen ? <FinalResult me={me} rank={myRank} participants={participants} byTime={byTime} /> : <RankingHiddenNote />)}
       {(room.phase === "question" || room.phase === "closed" || room.phase === "revealed") && (
         <QuestionStage room={room} me={me} />
       )}
@@ -47,6 +62,7 @@ function Lobby({ room, count }: { room: Room; count: number }) {
       </div>
       <Title sub={room.title}>Ready?</Title>
       <p className="font-bold">まもなくクイズが始まります</p>
+      <PrizeIntro />
       <p className="text-sm text-ink-soft">現在 {count} 人が参加中</p>
     </Card>
   );
@@ -63,6 +79,8 @@ function QuestionStage({ room, me }: { room: Room; me: Participant }) {
 
   return (
     <div className="space-y-4">
+      {room.phase === "question" && <Countdown endsAt={room.questionEndsAt} />}
+      <PrizeIntro compact />
       <Card>
         <QuestionBody question={question.data} number={room.currentNumber} total={room.totalQuestions} />
       </Card>
@@ -94,9 +112,10 @@ function QuestionStage({ room, me }: { room: Room; me: Participant }) {
   );
 }
 
-function FinalResult({ me, rank, participants }: { me: Participant; rank?: number; participants: Participant[] }) {
+function FinalResult({ me, rank, participants, byTime }: { me: Participant; rank?: number; participants: Participant[]; byTime: boolean }) {
   return (
     <div className="space-y-4">
+      <GuestJankenNote participants={participants} byTime={byTime} uid={me.id} />
       <Card className="space-y-3 py-8 text-center">
         <p className="text-sm text-ink-soft">クイズ終了！あなたの順位は</p>
         <p className="animate-pop font-display text-7xl font-semibold italic text-gold-600">
@@ -111,7 +130,7 @@ function FinalResult({ me, rank, participants }: { me: Participant; rank?: numbe
       </Card>
       <Card>
         <h2 className="mb-3 text-center font-bold">最終ランキング</h2>
-        <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} />
+        <Ranking participants={participants} highlightUid={me.id} limit={10} showTime={false} byTime={byTime} honorific />
       </Card>
     </div>
   );

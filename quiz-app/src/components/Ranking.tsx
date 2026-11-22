@@ -1,3 +1,4 @@
+import { withHonorific } from "@/lib/honorific";
 import { formatSeconds, rankParticipants } from "@/lib/scoring";
 import type { Participant } from "@/lib/types";
 
@@ -9,6 +10,10 @@ export function Ranking({
   limit,
   large = false,
   showTime = true,
+  byTime = true,
+  showTable = false,
+  honorific = false,
+  onRelease,
   onRemove,
 }: {
   participants: Participant[];
@@ -16,9 +21,15 @@ export function Ranking({
   limit?: number;
   large?: boolean;
   showTime?: boolean;
+  /** false のとき、正解数が同じなら同順位 */
+  byTime?: boolean;
+  showTable?: boolean;
+  /** ゲストとスクリーンだけ。保存名はそのまま */
+  honorific?: boolean;
+  onRelease?: (p: Participant) => void;
   onRemove?: (p: Participant) => void;
 }) {
-  const ranked = rankParticipants(participants);
+  const ranked = rankParticipants(participants, byTime);
   const rows = limit ? ranked.slice(0, limit) : ranked;
   if (!rows.length) return <p className="py-6 text-center text-sm text-ink-soft">まだ参加者がいません</p>;
   return (
@@ -37,7 +48,10 @@ export function Ranking({
           <span className={`w-12 shrink-0 text-center font-display font-semibold ${large ? "text-3xl" : "text-xl"} text-gold-600`}>
             {MEDALS[p.rank] || p.rank}
           </span>
-          <span className="min-w-0 flex-1 truncate font-bold">{p.nickname}</span>
+          <span className="min-w-0 flex-1 truncate font-bold">
+            {honorific ? withHonorific(p.nickname) : p.nickname}
+            {showTable && p.table && <span className="ml-2 text-[0.7em] font-bold text-ink-soft">{p.table}卓</span>}
+          </span>
           {showTime && p.score > 0 && (
             <span className="hidden text-xs text-ink-soft sm:inline">{formatSeconds(p.totalTimeMs)}</span>
           )}
@@ -45,6 +59,15 @@ export function Ranking({
             {p.score}
             <span className="text-[0.7em]"> 問</span>
           </span>
+          {onRelease && p.guestId && (
+            <button
+              onClick={() => onRelease(p)}
+              className="shrink-0 rounded-full px-2 text-xs text-ink-soft hover:bg-gold-50"
+              title="別のスマホで入り直せるようにする"
+            >
+              解除
+            </button>
+          )}
           {onRemove && (
             <button
               onClick={() => onRemove(p)}

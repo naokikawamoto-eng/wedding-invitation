@@ -1,36 +1,46 @@
 "use client";
 
-import { signOut, type User } from "firebase/auth";
-import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase";
-import { useGuestUser } from "@/lib/hooks";
+import { clearPasscode, passcode, verifyPasscode } from "@/lib/transport";
 import { Button, Card, ErrorNote, Ornament, Spinner, Title, inputClass } from "../ui";
 
-/** 主催者（合言葉を入力した端末）のときだけ中身を表示する */
-export function AdminGate({ children }: { children: (user: User) => React.ReactNode }) {
-  const { user, error } = useGuestUser(); // 先に匿名ログインしておき、合言葉で主催者に昇格する
-  const [isAdmin, setIsAdmin] = useState<{ uid: string; ok: boolean } | null>(null);
-
+/** 合言葉を通ったブラウザだけ、進行画面を出す */
+export function AdminGate({ children }: { children: (user: { uid: string }) => React.ReactNode }) {
+  const [ready, setReady] = useState<"unknown" | "in" | "out">("unknown");
+  const [gateOpen, setGateOpen] = useState(false);
   useEffect(() => {
-    if (!user) return;
-    // 合言葉の書き込みはサーバーで判定されるので、手元だけの未確定の書き込みは数えない
-    return onSnapshot(
-      doc(db(), "admins", user.uid),
-      { includeMetadataChanges: true },
-      (s) => setIsAdmin({ uid: user.uid, ok: s.exists() && !s.metadata.hasPendingWrites }),
-      () => setIsAdmin({ uid: user.uid, ok: false }),
-    );
-  }, [user]);
-
-  if (error) return <ErrorNote error={error} />;
-  if (!user || isAdmin?.uid !== user.uid) return <Spinner />;
-  if (isAdmin.ok) return <>{children(user)}</>;
-  return <PasscodeForm />;
+    let cancel = false;
+    fetch("/api/host-access", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data: { open?: boolean }) => {
+        if (cancel) return;
+        const open = data.open === true;
+        setGateOpen(open);
+        setReady(open || passcode() ? "in" : "out");
+      })
+      .catch(() => {
+        if (!cancel) setReady(passcode() ? "in" : "out");
+      });
+    return () => {
+      cancel = true;
+    };
+  }, []);
+  if (ready === "unknown") return <Spinner />;
+  if (ready === "out") return <PasscodeForm onOk={() => setReady("in")} />;
+  return (
+    <>
+      {gateOpen && (
+        <p className="bg-gold-100 px-4 py-2 text-center text-sm font-bold text-gold-600">
+          主催者の合言葉確認は、いま一時的にオフです
+        </p>
+      )}
+      {children({ uid: "host" })}
+    </>
+  );
 }
 
-function PasscodeForm() {
-  const [passcode, setPasscode] = useState("");
+function PasscodeForm({ onOk }: { onOk: () => void }) {
+  const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
 
@@ -46,10 +56,10 @@ function PasscodeForm() {
             setBusy(true);
             setError(undefined);
             try {
-              await setDoc(doc(db(), "admins", auth().currentUser!.uid), { passcode: passcode.trim() });
-            } catch {
-              setError(new Error("合言葉が違います"));
-            } finally {
+              await verifyPasscode(value.trim());
+              onOk();
+            } catch (err) {
+              setError(err);
               setBusy(false);
             }
           }}
@@ -59,26 +69,33 @@ function PasscodeForm() {
             <input
               className={`${inputClass} mt-2 text-lg`}
               type="password"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
               autoComplete="current-password"
               autoFocus
             />
           </label>
           <ErrorNote error={error} />
-          <Button type="submit" size="lg" className="w-full" disabled={!passcode.trim() || busy}>
+          <Button type="submit" size="lg" className="w-full" disabled={!value.trim() || busy}>
             {busy ? "確認中…" : "主催者として入る"}
           </Button>
         </form>
       </Card>
-      <p className="text-center text-xs text-ink-soft">一度入ると、この端末では次回から入力不要です</p>
+      <p className="text-center text-xs text-ink-soft">このブラウザでは、次回から入力不要です</p>
     </main>
   );
 }
 
 export function SignOutButton() {
   return (
-    <Button variant="ghost" size="sm" onClick={() => signOut(auth())}>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => {
+        clearPasscode();
+        location.href = "/admin";
+      }}
+    >
       ログアウト
     </Button>
   );

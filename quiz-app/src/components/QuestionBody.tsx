@@ -32,7 +32,7 @@ export function QuestionBody({
         </p>
       )}
       {question.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element -- Firebase Storage の URL をそのまま表示する
+        // eslint-disable-next-line @next/next/no-img-element -- アップロードした画像 URL をそのまま表示する
         <img
           src={question.imageUrl}
           alt=""

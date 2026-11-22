@@ -6,10 +6,13 @@ import { useState } from "react";
 import { AdminGate } from "@/components/admin/AdminGate";
 import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
 import { ControlPanel } from "@/components/admin/ControlPanel";
+import { HostPrizes } from "@/components/admin/HostPrizes";
 import { QuestionManager } from "@/components/admin/QuestionManager";
 import { JoinQR } from "@/components/JoinQR";
+import { PrizeHostNote } from "@/components/PrizePlanNote";
 import { Ranking } from "@/components/Ranking";
 import { Button, Card, ErrorNote, Spinner } from "@/components/ui";
+import { AFTERPARTY_ROOM_ID, EVENT_LABEL } from "@/lib/events";
 import { useHostData, useRoom } from "@/lib/hooks";
 import { removeParticipant } from "@/lib/quiz";
 import type { Room } from "@/lib/types";
@@ -31,7 +34,7 @@ export default function AdminRoomPage() {
 }
 
 function RoomGuard({ roomId }: { roomId: string }) {
-  const room = useRoom(roomId);
+  const room = useRoom(roomId, "host");
   if (room.error) return <ErrorNote error={room.error} />;
   if (room.data === undefined) return <Spinner />;
   if (!room.data) return <p className="py-20 text-center">ルーム「{roomId}」が見つかりません</p>;
@@ -49,7 +52,10 @@ function AdminRoom({ room }: { room: Room }) {
         <Link href="/admin" className="text-sm text-ink-soft hover:text-ink">
           ← ルーム一覧
         </Link>
-        <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{room.title}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-xl font-bold">
+          {room.title}
+          <span className="ml-2 text-sm font-bold text-ink-soft">{EVENT_LABEL[room.event]}</span>
+        </h1>
         <span className="text-sm text-ink-soft">
           コード <b className="font-display text-2xl tracking-widest text-gold-600">{room.id}</b>
         </span>
@@ -59,6 +65,11 @@ function AdminRoom({ room }: { room: Room }) {
         <Button variant="outline" size="sm" onClick={() => setShowQR(!showQR)}>
           参加用QR
         </Button>
+        {room.id === AFTERPARTY_ROOM_ID && (
+          <Link href="/admin/race" className="text-sm font-bold text-gold-600 underline">
+            競馬企画
+          </Link>
+        )}
         <a href={`/screen/${room.id}`} target="_blank" rel="noreferrer">
           <Button variant="gold" size="sm">
             スクリーン表示 ↗
@@ -87,6 +98,7 @@ function AdminRoom({ room }: { room: Room }) {
         ))}
       </nav>
 
+      <HostPrizes event={room.event} />
       <ErrorNote error={error} />
       {loading ? (
         <Spinner />
@@ -96,8 +108,12 @@ function AdminRoom({ room }: { room: Room }) {
         <QuestionManager room={room} questions={questions} keys={keys} />
       ) : tab === "ranking" ? (
         <Card>
+          <PrizeHostNote participants={participants} byTime={room.event !== "reception"} />
           <Ranking
             participants={participants}
+            showTable={room.event === "reception"}
+            byTime={room.event !== "reception"}
+            showTime={room.event !== "reception"}
             onRemove={(p) => {
               if (confirm(`「${p.nickname}」を削除しますか？`)) removeParticipant(room.id, p.id);
             }}

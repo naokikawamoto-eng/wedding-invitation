@@ -35,18 +35,22 @@ export interface Ranked extends Participant {
   rank: number;
 }
 
-/** 正解数の多い順、同点なら回答時間の合計が短い順。完全に同じなら同順位 */
-export function rankParticipants(participants: Participant[]): Ranked[] {
-  const sorted = [...participants].sort(
-    (a, b) =>
-      b.score - a.score ||
-      a.totalTimeMs - b.totalTimeMs ||
-      (a.joinedAt?.toMillis() ?? 0) - (b.joinedAt?.toMillis() ?? 0),
-  );
+/**
+ * 正解数の多い順。
+ * byTime が true のときだけ、同点を回答時間の短さで分ける（二次会）。
+ * false のときは正解数が同じなら同順位（一次会）。並び順のための参加時刻は順位に使わない。
+ */
+export function rankParticipants(participants: Participant[], byTime = true): Ranked[] {
+  const sorted = [...participants].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (byTime && a.totalTimeMs !== b.totalTimeMs) return a.totalTimeMs - b.totalTimeMs;
+    return (a.joinedAt ?? 0) - (b.joinedAt ?? 0);
+  });
   let rank = 0;
   return sorted.map((p, i) => {
     const prev = sorted[i - 1];
-    if (!prev || prev.score !== p.score || prev.totalTimeMs !== p.totalTimeMs) rank = i + 1;
+    const tied = !!prev && prev.score === p.score && (!byTime || prev.totalTimeMs === p.totalTimeMs);
+    if (!tied) rank = i + 1;
     return { ...p, rank };
   });
 }
@@ -85,6 +89,65 @@ export function questionStats(q: Question, key: AnswerKey | undefined, answers: 
     choiceCounts,
     textGroups: [...groups.values()].sort((a, b) => b.count - a.count),
   };
+}
+
+/** まとめて発表用。分母は送信した人だけ。未送信の正解は数えない */
+export function submittedCorrectRates(
+  questions: Question[],
+  keys: Map<string, AnswerKey>,
+  answers: Answer[],
+  participants: Participant[],
+): { questionId: string; correct: number; submitted: number }[] {
+  const submitted = new Set(participants.filter((person) => person.submitted).map((person) => person.id));
+  return questions.map((question) => {
+    const key = keys.get(question.id);
+    let correct = 0;
+    if (key) {
+      for (const answer of answers) {
+        if (answer.questionId !== question.id || !submitted.has(answer.uid)) continue;
+        if (isCorrect(question.type, key, answer)) correct += 1;
+      }
+    }
+    return { questionId: question.id, correct, submitted: submitted.size };
+  });
+}
+
+export interface SubmissionRow {
+  person: Participant;
+  correct: number;
+  submittedAt: number;
+}
+
+/** 主催者向け。発表前でも全問の正解数を数える。ゲストの得点や順位には使わない */
+export function hostSubmissions(
+  participants: Participant[],
+  questions: Question[],
+  keys: Map<string, AnswerKey>,
+  answers: Answer[],
+): { submitted: SubmissionRow[]; pending: Participant[] } {
+  const submitted: SubmissionRow[] = [];
+  const pending: Participant[] = [];
+  for (const person of participants) {
+    if (!person.submitted) {
+      pending.push(person);
+      continue;
+    }
+    let correct = 0;
+    for (const question of questions) {
+      const key = keys.get(question.id);
+      const answer = answers.find((item) => item.uid === person.id && item.questionId === question.id);
+      if (key && answer && isCorrect(question.type, key, answer)) correct += 1;
+    }
+    const latest = answers.reduce((max, item) => (item.uid === person.id && item.answeredAt ? Math.max(max, item.answeredAt) : max), 0);
+    submitted.push({
+      person,
+      correct,
+      submittedAt: typeof person.submittedAt === "number" ? person.submittedAt : latest || Number.POSITIVE_INFINITY,
+    });
+  }
+  submitted.sort((a, b) => b.correct - a.correct || a.submittedAt - b.submittedAt || a.person.nickname.localeCompare(b.person.nickname, "ja"));
+  pending.sort((a, b) => (a.joinedAt ?? 0) - (b.joinedAt ?? 0) || a.nickname.localeCompare(b.nickname, "ja"));
+  return { submitted, pending };
 }
 
 export function formatSeconds(ms: number): string {
