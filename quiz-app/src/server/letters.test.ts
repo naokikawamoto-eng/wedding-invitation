@@ -26,6 +26,10 @@ test("手紙は空白と様を除いた氏名で新郎55人にだけ結び、本
   const draft = letterForGuest("a6");
   assert.equal(draft?.body.includes("畠さん"), true);
   assert.equal(draft?.body.includes("竜泉寺"), false);
+  const akaba = letterForGuest("b6");
+  assert.equal(akaba?.callName, "赤羽さん");
+  assert.equal(akaba?.body.endsWith("NAOKIより"), true);
+  assert.equal(raw.includes("直樹より"), false);
   for (const guest of RECEPTION_GUESTS.filter((item) => item.side === "bride" || item.test)) {
     assert.equal(letterForGuest(guest.id), null, guest.name);
   }
