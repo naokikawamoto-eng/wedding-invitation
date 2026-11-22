@@ -10,13 +10,14 @@ import { afterpartyBadge, receptionBadge } from "@/lib/quiz-status";
 import { joinRoom } from "@/lib/quiz";
 import { RECEPTION_GUESTS } from "@/lib/reception-guests";
 import { PersonalLetter } from "./PersonalLetter";
+import { SeatingChart } from "./SeatingChart";
 import { RaceGuest } from "../race/RaceGuest";
 import { AnswerReview } from "./AnswerReview";
 import { PlayerGame } from "./PlayerGame";
 import { SelfPlay } from "./SelfPlay";
 import { Button, Card, ErrorNote, Ornament, Spinner, Title, inputClass } from "../ui";
 
-type Step = "name" | "confirm" | "select" | "reception" | "afterparty" | "race" | "review-reception" | "review-afterparty" | "closed-reception" | "closed-afterparty" | "accepted";
+type Step = "name" | "confirm" | "select" | "seating" | "reception" | "afterparty" | "race" | "review-reception" | "review-afterparty" | "closed-reception" | "closed-afterparty" | "accepted";
 
 export function GuestFlow({
   initialRoom,
@@ -38,6 +39,7 @@ export function GuestFlow({
   const [error, setError] = useState<unknown>();
   const [query, setQuery] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [seatingReturn, setSeatingReturn] = useState<Step>("name");
 
   const loaded =
     !!uid &&
@@ -75,6 +77,11 @@ export function GuestFlow({
     if (decision.seatId !== readSeat()) writeSeat(decision.seatId);
     setCheckedUid(uid);
   }, [loaded, uid, reception.data, afterparty.data, meReception.data, meAfter.data]);
+
+  function openSeating(back: Step) {
+    setSeatingReturn(back);
+    setStep("seating");
+  }
 
   function open(room: typeof RECEPTION_ROOM_ID | typeof AFTERPARTY_ROOM_ID) {
     setError(undefined);
@@ -201,6 +208,9 @@ export function GuestFlow({
         <div className="space-y-4">
           <Title sub="河本直樹 & 磯野有梨花">Welcome</Title>
           <Ornament />
+          <Button variant="outline" className="w-full" onClick={() => openSeating("name")}>
+            席次表
+          </Button>
           <Card>
             <label className="block text-sm font-bold">
               お名前
@@ -227,10 +237,22 @@ export function GuestFlow({
       {atSelect && seat && (
         <div className="space-y-3">
           <Title sub={withHonorific(seat.name)}>Quiz</Title>
+          <Button variant="outline" className="w-full" onClick={() => openSeating("select")}>
+            席次表
+          </Button>
           <QuizChoice label="一次会のクイズ" status={receptionStatus} onClick={() => open(RECEPTION_ROOM_ID)} />
           <QuizChoice label="二次会のクイズ" status={afterpartyStatus} onClick={() => open(AFTERPARTY_ROOM_ID)} />
           {reception.raceGuestOpen && <QuizChoice label="競馬企画" status={null} onClick={() => setStep("race")} />}
           <PrizeIntro />
+        </div>
+      )}
+
+      {step === "seating" && (
+        <div className="space-y-3">
+          <SeatingChart />
+          <Button variant="outline" className="w-full" onClick={() => setStep(seatingReturn)}>
+            戻る
+          </Button>
         </div>
       )}
 
